@@ -734,14 +734,17 @@ select.input {
   flex: 1;
   min-width: 0;
   min-height: 36px;
-  padding: 0 8px;
+  padding: 4px 6px;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: var(--text-2);
   font-size: 0.9rem;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.2;
+  /* Long labels in some languages (e.g. German "Zweierwette") wrap or hyphenate instead of overflowing. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .segmented button.is-active {
