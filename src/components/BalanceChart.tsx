@@ -196,7 +196,7 @@ export function BalanceChart(props: { room: Room; highlightId?: string }) {
         {hover !== null && (
           <div className="chart__tooltip" style={{ left: tooltipLeft }} role="presentation">
             <strong>
-              {hover === 0 ? t("開始時", "Start") : t(`第${hover}レース後`, `After race ${hover}`)}
+              {hover === 0 ? t("開始時", "Start") : t("第{n}レース後", "After race {n}", { n: hover })}
             </strong>
             <ul>
               {hovered.map((item) => (

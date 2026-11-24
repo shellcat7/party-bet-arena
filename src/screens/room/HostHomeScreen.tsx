@@ -11,7 +11,7 @@ import { useCorrectResult } from "./useCorrectResult";
 const phases: RaceStatus[] = ["betting", "closed", "settled"];
 
 export function HostHomeScreen() {
-  const { t } = useI18n();
+  const { t, formatList } = useI18n();
   const confirm = useConfirm();
   const { room, controller, nav } = useOpenRoom();
   const { actions, busy } = controller;
@@ -32,8 +32,9 @@ export function HostHomeScreen() {
       const ok = await confirm({
         title: t("ベットを締め切りますか？", "Close betting?"),
         message: t(
-          `まだ${missing.map((player) => player.name).join("、")}がベットしていません。`,
-          `${missing.map((player) => player.name).join(", ")} haven't bet yet.`,
+          "まだ{names}がベットしていません。",
+          "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}",
+          { names: formatList(missing.map((player) => player.name)), count: missing.length },
         ),
         confirmLabel: t("締め切る", "Close betting"),
       });
@@ -52,7 +53,7 @@ export function HostHomeScreen() {
         <div className="stage-card__head">
           <h2 id="stage-title">
             {raceName(t, race.number)}
-            <small>{t(`（全${room.settings.maxRaces}レース）`, ` of ${room.settings.maxRaces}`)}</small>
+            <small>{t("（全{max}レース）", " of {max}", { max: room.settings.maxRaces })}</small>
           </h2>
           {isFinalRace(room) && !gameOver && (
             <span className="badge badge--accent">{t("最終レース", "Final race")}</span>
@@ -91,7 +92,7 @@ export function HostHomeScreen() {
               <div className="stage-card__empty">
                 <p>
                   {t(
-                    "まだ参加者がいません。招待するか、代行で追加しましょう。",
+                    "まだ参加者がいません。招待するか、参加者を追加してください。",
                     "No bettors yet. Invite friends or add them yourself.",
                   )}
                 </p>
@@ -164,10 +165,7 @@ export function HostHomeScreen() {
         {race.status === "closed" && (
           <div className="button-stack">
             <p className="stage-card__hint">
-              {t(
-                `${race.bets.length}枚のベットで締め切りました。レースが終わったら着順を入力してください。`,
-                `Closed with ${race.bets.length} tickets. Enter the finishing order once the race is over.`,
-              )}
+              {t("{count}枚のベットで締め切りました。レースが終わったら着順を入力してください。", "{count, plural, one {Closed with # ticket.} other {Closed with # tickets.}} Enter the finishing order once the race is over.", { count: race.bets.length })}
             </p>
             <button
               className="button button--primary button--block button--lg"
@@ -204,7 +202,7 @@ export function HostHomeScreen() {
                 onClick={() => void next()}
                 disabled={busy}
               >
-                {t(`${raceName(t, race.number + 1)}を始める`, `Start ${raceName(t, race.number + 1)}`)}
+                {t("{race}を始める", "Start {race}", { race: raceName(t, race.number + 1) })}
               </button>
             )}
             <button
@@ -238,15 +236,12 @@ export function HostHomeScreen() {
           </div>
           <div>
             <dt>{t("チケット", "Tickets")}</dt>
-            <dd>{t(`${race.bets.length}枚`, `${race.bets.length}`)}</dd>
+            <dd>{t("{count}枚", "{count}", { count: race.bets.length })}</dd>
           </div>
           <div>
             <dt>{t("参加者", "Bettors")}</dt>
             <dd>
-              {t(
-                `${room.players.length} / ${room.settings.maxPlayers}人`,
-                `${room.players.length} / ${room.settings.maxPlayers}`,
-              )}
+              {t("{count} / {max}人", "{count} / {max}", { count: room.players.length, max: room.settings.maxPlayers })}
             </dd>
           </div>
         </dl>

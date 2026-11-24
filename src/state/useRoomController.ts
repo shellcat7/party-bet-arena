@@ -404,20 +404,17 @@ export function useRoomController({ t, notify, language }: Options) {
         const existing = remote.players.find((player) => player.uid === uid);
         if (existing) {
           enterRoom(remote, "player", existing.id);
-          notify.success(t(`${existing.name}として再参加しました`, `Welcome back, ${existing.name}`));
+          notify.success(t("{name}として再参加しました", "Welcome back, {name}", { name: existing.name }));
           return "player" as const;
         }
         if (!rooms.canAddPlayer(remote)) {
           notify.error(
-            t(
-              `このルームは満員です（最大${remote.settings.maxPlayers}人）。`,
-              `This room is full (max ${remote.settings.maxPlayers}).`,
-            ),
+            t("このルームは満員です（最大{max}人）。", "This room is full (max {max}).", { max: remote.settings.maxPlayers }),
           );
           return null;
         }
         const name =
-          input.name.trim() || t(`参加者${remote.players.length + 1}`, `Player ${remote.players.length + 1}`);
+          input.name.trim() || t("参加者{n}", "Player {n}", { n: remote.players.length + 1 });
         const player = rooms.buildPlayer(remote, {
           id: uid,
           uid,
@@ -427,7 +424,7 @@ export function useRoomController({ t, notify, language }: Options) {
         });
         await withTimeout(addRemotePlayer(remote.id, player));
         enterRoom(rooms.addPlayer(remote, player), "player", player.id);
-        notify.success(t(`${name}として参加しました`, `Joined as ${name}`));
+        notify.success(t("{name}として参加しました", "Joined as {name}", { name }));
         return "player" as const;
       } catch (error) {
         reportError(error);

@@ -21,7 +21,7 @@ export function FinalScreen() {
 
   const share = () => {
     const text = [
-      t(`${room.name} 最終結果`, `${room.name}: final standings`),
+      t("{room} 最終結果", "{room}: final standings", { room: room.name }),
       ...ranking.map(
         ({ player, rank }) => `${rank}. ${player.emoji} ${player.name} ${formatNumber(player.balance)}pt`,
       ),
@@ -110,10 +110,11 @@ export function FinalScreen() {
                   <strong>{playerName(highlights.biggestWin.playerId)}</strong>
                   <span>
                     <Points value={highlights.biggestWin.payout} />
-                    {t(
-                      `（${raceName(t, highlights.biggestWin.raceNumber)}・${labels[highlights.biggestWin.type].title} ${highlights.biggestWin.multiplier.toFixed(1)}倍）`,
-                      ` (race ${highlights.biggestWin.raceNumber}, ${labels[highlights.biggestWin.type].title} ×${highlights.biggestWin.multiplier.toFixed(1)})`,
-                    )}
+                    {t("（{race}・{type} {odds}倍）", " ({race}, {type} ×{odds})", {
+                      race: raceName(t, highlights.biggestWin.raceNumber),
+                      type: labels[highlights.biggestWin.type].title,
+                      odds: highlights.biggestWin.multiplier.toFixed(1),
+                    })}
                   </span>
                 </dd>
               </div>
@@ -124,10 +125,7 @@ export function FinalScreen() {
                 <dd>
                   <strong>{playerName(highlights.sharpshooter.playerId)}</strong>
                   <span>
-                    {t(
-                      `${highlights.sharpshooter.tickets}枚中${highlights.sharpshooter.hits}枚`,
-                      `${highlights.sharpshooter.hits} of ${highlights.sharpshooter.tickets} tickets`,
-                    )}
+                    {t("{tickets}枚中{hits}枚", "{hits} of {tickets, plural, one {# ticket} other {# tickets}}", { tickets: highlights.sharpshooter.tickets, hits: highlights.sharpshooter.hits })}
                   </span>
                 </dd>
               </div>
@@ -138,7 +136,7 @@ export function FinalScreen() {
                 <dd>
                   <strong>{highlights.favouriteWinner.name}</strong>
                   <span>
-                    {t(`${highlights.favouriteWinner.wins}勝`, `${highlights.favouriteWinner.wins} wins`)}
+                    {t("{count}勝", "{count, plural, one {# win} other {# wins}}", { count: highlights.favouriteWinner.wins })}
                   </span>
                 </dd>
               </div>

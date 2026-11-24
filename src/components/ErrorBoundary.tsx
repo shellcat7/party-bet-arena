@@ -1,7 +1,8 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import type { LanguageName } from "../lib/types";
 
-type Props = { children: ReactNode; language: "ja" | "en" };
+type Props = { children: ReactNode; language: LanguageName };
 type State = { error: Error | null };
 
 /** Last line of defence: a readable recovery screen instead of a blank page. */

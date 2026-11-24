@@ -61,10 +61,10 @@ export function ManageScreen(props: { initialSection?: ManageSection }) {
         value={section}
         onChange={setSection}
         options={[
-          { value: "bettors", label: t(`参加者 ${room.players.length}`, `Bettors ${room.players.length}`) },
+          { value: "bettors", label: t("参加者 {count}", "Bettors {count}", { count: room.players.length }) },
           {
             value: "racers",
-            label: t(`対戦者 ${room.contestants.length}`, `Racers ${room.contestants.length}`),
+            label: t("対戦者 {count}", "Racers {count}", { count: room.contestants.length }),
           },
           { value: "rules", label: t("ルール", "Rules") },
         ]}
@@ -97,7 +97,7 @@ function BettorsSection() {
     const player = room.players.find((item) => item.id === playerId);
     if (!player) return;
     const ok = await confirm({
-      title: t(`${player.name}さんを外しますか？`, `Remove ${player.name}?`),
+      title: t("{name}さんを外しますか？", "Remove {name}?", { name: player.name }),
       message: t(
         "このレースのベットも取り消されます。過去のレース記録は残ります。",
         "Their open tickets are voided. Past results are kept.",
@@ -112,7 +112,7 @@ function BettorsSection() {
     <>
       <section className="card">
         <header className="card__header">
-          <h2>{t("参加者（ベットする人）", "Bettors")}</h2>
+          <h2>{t("参加者", "Bettors")}</h2>
           <span className="badge">
             {room.players.length}/{room.settings.maxPlayers}
           </span>
@@ -124,7 +124,7 @@ function BettorsSection() {
               <EmojiPicker
                 value={player.emoji}
                 accent={player.accent}
-                label={t(`${player.name}のアイコン`, `${player.name}'s icon`)}
+                label={t("{name}のアイコン", "{name}'s icon", { name: player.name })}
                 onChange={(value) => void actions.updatePlayer(player.id, { emoji: value })}
               />
               <div className="edit-list__main">
@@ -143,7 +143,7 @@ function BettorsSection() {
                 className="icon-button icon-button--quiet"
                 type="button"
                 onClick={() => void remove(player.id)}
-                aria-label={t(`${player.name}を外す`, `Remove ${player.name}`)}
+                aria-label={t("{name}を外す", "Remove {name}", { name: player.name })}
               >
                 <Trash2 size={18} />
               </button>
@@ -215,12 +215,9 @@ function RacersSection() {
       (bet.contestantIds ?? [bet.contestantId]).includes(contestantId),
     ).length;
     const ok = await confirm({
-      title: t(`${contestant.name}を外しますか？`, `Remove ${contestant.name}?`),
+      title: t("{name}を外しますか？", "Remove {name}?", { name: contestant.name }),
       message: affected
-        ? t(
-            `この対戦者を含むベット${affected}枚が取り消されます。`,
-            `${affected} open tickets that include this racer will be voided.`,
-          )
+        ? t("この対戦者を含むベット{count}枚が取り消されます。", "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}", { count: affected })
         : undefined,
       confirmLabel: t("外す", "Remove"),
       tone: "danger",
@@ -239,7 +236,7 @@ function RacersSection() {
   return (
     <section className="card">
       <header className="card__header">
-        <h2>{t("対戦者（レースに出る人・CPU）", "Racers")}</h2>
+        <h2>{t("対戦者", "Racers")}</h2>
         <button
           className="link-button"
           type="button"
@@ -272,13 +269,13 @@ function RacersSection() {
             <EmojiPicker
               value={contestant.icon}
               accent={contestant.accent}
-              label={t(`${contestant.name}のアイコン`, `${contestant.name}'s icon`)}
+              label={t("{name}のアイコン", "{name}'s icon", { name: contestant.name })}
               onChange={(value) => void actions.updateContestant(contestant.id, { icon: value })}
             />
             <div className="edit-list__main">
               <CommitInput
                 value={contestant.name}
-                label={t(`${index + 1}番の名前`, `Racer ${index + 1} name`)}
+                label={t("{n}番の名前", "Racer {n} name", { n: index + 1 })}
                 maxLength={LIMITS.maxNameLength}
                 onCommit={(value) => void actions.updateContestant(contestant.id, { name: value })}
               />
@@ -325,7 +322,7 @@ function RacersSection() {
               type="button"
               onClick={() => void remove(contestant.id)}
               disabled={!canRemoveContestant(room)}
-              aria-label={t(`${contestant.name}を外す`, `Remove ${contestant.name}`)}
+              aria-label={t("{name}を外す", "Remove {name}", { name: contestant.name })}
             >
               <Trash2 size={18} />
             </button>
@@ -403,10 +400,7 @@ function RulesSection() {
     if (!player || bonusAmount <= 0) return;
     if (await actions.grantBonus(player.id, bonusAmount)) {
       notify.success(
-        t(
-          `${player.name}さんに${formatNumber(bonusAmount)}pt付与しました`,
-          `Gave ${player.name} ${formatNumber(bonusAmount)}pt`,
-        ),
+        t("{name}さんに{amount}pt付与しました", "Gave {name} {amount}pt", { name: player.name, amount: formatNumber(bonusAmount) }),
       );
     }
   };
@@ -453,7 +447,7 @@ function RulesSection() {
           <span>
             <strong>{t("レース数", "Races")}</strong>
             <small>
-              {t(`現在 第${room.currentRace.number}レース`, `Now on race ${room.currentRace.number}`)}
+              {t("現在 第{n}レース", "Now on race {n}", { n: room.currentRace.number })}
             </small>
           </span>
           <Stepper

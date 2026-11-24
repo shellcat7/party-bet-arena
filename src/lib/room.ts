@@ -125,6 +125,41 @@ const demoCopy = {
     players: ["Alex", "Sam", "Mia", "Ken"],
     racers: ["Red", "Blue", "Yellow", "Green"],
   },
+  zh: {
+    room: "周末游戏大会（演示）",
+    players: ["小明", "小红", "阿强", "小美"],
+    racers: ["红色", "蓝色", "黄色", "绿色"],
+  },
+  ko: {
+    room: "주말 게임 대회 (데모)",
+    players: ["민준", "서연", "지훈", "하은"],
+    racers: ["레드", "블루", "옐로", "그린"],
+  },
+  es: {
+    room: "Noche de juegos (demo)",
+    players: ["Lucía", "Mateo", "Sofía", "Diego"],
+    racers: ["Rojo", "Azul", "Amarillo", "Verde"],
+  },
+  fr: {
+    room: "Soirée jeux (démo)",
+    players: ["Léa", "Hugo", "Chloé", "Louis"],
+    racers: ["Rouge", "Bleu", "Jaune", "Vert"],
+  },
+  de: {
+    room: "Spieleabend (Demo)",
+    players: ["Lena", "Jonas", "Mia", "Felix"],
+    racers: ["Rot", "Blau", "Gelb", "Grün"],
+  },
+  it: {
+    room: "Serata giochi (demo)",
+    players: ["Giulia", "Marco", "Sofia", "Luca"],
+    racers: ["Rosso", "Blu", "Giallo", "Verde"],
+  },
+  uk: {
+    room: "Ігровий вечір (демо)",
+    players: ["Олена", "Андрій", "Марія", "Тарас"],
+    racers: ["Червоний", "Синій", "Жовтий", "Зелений"],
+  },
 } satisfies Record<LanguageName, { room: string; players: string[]; racers: string[] }>;
 
 /**

@@ -50,12 +50,17 @@ function readJson<T>(key: string): T | undefined {
 
 /* ----------------------------------------------------------------------------- preferences */
 
+const SUPPORTED_LANGUAGES: LanguageName[] = ["ja", "en", "zh", "ko", "es", "fr", "de", "it", "uk"];
+
 export type ThemePreference = "system" | "light" | "dark";
 export type Preferences = { language: LanguageName; theme: ThemePreference };
 
 function detectLanguage(): LanguageName {
-  const language = globalThis.navigator?.language ?? "ja";
-  return language.toLowerCase().startsWith("ja") ? "ja" : "en";
+  for (const tag of globalThis.navigator?.languages ?? [globalThis.navigator?.language ?? "ja"]) {
+    const base = tag.toLowerCase().split(/[-_]/)[0];
+    if (SUPPORTED_LANGUAGES.includes(base as LanguageName)) return base as LanguageName;
+  }
+  return "en";
 }
 
 export function loadPreferences(): Preferences {
@@ -63,7 +68,7 @@ export function loadPreferences(): Preferences {
   const legacy = readJson<{ language?: string }>(KEYS.session);
   const language = stored?.language ?? legacy?.language;
   return {
-    language: language === "en" || language === "ja" ? language : detectLanguage(),
+    language: SUPPORTED_LANGUAGES.includes(language as LanguageName) ? (language as LanguageName) : detectLanguage(),
     theme: stored?.theme === "light" || stored?.theme === "dark" ? stored.theme : "system",
   };
 }

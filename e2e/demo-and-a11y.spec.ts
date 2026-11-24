@@ -60,7 +60,7 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
 
 test("the interface can switch to English", async ({ page }) => {
   await freshStart(page);
-  await page.getByRole("radio", { name: "EN" }).click();
+  await page.getByLabel("表示言語").selectOption("en");
   await expect(page.getByRole("button", { name: "Create a room" })).toBeVisible();
   await page.reload();
   await expect(page.getByRole("heading", { name: "Rank Party" })).toBeVisible();
@@ -115,4 +115,24 @@ test.describe("small phones (320px)", () => {
     await page.getByRole("button", { name: "着順を入力する" }).click();
     await expectNoHorizontalOverflow(page);
   });
+});
+
+test.describe("other languages on a small phone", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  for (const code of ["de", "fr", "uk", "zh"]) {
+    test(`${code}: translated and without horizontal scrolling`, async ({ page }) => {
+      const errors = trackErrors(page);
+      await freshStart(page);
+      await page.getByLabel("表示言語").selectOption(code);
+      await expect(page.locator("html")).toHaveAttribute("lang", code);
+      await expect(page.locator(".launch__intro h1")).not.toHaveText("ランクパーティ");
+      await page.locator(".launch__actions .button--ghost").click();
+      for (let index = 0; index < 4; index += 1) {
+        await page.locator(".bottom-nav button").nth(index).click();
+        await expectNoHorizontalOverflow(page);
+      }
+      errors.assertClean();
+    });
+  }
 });

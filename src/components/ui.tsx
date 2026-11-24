@@ -109,7 +109,7 @@ export function Stepper(props: {
         type="button"
         onClick={() => set(props.value - step)}
         disabled={props.value <= props.min}
-        aria-label={t(`${props.label}を減らす`, `Decrease ${props.label}`)}
+        aria-label={t("{label}を減らす", "Decrease {label}", { label: props.label })}
       >
         <Minus size={18} />
       </button>
@@ -118,7 +118,7 @@ export function Stepper(props: {
         type="button"
         onClick={() => set(props.value + step)}
         disabled={props.value >= props.max}
-        aria-label={t(`${props.label}を増やす`, `Increase ${props.label}`)}
+        aria-label={t("{label}を増やす", "Increase {label}", { label: props.label })}
       >
         <Plus size={18} />
       </button>

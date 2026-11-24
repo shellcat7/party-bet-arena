@@ -18,8 +18,8 @@ function Movement(props: { value?: number }) {
       className={up ? "movement movement--up" : "movement movement--down"}
       aria-label={
         up
-          ? t(`${props.value}つ上昇`, `Up ${props.value}`)
-          : t(`${-props.value}つ下降`, `Down ${-props.value}`)
+          ? t("{count}つ上昇", "Up {count}", { count: props.value })
+          : t("{count}つ下降", "Down {count}", { count: -props.value })
       }
     >
       {up ? <ArrowUp size={12} strokeWidth={3} /> : <ArrowDown size={12} strokeWidth={3} />}
@@ -56,7 +56,7 @@ export function RankingScreen() {
             ? t("最初のレースが終わると順位が動きます", "Ranks move after the first race")
             : isGameOver(room)
               ? t("最終結果", "Final standings")
-              : t(`第${room.raceHistory.length}レース終了時点`, `After race ${room.raceHistory.length}`)}
+              : t("第{n}レース終了時点", "After race {n}", { n: room.raceHistory.length })}
         </p>
       </header>
 

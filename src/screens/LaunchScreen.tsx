@@ -1,9 +1,11 @@
-import { ChevronRight, Github, Monitor, Moon, Sun, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Github, Globe, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useConfirm } from "../components/feedback";
 import { BrandMark } from "../components/ui";
 import { raceStatusCopy } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
+import { LANGUAGES } from "../i18n/languages";
 import type { RoomSummary, ThemePreference } from "../lib/storage";
+import type { LanguageName } from "../lib/types";
 import { useApp } from "../state/AppContext";
 import { homeScreenFor } from "../state/navigation";
 
@@ -12,20 +14,18 @@ const REPOSITORY_URL = "https://github.com/shellcat7/party-bet-arena";
 export function LanguageSwitch() {
   const { language, setLanguage, t } = useI18n();
   return (
-    <div className="pill-switch" role="radiogroup" aria-label={t("表示言語", "Language")}>
-      {(["ja", "en"] as const).map((value) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={language === value}
-          className={language === value ? "is-active" : undefined}
-          onClick={() => setLanguage(value)}
-        >
-          {value === "ja" ? "日本語" : "EN"}
-        </button>
-      ))}
-    </div>
+    <label className="language-select">
+      <Globe size={16} aria-hidden="true" />
+      <span className="sr-only">{t("表示言語", "Language")}</span>
+      <select value={language} onChange={(event) => setLanguage(event.target.value as LanguageName)}>
+        {LANGUAGES.map((item) => (
+          <option key={item.code} value={item.code} lang={item.code}>
+            {item.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown size={14} aria-hidden="true" />
+    </label>
   );
 }
 
@@ -45,10 +45,7 @@ export function ThemeSwitch() {
       className="icon-button"
       type="button"
       onClick={() => setPreferences({ theme: next })}
-      aria-label={t(
-        `表示テーマ：${labels[preferences.theme]}（${labels[next]}に切り替え）`,
-        `Theme: ${labels[preferences.theme]} (switch to ${labels[next]})`,
-      )}
+      aria-label={t("表示テーマ：{current}（{next}に切り替え）", "Theme: {current} (switch to {next})", { current: labels[preferences.theme], next: labels[next] })}
       title={labels[preferences.theme]}
     >
       <Icon size={18} />
@@ -146,7 +143,7 @@ function SavedRooms(props: { summaries: RoomSummary[] }) {
 
   const remove = async (summary: RoomSummary) => {
     const ok = await confirm({
-      title: t(`「${summary.name}」を削除しますか？`, `Delete “${summary.name}”?`),
+      title: t("「{name}」を削除しますか？", "Delete “{name}”?", { name: summary.name }),
       message:
         summary.role === "host"
           ? t(
@@ -187,10 +184,7 @@ function SavedRooms(props: { summaries: RoomSummary[] }) {
                 <small>
                   {summary.role === "host" ? t("幹事", "Host") : t("参加者", "Player")}
                   {" ・ "}
-                  {t(
-                    `第${summary.currentRaceNumber}/${summary.maxRaces}レース`,
-                    `Race ${summary.currentRaceNumber}/${summary.maxRaces}`,
-                  )}
+                  {t("第{n}/{max}レース", "Race {n}/{max}", { n: summary.currentRaceNumber, max: summary.maxRaces })}
                   {" ・ "}
                   {status[summary.status]}
                 </small>
@@ -201,7 +195,7 @@ function SavedRooms(props: { summaries: RoomSummary[] }) {
               type="button"
               className="icon-button icon-button--quiet"
               onClick={() => void remove(summary)}
-              aria-label={t(`${summary.name}を削除`, `Delete ${summary.name}`)}
+              aria-label={t("{name}を削除", "Delete {name}", { name: summary.name })}
             >
               <Trash2 size={18} />
             </button>

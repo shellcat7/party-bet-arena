@@ -228,7 +228,7 @@
 }
 
 .topbar__spacer {
-  width: 40px;
+  width: 44px;
 }
 
 .balance-chip {
@@ -1237,7 +1237,7 @@
 
 .edit-list--racers li {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  grid-template-columns: 40px minmax(0, 1fr) 44px;
   gap: 8px 10px;
   align-items: center;
 }

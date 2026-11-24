@@ -135,8 +135,8 @@
 }
 
 .icon-button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   flex: none;
   display: inline-grid;
   place-items: center;
@@ -217,10 +217,16 @@
 
 .card__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 4px 12px;
   min-height: 28px;
+}
+
+.card__header .link-button,
+.card__header .badge {
+  white-space: nowrap;
 }
 
 .card__header h2,
@@ -696,8 +702,8 @@ select.input {
 }
 
 .stepper button {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   border: 0;
@@ -716,8 +722,7 @@ select.input {
   text-align: center;
 }
 
-.segmented,
-.pill-switch {
+.segmented {
   display: flex;
   gap: 2px;
   padding: 2px;
@@ -725,8 +730,7 @@ select.input {
   background: var(--surface-3);
 }
 
-.segmented button,
-.pill-switch button {
+.segmented button {
   flex: 1;
   min-width: 0;
   min-height: 36px;
@@ -740,8 +744,7 @@ select.input {
   white-space: nowrap;
 }
 
-.segmented button.is-active,
-.pill-switch button.is-active {
+.segmented button.is-active {
   background: var(--surface);
   color: var(--text);
   box-shadow: 0 1px 2px rgba(15, 17, 21, 0.12);
@@ -751,10 +754,38 @@ select.input {
   opacity: 0.4;
 }
 
-.pill-switch button {
-  min-height: 32px;
-  padding: 0 10px;
-  font-size: 0.82rem;
+
+.language-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 40px;
+  color: var(--text-2);
+}
+
+.language-select > svg {
+  position: absolute;
+  pointer-events: none;
+}
+
+.language-select > svg:first-of-type {
+  left: 12px;
+}
+
+.language-select > svg:last-of-type {
+  right: 10px;
+}
+
+.language-select select {
+  height: 100%;
+  padding: 0 30px 0 34px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-m);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.87rem;
+  appearance: none;
+  cursor: pointer;
 }
 
 .emoji-picker {

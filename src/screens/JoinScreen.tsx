@@ -7,7 +7,6 @@ import { LIMITS } from "../lib/constants";
 import { JOIN_CODE_LENGTH, normalizeCodeInput, parseInviteUrl, ROOM_ID_LENGTH } from "../lib/ids";
 import { useApp } from "../state/AppContext";
 import { homeScreenFor } from "../state/navigation";
-import { LanguageSwitch } from "./LaunchScreen";
 
 type BarcodeDetectorLike = new (options?: { formats?: string[] }) => {
   detect: (source: ImageBitmap) => Promise<Array<{ rawValue: string }>>;
@@ -108,7 +107,6 @@ export function JoinScreen() {
         title={t("ルームに参加", "Join a room")}
         subtitle={t("幹事から届いた招待を入力してください", "Enter the invitation from your host")}
         onBack={nav.canGoBack ? nav.back : () => nav.reset({ name: "launch" })}
-        actions={<LanguageSwitch />}
       />
 
       <form

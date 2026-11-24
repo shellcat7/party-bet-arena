@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Field, PageHeader, SegmentedControl, Stepper, Toggle } from "../components/ui";
 import { useI18n } from "../i18n/i18n";
 import { LIMITS } from "../lib/constants";
@@ -16,6 +16,11 @@ export function CreateRoomScreen() {
   const [customBalance, setCustomBalance] = useState(false);
   const update = (patch: Partial<RoomCreateInput>) => setDraft((current) => ({ ...current, ...patch }));
   const canSubmit = draft.name.trim().length > 0 && !controller.busy;
+
+  // The invitation screen comes next; fetch its code (and the QR library) ahead of time.
+  useEffect(() => {
+    void import("./InviteScreen");
+  }, []);
 
   const submit = async () => {
     if (!canSubmit) return;
@@ -56,7 +61,7 @@ export function CreateRoomScreen() {
           <div className="setting-row">
             <span>
               <strong>{t("レース数", "Races")}</strong>
-              <small>{t(`最大${LIMITS.maxRaces}レース`, `Up to ${LIMITS.maxRaces}`)}</small>
+              <small>{t("最大{max}レース", "Up to {max}", { max: LIMITS.maxRaces })}</small>
             </span>
             <Stepper
               label={t("レース数", "races")}

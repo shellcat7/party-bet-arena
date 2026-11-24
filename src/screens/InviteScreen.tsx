@@ -16,7 +16,7 @@ export default function InviteScreen(props: { isNew: boolean }) {
   const copy = async (value: string, label: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      notify.success(t(`${label}をコピーしました`, `${label} copied`));
+      notify.success(t("{label}をコピーしました", "{label} copied", { label }));
     } catch {
       notify.error(
         t(
@@ -28,10 +28,7 @@ export default function InviteScreen(props: { isNew: boolean }) {
   };
 
   const share = async () => {
-    const text = t(
-      `「${room.name}」への招待です。リンクを開いて参加してください。`,
-      `You're invited to “${room.name}”. Open the link to join.`,
-    );
+    const text = t("「{room}」への招待です。リンクを開いて参加してください。", "You're invited to “{room}”. Open the link to join.", { room: room.name });
     if (navigator.share) {
       try {
         await navigator.share({ title: room.name, text, url });

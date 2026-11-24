@@ -39,7 +39,7 @@ export function raceStatusCopy(t: Translate): Record<RaceStatus, string> {
 }
 
 export function raceName(t: Translate, number: number) {
-  return t(`第${number}レース`, `Race ${number}`);
+  return t("第{n}レース", "Race {n}", { n: number });
 }
 
 export function betErrorMessage(t: Translate, error: BetError) {

@@ -123,7 +123,7 @@ export function BetScreen() {
                 >
                   <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
                   <span>{player.name}</span>
-                  {count > 0 && <em aria-label={t(`${count}枚ベット済み`, `${count} tickets`)}>{count}</em>}
+                  {count > 0 && <em aria-label={t("{count}枚ベット済み", "{count, plural, one {# ticket placed} other {# tickets placed}}", { count })}>{count}</em>}
                 </button>
               );
             })}
@@ -403,7 +403,7 @@ function PlacedTicket(props: { room: Room; bet: Bet }) {
           <p>
             {room.currentRace.status === "betting"
               ? waitingFor > 0
-                ? t(`あと${waitingFor}人のベットを待っています`, `Waiting for ${waitingFor} more`)
+                ? t("あと{count}人のベットを待っています", "Waiting for {count} more", { count: waitingFor })
                 : t(
                     "全員ベットしました。締切を待っています",
                     "Everyone has bet. Waiting for the host to close betting",
@@ -491,10 +491,7 @@ function TicketList(props: { room: Room }) {
     const player = getPlayer(room, bet.playerId);
     const ok = await confirm({
       title: t("このベットを取り消しますか？", "Void this ticket?"),
-      message: t(
-        `${player?.name ?? "?"}さんの${labels[bet.type].title}（${bet.amount}pt）を取り消します。`,
-        `${player?.name ?? "?"}'s ${labels[bet.type].title} for ${bet.amount}pt will be removed.`,
-      ),
+      message: t("{name}さんの{type}（{amount}pt）を取り消します。", "{name}'s {type} for {amount}pt will be removed.", { name: player?.name ?? "?", type: labels[bet.type].title, amount: bet.amount }),
       confirmLabel: t("取り消す", "Void"),
       tone: "danger",
     });

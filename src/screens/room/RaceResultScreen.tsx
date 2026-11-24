@@ -48,7 +48,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
   return (
     <div className="screen">
       <PageHeader
-        title={t(`${raceName(t, entry.raceNumber)}の結果`, `${raceName(t, entry.raceNumber)} result`)}
+        title={t("{race}の結果", "{race} result", { race: raceName(t, entry.raceNumber) })}
         subtitle={formatDateTime(entry.settledAt)}
         onBack={
           nav.canGoBack ? nav.back : () => nav.replace({ name: controller.role === "host" ? "home" : "bet" })
@@ -122,10 +122,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
                 if (await controller.actions.nextRace()) nav.reset({ name: "home" });
               }}
             >
-              {t(
-                `${raceName(t, entry.raceNumber + 1)}を始める`,
-                `Start ${raceName(t, entry.raceNumber + 1)}`,
-              )}
+              {t("{race}を始める", "Start {race}", { race: raceName(t, entry.raceNumber + 1) })}
             </button>
           )}
         </div>

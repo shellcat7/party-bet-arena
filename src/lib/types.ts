@@ -9,7 +9,7 @@ export type RaceStatus = "betting" | "closed" | "settled";
 
 /** Stored on the room for backwards compatibility; display theme is now a per-device preference. */
 export type ThemeName = "arena" | "neon";
-export type LanguageName = "ja" | "en";
+export type LanguageName = "ja" | "en" | "zh" | "ko" | "es" | "fr" | "de" | "it" | "uk";
 export type AppRole = "host" | "player";
 
 export type RoomSettings = {

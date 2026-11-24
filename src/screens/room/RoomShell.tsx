@@ -146,10 +146,7 @@ function RoomTopBar() {
       <div className="topbar__title">
         <strong>{room.name}</strong>
         <span>
-          {t(
-            `第${room.currentRace.number}/${room.settings.maxRaces}レース`,
-            `Race ${room.currentRace.number}/${room.settings.maxRaces}`,
-          )}
+          {t("第{n}/{max}レース", "Race {n}/{max}", { n: room.currentRace.number, max: room.settings.maxRaces })}
           <i className={`status-dot status-dot--${room.currentRace.status}`} aria-hidden="true" />
           {status[room.currentRace.status]}
         </span>
