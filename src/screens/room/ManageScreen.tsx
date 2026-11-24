@@ -217,7 +217,11 @@ function RacersSection() {
     const ok = await confirm({
       title: t("{name}を外しますか？", "Remove {name}?", { name: contestant.name }),
       message: affected
-        ? t("この対戦者を含むベット{count}枚が取り消されます。", "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}", { count: affected })
+        ? t(
+            "この対戦者を含むベット{count}枚が取り消されます。",
+            "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}",
+            { count: affected },
+          )
         : undefined,
       confirmLabel: t("外す", "Remove"),
       tone: "danger",
@@ -400,7 +404,10 @@ function RulesSection() {
     if (!player || bonusAmount <= 0) return;
     if (await actions.grantBonus(player.id, bonusAmount)) {
       notify.success(
-        t("{name}さんに{amount}pt付与しました", "Gave {name} {amount}pt", { name: player.name, amount: formatNumber(bonusAmount) }),
+        t("{name}さんに{amount}pt付与しました", "Gave {name} {amount}pt", {
+          name: player.name,
+          amount: formatNumber(bonusAmount),
+        }),
       );
     }
   };
@@ -446,9 +453,7 @@ function RulesSection() {
         <div className="setting-row">
           <span>
             <strong>{t("レース数", "Races")}</strong>
-            <small>
-              {t("現在 第{n}レース", "Now on race {n}", { n: room.currentRace.number })}
-            </small>
+            <small>{t("現在 第{n}レース", "Now on race {n}", { n: room.currentRace.number })}</small>
           </span>
           <Stepper
             label={t("レース数", "races")}

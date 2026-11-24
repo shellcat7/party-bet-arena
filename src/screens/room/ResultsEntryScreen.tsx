@@ -30,7 +30,11 @@ export function ResultsEntryScreen() {
     const winner = room.contestants.find((contestant) => contestant.id === order[0]);
     const ok = await confirm({
       title: t("この着順で確定しますか？", "Confirm this result?"),
-      message: t("1着は{icon} {name}。確定すると全員の残高に払戻が反映され、取り消せません。", "{icon} {name} wins. Payouts will be applied to everyone's balance and can't be undone.", { icon: winner?.icon ?? "", name: winner?.name ?? "" }),
+      message: t(
+        "1着は{icon} {name}。確定すると全員の残高に払戻が反映され、取り消せません。",
+        "{icon} {name} wins. Payouts will be applied to everyone's balance and can't be undone.",
+        { icon: winner?.icon ?? "", name: winner?.name ?? "" },
+      ),
       confirmLabel: t("確定して精算", "Confirm & pay out"),
     });
     if (!ok) return;
@@ -78,8 +82,14 @@ export function ResultsEntryScreen() {
                   disabled={settled}
                   aria-label={
                     position >= 0
-                      ? t("{name}：{n}着（タップで取り消し）", "{name}: position {n} (tap to undo)", { name: contestant.name, n: position + 1 })
-                      : t("{name}を{n}着にする", "Place {name} {n}", { name: contestant.name, n: order.length + 1 })
+                      ? t("{name}：{n}着（タップで取り消し）", "{name}: position {n} (tap to undo)", {
+                          name: contestant.name,
+                          n: position + 1,
+                        })
+                      : t("{name}を{n}着にする", "Place {name} {n}", {
+                          name: contestant.name,
+                          n: order.length + 1,
+                        })
                   }
                 >
                   <span className="finish-pick__position">{position >= 0 ? position + 1 : "–"}</span>

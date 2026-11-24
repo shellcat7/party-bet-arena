@@ -165,7 +165,11 @@ export function HostHomeScreen() {
         {race.status === "closed" && (
           <div className="button-stack">
             <p className="stage-card__hint">
-              {t("{count}枚のベットで締め切りました。レースが終わったら着順を入力してください。", "{count, plural, one {Closed with # ticket.} other {Closed with # tickets.}} Enter the finishing order once the race is over.", { count: race.bets.length })}
+              {t(
+                "{count}枚のベットで締め切りました。レースが終わったら着順を入力してください。",
+                "{count, plural, one {Closed with # ticket.} other {Closed with # tickets.}} Enter the finishing order once the race is over.",
+                { count: race.bets.length },
+              )}
             </p>
             <button
               className="button button--primary button--block button--lg"
@@ -241,7 +245,10 @@ export function HostHomeScreen() {
           <div>
             <dt>{t("参加者", "Bettors")}</dt>
             <dd>
-              {t("{count} / {max}人", "{count} / {max}", { count: room.players.length, max: room.settings.maxPlayers })}
+              {t("{count} / {max}人", "{count} / {max}", {
+                count: room.players.length,
+                max: room.settings.maxPlayers,
+              })}
             </dd>
           </div>
         </dl>

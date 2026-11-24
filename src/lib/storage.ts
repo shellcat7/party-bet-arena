@@ -68,7 +68,9 @@ export function loadPreferences(): Preferences {
   const legacy = readJson<{ language?: string }>(KEYS.session);
   const language = stored?.language ?? legacy?.language;
   return {
-    language: SUPPORTED_LANGUAGES.includes(language as LanguageName) ? (language as LanguageName) : detectLanguage(),
+    language: SUPPORTED_LANGUAGES.includes(language as LanguageName)
+      ? (language as LanguageName)
+      : detectLanguage(),
     theme: stored?.theme === "light" || stored?.theme === "dark" ? stored.theme : "system",
   };
 }

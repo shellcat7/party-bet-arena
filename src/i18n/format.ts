@@ -57,9 +57,14 @@ export function formatMessage(template: string, params: MessageParams | undefine
     if (plural) {
       const count = Number(params[plural[1]]);
       const branches = parseBranches(plural[2]);
-      const category = branches[`=${count}`] !== undefined ? `=${count}` : new Intl.PluralRules(locale).select(count);
+      const category =
+        branches[`=${count}`] !== undefined ? `=${count}` : new Intl.PluralRules(locale).select(count);
       const branch = branches[category] ?? branches.other ?? "";
-      output += formatMessage(branch.replace(/#/g, new Intl.NumberFormat(locale).format(count)), params, locale);
+      output += formatMessage(
+        branch.replace(/#/g, new Intl.NumberFormat(locale).format(count)),
+        params,
+        locale,
+      );
     } else {
       const value = params[inner.trim()];
       output += value === undefined ? template.slice(open, close + 1) : String(value);

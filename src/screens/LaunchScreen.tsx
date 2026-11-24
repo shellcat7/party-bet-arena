@@ -45,7 +45,10 @@ export function ThemeSwitch() {
       className="icon-button"
       type="button"
       onClick={() => setPreferences({ theme: next })}
-      aria-label={t("表示テーマ：{current}（{next}に切り替え）", "Theme: {current} (switch to {next})", { current: labels[preferences.theme], next: labels[next] })}
+      aria-label={t("表示テーマ：{current}（{next}に切り替え）", "Theme: {current} (switch to {next})", {
+        current: labels[preferences.theme],
+        next: labels[next],
+      })}
       title={labels[preferences.theme]}
     >
       <Icon size={18} />
@@ -184,7 +187,10 @@ function SavedRooms(props: { summaries: RoomSummary[] }) {
                 <small>
                   {summary.role === "host" ? t("幹事", "Host") : t("参加者", "Player")}
                   {" ・ "}
-                  {t("第{n}/{max}レース", "Race {n}/{max}", { n: summary.currentRaceNumber, max: summary.maxRaces })}
+                  {t("第{n}/{max}レース", "Race {n}/{max}", {
+                    n: summary.currentRaceNumber,
+                    max: summary.maxRaces,
+                  })}
                   {" ・ "}
                   {status[summary.status]}
                 </small>

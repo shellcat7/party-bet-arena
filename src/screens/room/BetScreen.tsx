@@ -123,7 +123,17 @@ export function BetScreen() {
                 >
                   <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
                   <span>{player.name}</span>
-                  {count > 0 && <em aria-label={t("{count}枚ベット済み", "{count, plural, one {# ticket placed} other {# tickets placed}}", { count })}>{count}</em>}
+                  {count > 0 && (
+                    <em
+                      aria-label={t(
+                        "{count}枚ベット済み",
+                        "{count, plural, one {# ticket placed} other {# tickets placed}}",
+                        { count },
+                      )}
+                    >
+                      {count}
+                    </em>
+                  )}
                 </button>
               );
             })}
@@ -491,7 +501,11 @@ function TicketList(props: { room: Room }) {
     const player = getPlayer(room, bet.playerId);
     const ok = await confirm({
       title: t("このベットを取り消しますか？", "Void this ticket?"),
-      message: t("{name}さんの{type}（{amount}pt）を取り消します。", "{name}'s {type} for {amount}pt will be removed.", { name: player?.name ?? "?", type: labels[bet.type].title, amount: bet.amount }),
+      message: t(
+        "{name}さんの{type}（{amount}pt）を取り消します。",
+        "{name}'s {type} for {amount}pt will be removed.",
+        { name: player?.name ?? "?", type: labels[bet.type].title, amount: bet.amount },
+      ),
       confirmLabel: t("取り消す", "Void"),
       tone: "danger",
     });

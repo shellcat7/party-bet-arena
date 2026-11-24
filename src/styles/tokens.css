@@ -64,7 +64,8 @@
 
 :root:lang(zh) {
   font-family:
-    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC",
+    sans-serif;
 }
 
 :root:lang(ko) {

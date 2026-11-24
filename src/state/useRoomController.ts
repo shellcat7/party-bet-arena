@@ -409,12 +409,13 @@ export function useRoomController({ t, notify, language }: Options) {
         }
         if (!rooms.canAddPlayer(remote)) {
           notify.error(
-            t("このルームは満員です（最大{max}人）。", "This room is full (max {max}).", { max: remote.settings.maxPlayers }),
+            t("このルームは満員です（最大{max}人）。", "This room is full (max {max}).", {
+              max: remote.settings.maxPlayers,
+            }),
           );
           return null;
         }
-        const name =
-          input.name.trim() || t("参加者{n}", "Player {n}", { n: remote.players.length + 1 });
+        const name = input.name.trim() || t("参加者{n}", "Player {n}", { n: remote.players.length + 1 });
         const player = rooms.buildPlayer(remote, {
           id: uid,
           uid,

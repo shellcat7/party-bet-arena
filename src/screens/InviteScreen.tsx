@@ -28,7 +28,11 @@ export default function InviteScreen(props: { isNew: boolean }) {
   };
 
   const share = async () => {
-    const text = t("「{room}」への招待です。リンクを開いて参加してください。", "You're invited to “{room}”. Open the link to join.", { room: room.name });
+    const text = t(
+      "「{room}」への招待です。リンクを開いて参加してください。",
+      "You're invited to “{room}”. Open the link to join.",
+      { room: room.name },
+    );
     if (navigator.share) {
       try {
         await navigator.share({ title: room.name, text, url });

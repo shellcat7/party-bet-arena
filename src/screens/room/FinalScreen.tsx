@@ -125,7 +125,11 @@ export function FinalScreen() {
                 <dd>
                   <strong>{playerName(highlights.sharpshooter.playerId)}</strong>
                   <span>
-                    {t("{tickets}枚中{hits}枚", "{hits} of {tickets, plural, one {# ticket} other {# tickets}}", { tickets: highlights.sharpshooter.tickets, hits: highlights.sharpshooter.hits })}
+                    {t(
+                      "{tickets}枚中{hits}枚",
+                      "{hits} of {tickets, plural, one {# ticket} other {# tickets}}",
+                      { tickets: highlights.sharpshooter.tickets, hits: highlights.sharpshooter.hits },
+                    )}
                   </span>
                 </dd>
               </div>
@@ -136,7 +140,9 @@ export function FinalScreen() {
                 <dd>
                   <strong>{highlights.favouriteWinner.name}</strong>
                   <span>
-                    {t("{count}勝", "{count, plural, one {# win} other {# wins}}", { count: highlights.favouriteWinner.wins })}
+                    {t("{count}勝", "{count, plural, one {# win} other {# wins}}", {
+                      count: highlights.favouriteWinner.wins,
+                    })}
                   </span>
                 </dd>
               </div>
