@@ -86,3 +86,25 @@ test.describe("accessibility and layout", () => {
     });
   }
 });
+
+test.describe("small phones (320px)", () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  test("no screen scrolls horizontally", async ({ page }) => {
+    await freshStart(page);
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole("button", { name: /ルームを作る/ }).click();
+    await expectNoHorizontalOverflow(page);
+    await page.getByRole("button", { name: "戻る" }).click();
+    await page.getByRole("button", { name: /デモで試す/ }).click();
+    for (const tab of ["進行", "ベット", "順位", "管理"]) {
+      await nav(page, tab).click();
+      await expectNoHorizontalOverflow(page);
+    }
+    await nav(page, "進行").click();
+    await page.getByRole("button", { name: "ベットを締め切る" }).click();
+    await page.getByRole("dialog").getByRole("button", { name: "締め切る" }).click();
+    await page.getByRole("button", { name: "着順を入力する" }).click();
+    await expectNoHorizontalOverflow(page);
+  });
+});

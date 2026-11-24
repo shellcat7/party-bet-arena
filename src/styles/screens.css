@@ -1815,7 +1815,7 @@
 
 @media (max-width: 360px) {
   .screen {
-    padding-inline: 12px;
+    --screen-pad: 12px;
   }
 
   .amount__quick {
