@@ -29,7 +29,6 @@ const messages: Record<string, string> = {
   "Bet placed": "Ставку прийнято",
   "Bet status": "Стан ставок",
   "Bet type": "Тип ставки",
-  "Bets via host": "Ставки вводить ведучий",
   Betting: "Ставки",
   "Betting closed. Waiting for the result": "Ставки закрито. Чекаємо на результат",
   "Betting closes automatically when you confirm.": "Після підтвердження ставки закриються автоматично.",

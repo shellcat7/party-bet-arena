@@ -281,6 +281,13 @@
   padding-top: 0;
 }
 
+/* Pull the chevron out so it lines up optically with the content edge. */
+.page-header__back {
+  margin-left: -12px;
+  margin-right: -8px;
+  color: var(--text-2);
+}
+
 .page-header__title {
   min-width: 0;
   flex: 1;

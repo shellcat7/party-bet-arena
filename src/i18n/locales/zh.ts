@@ -27,7 +27,6 @@ const messages: Record<string, string> = {
   "Bet placed": "投注成功",
   "Bet status": "投注情况",
   "Bet type": "投注类型",
-  "Bets via host": "由主持人代投",
   Betting: "投注",
   "Betting closed. Waiting for the result": "投注已截止，等待比赛结果",
   "Betting closes automatically when you confirm.": "确认后将自动截止投注。",

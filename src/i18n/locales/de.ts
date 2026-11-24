@@ -30,7 +30,6 @@ const messages: Record<string, string> = {
   "Bet placed": "Wette abgegeben",
   "Bet status": "Wettstatus",
   "Bet type": "Wettart",
-  "Bets via host": "Tippt über die Spielleitung",
   Betting: "Wetten",
   "Betting closed. Waiting for the result": "Wetten geschlossen. Warten auf das Ergebnis",
   "Betting closes automatically when you confirm.":

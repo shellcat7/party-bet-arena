@@ -30,7 +30,6 @@ const messages: Record<string, string> = {
   "Bet placed": "Pari enregistré",
   "Bet status": "État des paris",
   "Bet type": "Type de pari",
-  "Bets via host": "Paris saisis par l'organisateur",
   Betting: "Paris",
   "Betting closed. Waiting for the result": "Paris clos. En attente du résultat",
   "Betting closes automatically when you confirm.":

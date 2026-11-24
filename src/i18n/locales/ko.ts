@@ -29,7 +29,6 @@ const messages: Record<string, string> = {
   "Bet placed": "베팅 완료",
   "Bet status": "베팅 현황",
   "Bet type": "베팅 종류",
-  "Bets via host": "진행자 대리 입력",
   Betting: "베팅 접수",
   "Betting closed. Waiting for the result": "베팅이 마감되었어요. 결과를 기다리고 있어요",
   "Betting closes automatically when you confirm.": "확정하면 베팅이 자동으로 마감돼요.",

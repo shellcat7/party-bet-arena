@@ -1,4 +1,3 @@
-import { Share2 } from "lucide-react";
 import { BalanceChart } from "../../components/BalanceChart";
 import { useNotify } from "../../components/feedback";
 import { Avatar, Points, PageHeader, RankBadge } from "../../components/ui";
@@ -36,16 +35,6 @@ export function FinalScreen() {
         subtitle={room.name}
         onBack={
           nav.canGoBack ? nav.back : () => nav.reset({ name: controller.role === "host" ? "home" : "bet" })
-        }
-        actions={
-          <button
-            className="icon-button"
-            type="button"
-            onClick={share}
-            aria-label={t("結果を共有", "Share results")}
-          >
-            <Share2 size={18} />
-          </button>
         }
       />
 

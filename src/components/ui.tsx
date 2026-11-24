@@ -1,6 +1,6 @@
 import { useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
-import { ArrowLeft, Minus, Plus } from "lucide-react";
+import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
 import { EMOJI_CHOICES } from "../lib/constants";
 
@@ -52,8 +52,13 @@ export function PageHeader(props: {
   return (
     <header className="page-header">
       {props.onBack && (
-        <button className="icon-button" type="button" onClick={props.onBack} aria-label={t("戻る", "Back")}>
-          <ArrowLeft size={22} />
+        <button
+          className="icon-button icon-button--quiet page-header__back"
+          type="button"
+          onClick={props.onBack}
+          aria-label={t("戻る", "Back")}
+        >
+          <ChevronLeft size={24} />
         </button>
       )}
       <div className="page-header__title">

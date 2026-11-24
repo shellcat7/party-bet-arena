@@ -1067,11 +1067,6 @@
   font-weight: 600;
 }
 
-.standings__name small {
-  color: var(--text-3);
-  font-size: 0.78rem;
-}
-
 .standings__value {
   display: grid;
   justify-items: end;
@@ -1185,6 +1180,13 @@
   display: grid;
   justify-items: start;
   gap: 2px;
+}
+
+/* On a tinted card the label reads as a caption, aligned with the name below it. */
+.champion .badge,
+.result-summary .badge {
+  padding-inline: 0;
+  background: none;
 }
 
 .champion h2 {

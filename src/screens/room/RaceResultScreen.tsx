@@ -55,7 +55,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
         }
         actions={
           <button
-            className="icon-button"
+            className="icon-button icon-button--quiet"
             type="button"
             onClick={share}
             aria-label={t("結果を共有", "Share result")}

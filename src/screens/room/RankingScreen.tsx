@@ -81,7 +81,6 @@ export function RankingScreen() {
                     {player.name}
                     {player.id === meId && <em>{t("あなた", "You")}</em>}
                   </strong>
-                  {player.isOffline && <small>{t("幹事が代行", "Bets via host")}</small>}
                 </span>
                 <span className="standings__value">
                   <Points value={player.balance} />

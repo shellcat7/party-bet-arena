@@ -31,8 +31,17 @@ async function newPage(options = {}) {
 const shot = async (page, name, fullPage = false) => {
   const toast = page.locator(".toast button");
   if (await toast.isVisible()) await toast.click();
+  await page.mouse.move(0, 0);
+  // For a full-page shot, grow the viewport first and let the layout settle, so that
+  // size-dependent parts such as the chart are not captured halfway through a resize.
+  const viewport = page.viewportSize();
+  if (fullPage) {
+    const height = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.setViewportSize({ width: viewport.width, height });
+  }
   await page.waitForTimeout(400);
-  await page.screenshot({ path: `${outDir}/${name}.png`, fullPage });
+  await page.screenshot({ path: `${outDir}/${name}.png` });
+  if (fullPage) await page.setViewportSize(viewport);
   console.log(`saved ${outDir}/${name}.png`);
 };
 const tab = (page, label) =>
