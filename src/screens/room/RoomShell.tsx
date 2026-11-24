@@ -1,7 +1,18 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
-import { CloudOff, Eye, History, House, LogOut, QrCode, Settings2, Ticket, Trophy } from "lucide-react";
-import { Coins } from "../../components/ui";
+import {
+  CloudOff,
+  Eye,
+  History,
+  House,
+  LogOut,
+  QrCode,
+  Settings2,
+  Ticket,
+  Trophy,
+  UserX,
+} from "lucide-react";
+import { Coins, EmptyState } from "../../components/ui";
 import { raceStatusCopy } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getAvailableBalance } from "../../lib/betting";
@@ -22,17 +33,48 @@ export function RoomShell() {
   const { room, controller, nav } = useOpenRoom();
   const { screen } = nav;
   const isTab = TAB_SCREENS.has(screen.name);
+  const content = useRef<HTMLDivElement>(null);
   usePlayerAutoNavigation();
 
+  // Move focus to the new screen so keyboard and screen-reader users land on its content.
+  useEffect(() => {
+    content.current?.focus({ preventScroll: true });
+  }, [screen]);
+
+  const removed = controller.role === "player" && !controller.me;
+
   return (
-    <div className={isTab ? "room room--tab" : "room"}>
+    <div className={isTab && !removed ? "room room--tab" : "room"}>
       {isTab && <RoomTopBar />}
       {controller.connection === "offline" && <OfflineBanner />}
       {room.isDemo && <DemoBanner />}
-      <div className="room__content" key={screen.name}>
-        {renderScreen(screen)}
+      <div className="room__content" key={screen.name} ref={content} tabIndex={-1}>
+        {removed ? <RemovedNotice /> : renderScreen(screen)}
       </div>
-      {isTab && <BottomNav />}
+      {isTab && !removed && <BottomNav />}
+    </div>
+  );
+}
+
+function RemovedNotice() {
+  const { t } = useI18n();
+  const { controller } = useOpenRoom();
+  return (
+    <div className="screen">
+      <EmptyState
+        icon={<UserX size={28} />}
+        title={t("参加者から外れています", "You're no longer in this room")}
+        action={
+          <button className="button button--primary" type="button" onClick={controller.actions.closeRoom}>
+            {t("ルーム一覧に戻る", "Back to rooms")}
+          </button>
+        }
+      >
+        {t(
+          "幹事があなたを参加者から外しました。参加し直すには、もう一度招待を受け取ってください。",
+          "The host removed you from the bettors. Ask for a new invitation to rejoin.",
+        )}
+      </EmptyState>
     </div>
   );
 }

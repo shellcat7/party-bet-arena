@@ -1,3 +1,5 @@
+> **アーカイブ（2026年10月21日時点）**: 当時のセキュリティレビュー記録です。現在のセキュリティモデルは [docs/SECURITY.md](../SECURITY.md) を参照してください。
+
 # Security review checkpoint — 2026-10-21
 
 ## State at pause

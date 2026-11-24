@@ -12,7 +12,13 @@ import {
   getPlayerBets,
   validateBet,
 } from "../../lib/betting";
-import { BET_TYPES, getBetPickIds, getEffectiveMultiplier, requiredPickCount } from "../../lib/odds";
+import {
+  BET_TYPES,
+  getBetPickIds,
+  getEffectiveMultiplier,
+  requiredPickCount,
+  isBetTypeAvailable,
+} from "../../lib/odds";
 import type { Bet, BetType, Room } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
 
@@ -98,7 +104,7 @@ export function BetScreen() {
         </section>
       )}
 
-      {isHost && (
+      {isHost && race.status === "betting" && (
         <section className="card proxy-picker" aria-labelledby="proxy-title">
           <h2 id="proxy-title" className="card__title">
             {t("誰のベットを入力しますか？", "Who is this bet for?")}
@@ -221,7 +227,11 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
           label={t("ベットの種類", "Bet type")}
           value={type}
           onChange={changeType}
-          options={BET_TYPES.map((value) => ({ value, label: labels[value].title }))}
+          options={BET_TYPES.map((value) => ({
+            value,
+            label: labels[value].title,
+            disabled: !isBetTypeAvailable(value, room.contestants.length),
+          }))}
         />
         <p className="bet-form__prompt">
           <strong>{labels[type].note}</strong>

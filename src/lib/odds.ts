@@ -9,6 +9,16 @@ export function requiredPickCount(type: BetType) {
   return 1;
 }
 
+/**
+ * A ticket type only makes sense when the field is big enough: with three or fewer racers a
+ * "place" (top three) ticket could never lose, and a trifecta needs three finishers.
+ */
+export function isBetTypeAvailable(type: BetType, racerCount: number) {
+  if (type === "place") return racerCount >= 4;
+  if (type === "trifecta") return racerCount >= 3;
+  return racerCount >= 2;
+}
+
 export function getBetPickIds(bet: Pick<Bet, "contestantId"> & Partial<Pick<Bet, "contestantIds">>) {
   return bet.contestantIds?.length ? bet.contestantIds : [bet.contestantId];
 }

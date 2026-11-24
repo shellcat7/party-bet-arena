@@ -44,6 +44,17 @@ describe("validateBet", () => {
     expect(validateBet(makeRoom(), ticket)).toBe(code);
   });
 
+  it("disables ticket types the field is too small for", () => {
+    const room = testRoom();
+    const small = { ...room, contestants: room.contestants.slice(0, 3) };
+    expect(validateBet(small, draft({ type: "place" }))).toBe("unavailable-type");
+    expect(validateBet(small, draft({ type: "trifecta", contestantIds: ["A", "B", "C"] }))).toBeNull();
+    const duel = { ...room, contestants: room.contestants.slice(0, 2) };
+    expect(validateBet(duel, draft({ type: "trifecta", contestantIds: ["A", "B", "C"] }))).toBe(
+      "unavailable-type",
+    );
+  });
+
   it("allows only one self-placed ticket per race", () => {
     const room = addBet(testRoom(), createBet(draft()));
     expect(validateBet(room, draft())).toBe("already-placed");

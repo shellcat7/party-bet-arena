@@ -4,7 +4,7 @@ playwright-report
 test-results
 package-lock.json
 docs/design-qa
-design-qa-assets
+docs/archive/design-qa-assets
 *.md
 public
 firebase.rules.json

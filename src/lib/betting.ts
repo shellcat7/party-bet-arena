@@ -1,5 +1,11 @@
 import { createId } from "./ids";
-import { getEffectiveMultiplier, isValidStake, requiredPickCount, resolvePicks } from "./odds";
+import {
+  getEffectiveMultiplier,
+  isBetTypeAvailable,
+  isValidStake,
+  requiredPickCount,
+  resolvePicks,
+} from "./odds";
 import type { Bet, DraftBet, Player, Room } from "./types";
 
 export type BetError =
@@ -11,7 +17,8 @@ export type BetError =
   | "duplicate-pick"
   | "unknown-pick"
   | "invalid-amount"
-  | "insufficient-balance";
+  | "insufficient-balance"
+  | "unavailable-type";
 
 export function getPlayer(room: Room, playerId: string | undefined): Player | undefined {
   return playerId ? room.players.find((player) => player.id === playerId) : undefined;
@@ -61,6 +68,7 @@ export function validateBet(room: Room, draft: DraftBet): BetError | null {
   if (draft.placedBy === "self" && room.currentRace.bets.some((bet) => bet.playerId === draft.playerId)) {
     return "already-placed";
   }
+  if (!isBetTypeAvailable(draft.type, room.contestants.length)) return "unavailable-type";
   if (!draft.contestantIds.length) return "no-pick";
   if (draft.contestantIds.length !== requiredPickCount(draft.type)) return "incomplete-pick";
   if (new Set(draft.contestantIds).size !== draft.contestantIds.length) return "duplicate-pick";

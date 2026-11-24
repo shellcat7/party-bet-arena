@@ -148,7 +148,9 @@ export function useRoomController({ t, notify, language }: Options) {
       // Keep a local copy until the server confirms, so nothing is lost if the tab closes offline.
       saveRoomSnapshot(next);
       try {
-        await updateRemoteRoom(next.id, buildRoomPatch(previous, next));
+        // While offline the SDK queues the write and the promise stays pending; stop waiting after
+        // a while and tell the host, but the queued write still syncs once the connection returns.
+        await withTimeout(updateRemoteRoom(next.id, buildRoomPatch(previous, next)));
         clearRoomSnapshot(next.id, next.updatedAt);
         return true;
       } catch (error) {

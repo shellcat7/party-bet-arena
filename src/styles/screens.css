@@ -427,6 +427,10 @@
   animation: screen-in 200ms ease-out;
 }
 
+.room__content:focus {
+  outline: none;
+}
+
 @keyframes screen-in {
   from {
     opacity: 0;
@@ -945,6 +949,8 @@
 }
 
 .ticket__picks {
+  position: relative;
+  padding-right: 28px;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -976,9 +982,11 @@
 }
 
 .ticket__picks .icon-button {
+  position: absolute;
+  top: 6px;
+  right: -6px;
   width: 32px;
   height: 32px;
-  margin-left: auto;
 }
 
 .amount {

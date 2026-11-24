@@ -1003,7 +1003,7 @@ select.input {
 
 .brand-mark {
   flex: none;
-  border-radius: 12px;
+  border-radius: 22%;
   box-shadow: var(--shadow-accent);
 }
 

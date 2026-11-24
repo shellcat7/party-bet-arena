@@ -219,25 +219,17 @@ export function Coins(props: { value: number; signed?: boolean; unit?: boolean }
   );
 }
 
+/** The product icon (same artwork as the home-screen icon). */
 export function BrandMark(props: { size?: number }) {
   const size = props.size ?? 40;
   return (
-    <svg className="brand-mark" width={size} height={size} viewBox="0 0 48 48" aria-hidden="true">
-      <rect width="48" height="48" rx="13" fill="url(#brand-gradient)" />
-      <path
-        d="M12 32.5 14.5 17l7 7.2L24 14l2.5 10.2 7-7.2L36 32.5Z"
-        fill="#111318"
-        stroke="#111318"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      <rect x="12" y="34" width="24" height="3.2" rx="1.6" fill="#111318" />
-      <defs>
-        <linearGradient id="brand-gradient" x1="0" y1="0" x2="48" y2="48">
-          <stop stopColor="#ffe15a" />
-          <stop offset="1" stopColor="#ffbf00" />
-        </linearGradient>
-      </defs>
-    </svg>
+    <img
+      className="brand-mark"
+      src={`${import.meta.env.BASE_URL}favicon.svg`}
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+    />
   );
 }

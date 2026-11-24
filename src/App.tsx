@@ -83,6 +83,11 @@ function AppShell(props: {
   const nav = useNavigation(initialScreen);
   const { screen, reset } = nav;
 
+  // Each new screen starts at the top.
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [screen]);
+
   // Leave room screens when the room goes away (left, deleted, or access revoked).
   useEffect(() => {
     if (!room && ROOM_SCREENS.has(screen.name)) reset({ name: "launch" });

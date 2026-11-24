@@ -1,3 +1,5 @@
+> **アーカイブ（2026年7月時点）**: 旧UIのデザインQA記録です。現在の画面は [README](../../README.md) と `docs/screenshots/` を参照してください。
+
 # Design QA
 
 ## Comparison Target

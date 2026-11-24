@@ -53,6 +53,10 @@ export function betErrorMessage(t: Translate, error: BetError) {
     "unknown-pick": t("選んだ対戦者が見つかりません", "That racer no longer exists"),
     "invalid-amount": t("ベット額を入力してください", "Enter a bet amount"),
     "insufficient-balance": t("残高が足りません", "Not enough coins"),
+    "unavailable-type": t(
+      "対戦者の人数が少ないため、この券種は使えません",
+      "Not enough racers for this ticket type",
+    ),
   };
   return messages[error];
 }
