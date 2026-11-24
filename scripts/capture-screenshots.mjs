@@ -38,9 +38,7 @@ const shot = async (page, name, fullPage = false) => {
 const tab = (page, label) =>
   page.getByRole("navigation", { name: "メインメニュー" }).getByRole("button", { name: label });
 
-// Launch screen
 let page = await newPage();
-await shot(page, "launch");
 
 // Host view of the demo
 await page.getByRole("button", { name: "デモを見る" }).click();
@@ -92,11 +90,5 @@ await dark.getByRole("button", { name: "デモを見る" }).click();
 await tab(dark, "ベット").click();
 await dark.locator(".racer").nth(2).click();
 await shot(dark, "bet-dark");
-await tab(dark, "順位").click();
-await shot(dark, "ranking-dark");
-
-// Desktop landing page
-const desktop = await newPage({ viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 });
-await shot(desktop, "desktop");
 
 await browser.close();

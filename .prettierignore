@@ -3,8 +3,6 @@ coverage
 playwright-report
 test-results
 package-lock.json
-docs/design-qa
-docs/archive/design-qa-assets
 *.md
 public
 firebase.rules.json

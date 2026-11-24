@@ -59,7 +59,7 @@
     "vite": "^7.3.5",
     "vitest": "^5.1.1"
   },
-  "description": "Party betting & live leaderboard web app for game nights — React, TypeScript and Firebase Realtime Database.",
+  "description": "Odds, bets and live standings for game nights. React, TypeScript and Firebase Realtime Database.",
   "engines": {
     "node": ">=22"
   }

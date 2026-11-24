@@ -74,8 +74,8 @@ export function firebaseIssueMessage(t: Translate, kind: FirebaseIssueKind) {
       return t("データベースの接続設定に問題があります。", "The database URL appears to be misconfigured.");
     case "network":
       return t(
-        "通信できませんでした。電波状況を確認してください。変更は端末に保存されています。",
-        "Couldn't reach the server. Your change is kept on this device.",
+        "サーバーに接続できませんでした。接続が戻ると、アプリを開いている間に自動で送信します。",
+        "Couldn't reach the server. The change will be sent when the connection returns, while the app stays open.",
       );
     default:
       return t("同期に失敗しました。もう一度お試しください。", "Sync failed. Please try again.");
