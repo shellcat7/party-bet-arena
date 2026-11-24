@@ -1,7 +1,15 @@
 export type BetType = "win" | "place" | "exacta" | "trifecta";
-export type RaceStatus = "setup" | "betting" | "closed" | "settled";
+
+/**
+ * Race lifecycle: `betting` → `closed` (no new bets) → `settled` (payouts applied).
+ * Realtime Database rules only accept participant bets while the race is `betting`,
+ * so closing the race freezes the pool before the host computes payouts.
+ */
+export type RaceStatus = "betting" | "closed" | "settled";
+
+/** Stored on the room for backwards compatibility; display theme is now a per-device preference. */
 export type ThemeName = "arena" | "neon";
-export type LanguageName = "ja" | "en" | "zh" | "ko" | "es" | "fr" | "de" | "it" | "uk";
+export type LanguageName = "ja" | "en";
 export type AppRole = "host" | "player";
 
 export type RoomSettings = {
@@ -14,16 +22,21 @@ export type RoomSettings = {
   specialBonus: number;
 };
 
+/** A bettor: someone who predicts results and holds play coins. */
 export type Player = {
   id: string;
   uid?: string;
   name: string;
   balance: number;
+  /** True when the host places bets on this person's behalf (no phone). */
   isOffline: boolean;
   accent: string;
   emoji: string;
+  /** Keeps display order stable: the database returns keyed records sorted by key, not insertion. */
+  joinedAt?: number;
 };
 
+/** A racer: a person or CPU who competes in each race. */
 export type Contestant = {
   id: string;
   name: string;
@@ -32,6 +45,8 @@ export type Contestant = {
   icon: string;
   cpuLevel: number;
   isCpu: boolean;
+  /** Post position; the database returns keyed records sorted by key, not insertion. */
+  order?: number;
 };
 
 export type Bet = {
@@ -42,6 +57,7 @@ export type Bet = {
   contestantIds: string[];
   type: BetType;
   amount: number;
+  /** Never trusted: settlement always recomputes the multiplier. */
   multiplier?: number;
   placedBy: "self" | "host";
   createdAt: number;
@@ -49,6 +65,9 @@ export type Bet = {
 
 export type Race = {
   id: string;
+  /** 1-based race number within the room. */
+  number: number;
+  /** Legacy display title ("第1レース"); kept so older clients keep rendering. */
   title: string;
   status: RaceStatus;
   startedAt: number;
@@ -67,15 +86,10 @@ export type RacePayout = {
   hits: number;
 };
 
-export type RaceContestantSnapshot = {
-  id: string;
-  name: string;
-  odds: number;
-  accent: string;
-  icon: string;
-  cpuLevel: number;
-  isCpu: boolean;
-};
+export type RaceContestantSnapshot = Pick<
+  Contestant,
+  "id" | "name" | "odds" | "accent" | "icon" | "cpuLevel" | "isCpu"
+>;
 
 export type RaceBetResult = {
   id: string;
@@ -93,11 +107,12 @@ export type RaceBetResult = {
 
 export type RaceHistoryEntry = {
   raceId: string;
+  raceNumber: number;
   raceTitle: string;
   settledAt: number;
   resultIds: string[];
-  contestants?: RaceContestantSnapshot[];
-  bets?: RaceBetResult[];
+  contestants: RaceContestantSnapshot[];
+  bets: RaceBetResult[];
   payouts: RacePayout[];
 };
 
@@ -122,10 +137,8 @@ export type Room = {
 export type DraftBet = {
   uid?: string;
   playerId: string;
-  contestantId: string;
   contestantIds: string[];
   type: BetType;
   amount: number;
-  multiplier: number;
   placedBy: "self" | "host";
 };

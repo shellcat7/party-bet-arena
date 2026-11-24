@@ -46,6 +46,7 @@
             "isOffline": { ".validate": "newData.isBoolean()" },
             "accent": { ".validate": "newData.isString() && newData.val().length <= 32" },
             "emoji": { ".validate": "newData.isString() && newData.val().length <= 32" },
+            "joinedAt": { ".validate": "newData.isNumber()" },
             "$other": { ".validate": false }
           }
         },

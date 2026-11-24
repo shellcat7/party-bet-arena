@@ -13,3 +13,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .tmp-*
+coverage
+playwright-report
+test-results
+blob-report
+*-debug.log

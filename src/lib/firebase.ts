@@ -1,15 +1,13 @@
+import type { Auth } from "firebase/auth";
+import type { RoomPatch } from "./patch";
+import { stripUndefined, toRoomPayload } from "./patch";
+import { normalizeRoom } from "./room";
 import type { Bet, Player, Room } from "./types";
-import { clearCachedRoom, normalizeRoom } from "./storage";
 
-type SyncCallback = (room: Room) => void;
-type FirebaseRoomPayload = Omit<Room, "players" | "contestants" | "currentRace"> & {
-  players: Record<string, Player>;
-  contestants: Record<string, Room["contestants"][number]>;
-  currentRace: Omit<Room["currentRace"], "bets"> & {
-    bets: Record<string, Bet>;
-  };
-};
-
+/**
+ * Thin wrapper around the Firebase SDK. The SDK is imported lazily so the app shell loads
+ * instantly and works fully offline when no Firebase project is configured.
+ */
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
@@ -19,156 +17,152 @@ const firebaseConfig = {
 };
 
 export const isFirebaseConfigured = Object.values(firebaseConfig).every(Boolean);
-let emulatorsConnected = false;
 
-export type FirebaseIssueKind =
-  | "anonymous-auth"
-  | "permission"
-  | "database-url"
-  | "network"
-  | "unknown";
+export type FirebaseIssueKind = "anonymous-auth" | "permission" | "database-url" | "network" | "unknown";
 
 export function getFirebaseIssueKind(error: unknown): FirebaseIssueKind {
   const code = typeof error === "object" && error && "code" in error ? String(error.code) : "";
   const message = error instanceof Error ? error.message : String(error ?? "");
   const detail = `${code} ${message}`.toLowerCase();
-
-  if (detail.includes("auth/operation-not-allowed") || detail.includes("anonymous")) return "anonymous-auth";
+  if (detail.includes("auth/operation-not-allowed") || detail.includes("admin-restricted-operation")) {
+    return "anonymous-auth";
+  }
   if (detail.includes("permission_denied") || detail.includes("permission-denied")) return "permission";
   if (detail.includes("database_url") || detail.includes("databaseurl") || detail.includes("invalid-url")) {
     return "database-url";
   }
-  if (detail.includes("network") || detail.includes("failed to fetch") || detail.includes("offline")) return "network";
+  if (detail.includes("network") || detail.includes("failed to fetch") || detail.includes("offline"))
+    return "network";
   return "unknown";
 }
 
-async function getFirebaseServices() {
-  if (!isFirebaseConfigured) return null;
+type Services = Awaited<ReturnType<typeof loadServices>>;
+let servicesPromise: Promise<Services> | undefined;
 
-  const [{ initializeApp, getApps }, { getDatabase, connectDatabaseEmulator, ref, get, onValue, set, remove }, { getAuth, connectAuthEmulator, signInAnonymously }] =
-    await Promise.all([import("firebase/app"), import("firebase/database"), import("firebase/auth")]);
-
-  const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getDatabase(app);
-  if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true" && !emulatorsConnected) {
-    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
-    connectDatabaseEmulator(db, "127.0.0.1", 9000);
-    emulatorsConnected = true;
-  }
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
-  }
-
-  return { auth, db, ref, get, onValue, set, remove };
-}
-
-function listToRecord<T extends { id: string }>(items: T[]) {
-  return Object.fromEntries(items.map((item) => [item.id, item])) as Record<string, T>;
-}
-
-function roomToFirebasePayload(room: Room, hostUid?: string): FirebaseRoomPayload {
-  return {
-    ...room,
-    hostUid: room.hostUid ?? hostUid,
-    players: listToRecord(room.players),
-    contestants: listToRecord(room.contestants),
-    currentRace: {
-      ...room.currentRace,
-      bets: listToRecord(room.currentRace.bets),
-    },
-  };
-}
-
-export async function getFirebaseUid() {
-  const services = await getFirebaseServices();
-  return services?.auth.currentUser?.uid;
-}
-
-export async function subscribeFirebaseRoom(roomId: string, callback: SyncCallback) {
-  if (!isFirebaseConfigured) return () => undefined;
-
-  const services = await getFirebaseServices();
-  if (!services) return () => undefined;
-  const { db, ref, onValue } = services;
-  return onValue(ref(db, `rooms/${roomId}`), (snapshot) => {
-    const value = snapshot.val() as Room | null;
-    if (value) callback(normalizeRoom(value));
-  });
-}
-
-export async function fetchFirebaseRoom(roomId: string) {
-  if (!isFirebaseConfigured) return null;
-
-  const services = await getFirebaseServices();
-  if (!services) return null;
-  const { db, ref, get } = services;
-  const snapshot = await get(ref(db, `rooms/${roomId}`));
-  const value = snapshot.val() as Room | null;
-  return value ? normalizeRoom(value) : null;
-}
-
-export async function saveFirebaseRoom(room: Room) {
-  if (!isFirebaseConfigured) return;
-
-  const services = await getFirebaseServices();
-  if (!services) return;
-  const { auth, db, ref, set } = services;
-  const hostUid = room.hostUid ?? auth.currentUser?.uid;
-  const updatedRoom = { ...room, hostUid, updatedAt: Date.now() };
-  await set(ref(db, `rooms/${room.id}`), roomToFirebasePayload(updatedRoom, hostUid));
-  clearCachedRoom(room.id);
-  if (hostUid) {
-    await set(ref(db, `roomMembers/${room.id}/${hostUid}`), {
-      role: "host",
-      joinCode: room.joinCode,
-      joinedAt: room.createdAt,
+async function loadServices() {
+  const [appModule, databaseModule, authModule] = await Promise.all([
+    import("firebase/app"),
+    import("firebase/database"),
+    import("firebase/auth"),
+  ]);
+  const app = appModule.getApps()[0] ?? appModule.initializeApp(firebaseConfig);
+  // `getAuth()` would also install the popup/redirect resolver, which injects a script from
+  // apis.google.com that our Content Security Policy (rightly) blocks. Anonymous sign-in
+  // only needs persistence.
+  let auth: Auth;
+  try {
+    auth = authModule.initializeAuth(app, {
+      persistence: [authModule.indexedDBLocalPersistence, authModule.browserLocalPersistence],
     });
+  } catch {
+    auth = authModule.getAuth(app); // already initialised (e.g. hot reload)
   }
+  const db = databaseModule.getDatabase(app);
+  if (import.meta.env.DEV && import.meta.env.VITE_USE_FIREBASE_EMULATORS === "true") {
+    authModule.connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    databaseModule.connectDatabaseEmulator(db, "127.0.0.1", 9000);
+  }
+  return { auth, db, authModule, database: databaseModule };
 }
 
-export async function joinFirebaseRoom(roomId: string, joinCode: string) {
-  if (!isFirebaseConfigured) return;
+async function services() {
+  if (!isFirebaseConfigured) throw new Error("Firebase is not configured");
+  servicesPromise ??= loadServices().catch((error) => {
+    servicesPromise = undefined;
+    throw error;
+  });
+  return servicesPromise;
+}
 
-  const services = await getFirebaseServices();
-  if (!services?.auth.currentUser) return;
-  const uid = services.auth.currentUser.uid;
-  const { db, ref, get, set } = services;
-  const membership = await get(ref(db, `roomMembers/${roomId}/${uid}`));
-  if (membership.exists()) return;
-  await set(ref(db, `roomMembers/${roomId}/${uid}`), {
-    role: "player",
-    joinCode,
-    joinedAt: Date.now(),
+/** Signs in anonymously if needed and returns this device's stable uid. */
+export async function ensureSignedIn(): Promise<string> {
+  const { auth, authModule } = await services();
+  await auth.authStateReady();
+  if (auth.currentUser) return auth.currentUser.uid;
+  const credential = await authModule.signInAnonymously(auth);
+  return credential.user.uid;
+}
+
+async function roomRef(roomId: string, path = "") {
+  const { db, database } = await services();
+  return database.ref(db, `rooms/${roomId}${path ? `/${path}` : ""}`);
+}
+
+export async function createRemoteRoom(room: Room) {
+  if (!room.hostUid) throw new Error("A host uid is required");
+  const { db, database } = await services();
+  await database.set(database.ref(db, `rooms/${room.id}`), toRoomPayload(room));
+  await database.set(database.ref(db, `roomMembers/${room.id}/${room.hostUid}`), {
+    role: "host",
+    joinCode: room.joinCode,
+    joinedAt: room.createdAt,
   });
 }
 
-export async function saveFirebasePlayer(roomId: string, player: Player) {
-  if (!isFirebaseConfigured) return;
-
-  const services = await getFirebaseServices();
-  if (!services) return;
-  const { db, ref, set } = services;
-  await set(ref(db, `rooms/${roomId}/players/${player.id}`), player);
-  clearCachedRoom(roomId);
+/** Applies a multi-path patch produced by `buildRoomPatch`. */
+export async function updateRemoteRoom(roomId: string, patch: RoomPatch) {
+  if (!Object.keys(patch).length) return;
+  const { database } = await services();
+  await database.update(await roomRef(roomId), stripUndefined(patch));
 }
 
-export async function saveFirebaseBet(roomId: string, bet: Bet) {
-  if (!isFirebaseConfigured) return;
-
-  const services = await getFirebaseServices();
-  if (!services) return;
-  const { db, ref, set } = services;
-  await set(ref(db, `rooms/${roomId}/currentRace/bets/${bet.id}`), bet);
-  clearCachedRoom(roomId);
+export async function fetchRemoteRoom(roomId: string): Promise<Room | null> {
+  const { database } = await services();
+  const snapshot = await database.get(await roomRef(roomId));
+  return snapshot.exists() ? normalizeRoom(snapshot.val()) : null;
 }
 
-export async function deleteFirebaseRoom(roomId: string) {
-  if (!isFirebaseConfigured) return;
+export async function subscribeRemoteRoom(
+  roomId: string,
+  onRoom: (room: Room | null) => void,
+  onError: (error: Error) => void,
+) {
+  const { database } = await services();
+  return database.onValue(
+    await roomRef(roomId),
+    (snapshot) => {
+      try {
+        onRoom(snapshot.exists() ? normalizeRoom(snapshot.val()) : null);
+      } catch (error) {
+        onError(error as Error);
+      }
+    },
+    onError,
+  );
+}
 
-  const services = await getFirebaseServices();
-  if (!services) return;
-  const { db, ref, remove } = services;
-  await remove(ref(db, `roomMembers/${roomId}`));
-  await remove(ref(db, `rooms/${roomId}`));
+/** Reports whether the Realtime Database websocket is currently connected. */
+export async function subscribeConnection(onChange: (connected: boolean) => void) {
+  const { db, database } = await services();
+  return database.onValue(database.ref(db, ".info/connected"), (snapshot) =>
+    onChange(snapshot.val() === true),
+  );
+}
+
+/**
+ * Registers this device as a participant. The rules accept the write only when the join code
+ * matches the room's, which is how an invitation is verified without exposing the room first.
+ */
+export async function joinRemoteRoom(roomId: string, joinCode: string, uid: string) {
+  const { db, database } = await services();
+  const membershipRef = database.ref(db, `roomMembers/${roomId}/${uid}`);
+  const membership = await database.get(membershipRef).catch(() => null);
+  if (membership?.exists()) return;
+  await database.set(membershipRef, { role: "player", joinCode, joinedAt: Date.now() });
+}
+
+export async function addRemotePlayer(roomId: string, player: Player) {
+  const { database } = await services();
+  await database.set(await roomRef(roomId, `players/${player.id}`), stripUndefined(player));
+}
+
+export async function placeRemoteBet(roomId: string, bet: Bet) {
+  const { database } = await services();
+  await database.set(await roomRef(roomId, `currentRace/bets/${bet.id}`), stripUndefined(bet));
+}
+
+export async function deleteRemoteRoom(roomId: string) {
+  const { db, database } = await services();
+  await database.remove(database.ref(db, `roomMembers/${roomId}`));
+  await database.remove(database.ref(db, `rooms/${roomId}`));
 }
