@@ -9,7 +9,7 @@ import { gameHighlights, isGameOver, rankPlayers } from "../../lib/settlement";
 import { useOpenRoom } from "../../state/AppContext";
 
 export function FinalScreen() {
-  const { t, formatNumber } = useI18n();
+  const { t, formatNumber, formatSigned, formatList } = useI18n();
   const notify = useNotify();
   const { room, controller, nav } = useOpenRoom();
   const ranking = rankPlayers(room.players);
@@ -60,13 +60,13 @@ export function FinalScreen() {
             <span className="badge badge--accent">
               {champions.length > 1 ? t("同率1位", "Tied for 1st") : t("1位", "1st place")}
             </span>
-            <h2 id="champion-title">{champions.map(({ player }) => player.name).join("、")}</h2>
+            <h2 id="champion-title">{formatList(champions.map(({ player }) => player.name))}</h2>
             <p>
               <Points value={champions[0].player.balance} />
               <span>
-                {t("（開始時から ", "(")}
-                <Points value={champions[0].player.balance - room.startingBalance} signed unit={false} />
-                {t("）", " from start)")}
+                {t("（開始時から {delta}）", "({delta} from start)", {
+                  delta: formatSigned(champions[0].player.balance - room.startingBalance),
+                })}
               </span>
             </p>
           </div>

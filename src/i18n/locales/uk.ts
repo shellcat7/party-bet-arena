@@ -1,10 +1,6 @@
 /** Ukrainian translations, keyed by the English source text. */
 const messages: Record<string, string> = {
-  "": " ",
   " ({race}, {type} ×{odds})": " ({race}, {type} ×{odds})",
-  " from start)": " від початку)",
-  " of {max}": " з {max}",
-  "(": "(",
   "1st and 2nd in order": "Перші два місця в точному порядку",
   "1st place": "1-ше місце",
   "1st to 3rd in order": "Перші три місця в точному порядку",
@@ -91,7 +87,6 @@ const messages: Record<string, string> = {
   "Down {count}":
     "Вниз на {count, plural, one {# позицію} few {# позиції} many {# позицій} other {# позиції}}",
   Edit: "Змінити",
-  English: "Англійська",
   "Enter a bet amount": "Введи суму ставки",
   "Enter a bet for someone": "Ввести ставку за гравця",
   "Enter results": "Ввести результати",
@@ -369,7 +364,6 @@ const messages: Record<string, string> = {
     "{count, plural, one {Ставки закрито, прийнято # ставку.} few {Ставки закрито, прийнято # ставки.} many {Ставки закрито, прийнято # ставок.} other {Ставки закрито, прийнято # ставки.}} Коли заїзд завершиться, введи порядок фінішу.",
   "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}":
     "{count, plural, one {{names} ще не має ставки.} few {{names} ще не мають ставок.} many {{names} ще не мають ставок.} other {{names} ще не мають ставок.}}",
-  "{count}": "{count}",
   "{count} / {max}": "{count} / {max}",
   "{hits} of {tickets, plural, one {# ticket} other {# tickets}}":
     "{hits} з {tickets, plural, one {# ставки} few {# ставок} many {# ставок} other {# ставки}}",
@@ -381,7 +375,14 @@ const messages: Record<string, string> = {
   "{name}: position {n} (tap to undo)": "{name}: місце {n} (торкнись, щоб скасувати)",
   "{race} result": "{race}: результати",
   "{room}: final standings": "{room}: підсумкова таблиця",
-  "—": "—",
+  "1st": "1-ше",
+  "2nd": "2-ге",
+  "3rd": "3-тє",
+  "Not selected": "Не вибрано",
+  "({delta} from start)": "({delta} від початку)",
+  "({max} races in total)": "(усього заїздів: {max})",
+  "{count, plural, one {# ticket} other {# tickets}}":
+    "{count, plural, one {# ставка} few {# ставки} many {# ставок} other {# ставки}}",
 };
 
 export default messages;

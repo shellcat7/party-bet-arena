@@ -287,8 +287,8 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
             const contestant = room.contestants.find((item) => item.id === picks[index]);
             return (
               <span key={index} className={contestant ? "ticket__pick" : "ticket__pick is-empty"}>
-                {pickCount > 1 && <small>{t(`${index + 1}着`, ["1st", "2nd", "3rd"][index])}</small>}
-                {contestant ? `${contestant.icon} ${contestant.name}` : t("未選択", "—")}
+                {pickCount > 1 && <small>{[t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")][index]}</small>}
+                {contestant ? `${contestant.icon} ${contestant.name}` : t("未選択", "Not selected")}
               </span>
             );
           })}

@@ -1,10 +1,6 @@
 /** Korean translations, keyed by the English source text. */
 const messages: Record<string, string> = {
-  "": "명",
   " ({race}, {type} ×{odds})": " ({race} · {type} {odds}배)",
-  " from start)": ")",
-  " of {max}": " (총 {max}경주)",
-  "(": "(시작 대비 ",
   "1st and 2nd in order": "1·2위 순서대로 맞히기",
   "1st place": "1위",
   "1st to 3rd in order": "1~3위 순서대로 맞히기",
@@ -90,7 +86,6 @@ const messages: Record<string, string> = {
   Done: "완료",
   "Down {count}": "{count}위 하락",
   Edit: "편집",
-  English: "영어",
   "Enter a bet amount": "베팅액을 입력해 주세요",
   "Enter a bet for someone": "베팅 대리 입력",
   "Enter results": "순위 입력",
@@ -360,7 +355,6 @@ const messages: Record<string, string> = {
     "{count, plural, other {베팅 #건으로 마감했어요.}} 경주가 끝나면 도착 순위를 입력해 주세요.",
   "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}":
     "{count, plural, other {아직 #명이 베팅하지 않았어요: {names}}}",
-  "{count}": "{count}건",
   "{count} / {max}": "{count} / {max}명",
   "{hits} of {tickets, plural, one {# ticket} other {# tickets}}":
     "{tickets, plural, other {#건}} 중 {hits}건 적중",
@@ -372,7 +366,13 @@ const messages: Record<string, string> = {
   "{name}: position {n} (tap to undo)": "{name}: {n}위(누르면 취소)",
   "{race} result": "{race} 결과",
   "{room}: final standings": "{room} 최종 순위",
-  "—": "미선택",
+  "1st": "1위",
+  "2nd": "2위",
+  "3rd": "3위",
+  "Not selected": "미선택",
+  "({delta} from start)": "(시작 대비 {delta})",
+  "({max} races in total)": "(총 {max}경주)",
+  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, other {#건}}",
 };
 
 export default messages;

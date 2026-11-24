@@ -1,10 +1,6 @@
 /** French translations, keyed by the English source text. */
 const messages: Record<string, string> = {
-  "": " ",
   " ({race}, {type} ×{odds})": " ({race}, {type} ×{odds})",
-  " from start)": " depuis le départ)",
-  " of {max}": " sur {max}",
-  "(": "(",
   "1st and 2nd in order": "1er et 2e dans l'ordre",
   "1st place": "1re place",
   "1st to 3rd in order": "Du 1er au 3e dans l'ordre",
@@ -49,7 +45,7 @@ const messages: Record<string, string> = {
   "Biggest payout": "Plus gros gain",
   "Bonus amount": "Montant du bonus",
   "Bonus recipient": "Bénéficiaire du bonus",
-  "By host": "Saisi par l'organisateur",
+  "By host": "Par l'organisateur",
   Cancel: "Annuler",
   "Cancel and choose again": "Retirer et choisir à nouveau",
   "Cancel bet": "Retirer le pari",
@@ -93,7 +89,6 @@ const messages: Record<string, string> = {
   Done: "Terminé",
   "Down {count}": "{count, plural, one {En baisse de # place} other {En baisse de # places}}",
   Edit: "Modifier",
-  English: "Français",
   "Enter a bet amount": "Saisissez une mise",
   "Enter a bet for someone": "Saisir un pari pour un parieur",
   "Enter results": "Saisir les résultats",
@@ -264,7 +259,7 @@ const messages: Record<string, string> = {
   "Scanning…": "Analyse en cours…",
   "See all": "Tout voir",
   "See the result and payouts": "Voir le résultat et les gains",
-  Self: "Saisi par le parieur",
+  Self: "Soi-même",
   Settled: "Réglé",
   "Settling…": "Règlement en cours…",
   "Share link": "Partager le lien",
@@ -373,7 +368,6 @@ const messages: Record<string, string> = {
     "{count, plural, one {Paris clos : # pari enregistré.} other {Paris clos : # paris enregistrés.}} Saisissez l'ordre d'arrivée à la fin de la course.",
   "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}":
     "{count, plural, one {{names} n'a pas encore parié.} other {{names} n'ont pas encore parié.}}",
-  "{count}": "{count}",
   "{count} / {max}": "{count} / {max}",
   "{hits} of {tickets, plural, one {# ticket} other {# tickets}}":
     "{hits} sur {tickets, plural, one {# pari} other {# paris}}",
@@ -385,7 +379,13 @@ const messages: Record<string, string> = {
   "{name}: position {n} (tap to undo)": "{name} : position {n} (touchez pour annuler)",
   "{race} result": "Résultat de la {race}",
   "{room}: final standings": "{room} : classement final",
-  "—": "—",
+  "1st": "1er",
+  "2nd": "2e",
+  "3rd": "3e",
+  "Not selected": "Non sélectionné",
+  "({delta} from start)": "({delta} depuis le début)",
+  "({max} races in total)": "({max} courses au total)",
+  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, one {# pari} other {# paris}}",
 };
 
 export default messages;

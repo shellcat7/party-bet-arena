@@ -1,10 +1,6 @@
 /** Simplified Chinese translations, keyed by the English source text. */
 const messages: Record<string, string> = {
-  "": "人",
   " ({race}, {type} ×{odds})": "（{race}，{type}，{odds}倍）",
-  " from start)": "）",
-  " of {max}": "（共{max}场）",
-  "(": "（较初始积分 ",
   "1st and 2nd in order": "按顺序猜中第1、2名",
   "1st place": "第1名",
   "1st to 3rd in order": "按顺序猜中第1至3名",
@@ -88,7 +84,6 @@ const messages: Record<string, string> = {
   Done: "完成",
   "Down {count}": "下降{count}位",
   Edit: "编辑",
-  English: "简体中文",
   "Enter a bet amount": "请输入投注额",
   "Enter a bet for someone": "为他人代投",
   "Enter results": "录入名次",
@@ -352,7 +347,6 @@ const messages: Record<string, string> = {
     "{count, plural, other {已截止投注，共#注。}}比赛结束后，请录入名次。",
   "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}":
     "{count, plural, other {{names}尚未投注。}}",
-  "{count}": "{count}注",
   "{count} / {max}": "{count} / {max}人",
   "{hits} of {tickets, plural, one {# ticket} other {# tickets}}": "{tickets}注中{hits}注",
   "{icon} {name} wins. Payouts will be applied to everyone's balance and can't be undone.":
@@ -363,7 +357,13 @@ const messages: Record<string, string> = {
   "{name}: position {n} (tap to undo)": "{name}：第{n}名（点按可取消）",
   "{race} result": "{race}结果",
   "{room}: final standings": "{room}：最终排名",
-  "—": "未选择",
+  "1st": "第1名",
+  "2nd": "第2名",
+  "3rd": "第3名",
+  "Not selected": "未选择",
+  "({delta} from start)": "（较初始积分 {delta}）",
+  "({max} races in total)": "（共{max}场）",
+  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, other {#注}}",
 };
 
 export default messages;

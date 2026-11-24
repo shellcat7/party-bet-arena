@@ -1,10 +1,6 @@
 /** German translations, keyed by the English source text. */
 const messages: Record<string, string> = {
-  "": " ",
   " ({race}, {type} ×{odds})": " ({race}, {type} ×{odds})",
-  " from start)": " seit Beginn)",
-  " of {max}": " von {max}",
-  "(": "(",
   "1st and 2nd in order": "1. und 2. Platz in richtiger Reihenfolge",
   "1st place": "1. Platz",
   "1st to 3rd in order": "1. bis 3. Platz in richtiger Reihenfolge",
@@ -93,7 +89,6 @@ const messages: Record<string, string> = {
   Done: "Fertig",
   "Down {count}": "{count, plural, one {Um # Platz gefallen} other {Um # Plätze gefallen}}",
   Edit: "Bearbeiten",
-  English: "Englisch",
   "Enter a bet amount": "Gib einen Einsatz ein",
   "Enter a bet for someone": "Wette für jemanden eintragen",
   "Enter results": "Ergebnis eintragen",
@@ -373,7 +368,6 @@ const messages: Record<string, string> = {
     "{count, plural, one {Geschlossen mit # Wette.} other {Geschlossen mit # Wetten.}} Trage nach dem Rennen den Zieleinlauf ein.",
   "{count, plural, one {{names} hasn't bet yet.} other {{names} haven't bet yet.}}":
     "{count, plural, one {{names} hat noch nicht getippt.} other {{names} haben noch nicht getippt.}}",
-  "{count}": "{count}",
   "{count} / {max}": "{count} / {max}",
   "{hits} of {tickets, plural, one {# ticket} other {# tickets}}":
     "{hits} von {tickets, plural, one {# Wette} other {# Wetten}}",
@@ -386,7 +380,13 @@ const messages: Record<string, string> = {
   "{name}: position {n} (tap to undo)": "{name}: Platz {n} (zum Entfernen antippen)",
   "{race} result": "Ergebnis von {race}",
   "{room}: final standings": "{room}: Endstand",
-  "—": "—",
+  "1st": "1.",
+  "2nd": "2.",
+  "3rd": "3.",
+  "Not selected": "Nicht gewählt",
+  "({delta} from start)": "({delta} seit Beginn)",
+  "({max} races in total)": "({max} Rennen insgesamt)",
+  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, one {# Wette} other {# Wetten}}",
 };
 
 export default messages;

@@ -6,7 +6,7 @@ import { formatMessage } from "./format";
 import { LANGUAGES } from "./languages";
 
 /**
- * Copy is written next to the component that renders it as `t("日本語", "English", params)`.
+ * Copy is written next to the component that renders it, as `t(japanese, english, params)`.
  * Japanese and English are the source languages. Every other language has a catalog in
  * `locales/<code>.ts` keyed by the English text (gettext style); a test fails if any catalog is
  * missing a string used in the code. Catalogs load on demand, so only the active one is fetched.

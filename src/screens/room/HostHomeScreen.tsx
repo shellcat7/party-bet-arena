@@ -53,7 +53,7 @@ export function HostHomeScreen() {
         <div className="stage-card__head">
           <h2 id="stage-title">
             {raceName(t, race.number)}
-            <small>{t("（全{max}レース）", " of {max}", { max: room.settings.maxRaces })}</small>
+            <small>{t("（全{max}レース）", "({max} races in total)", { max: room.settings.maxRaces })}</small>
           </h2>
           {isFinalRace(room) && !gameOver && (
             <span className="badge badge--accent">{t("最終レース", "Final race")}</span>
@@ -121,8 +121,10 @@ export function HostHomeScreen() {
                   <div className="bettor-status__head">
                     <strong>{t("ベット状況", "Who has bet")}</strong>
                     <span>
-                      {bettorsWithTickets.size} / {room.players.length}
-                      {t("人", "")}
+                      {t("{count} / {max}人", "{count} / {max}", {
+                        count: bettorsWithTickets.size,
+                        max: room.players.length,
+                      })}
                     </span>
                   </div>
                   <ul>
@@ -240,7 +242,11 @@ export function HostHomeScreen() {
           </div>
           <div>
             <dt>{t("チケット", "Tickets")}</dt>
-            <dd>{t("{count}枚", "{count}", { count: race.bets.length })}</dd>
+            <dd>
+              {t("{count}枚", "{count, plural, one {# ticket} other {# tickets}}", {
+                count: race.bets.length,
+              })}
+            </dd>
           </div>
           <div>
             <dt>{t("参加者", "Bettors")}</dt>
