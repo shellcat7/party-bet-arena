@@ -203,6 +203,8 @@ function RacersSection() {
   const { room, controller } = useOpenRoom();
   const { actions } = controller;
   const editable = room.currentRace.status === "betting";
+  const racerNames = new Set(room.contestants.map((contestant) => contestant.name));
+  const bettorsNotRacing = room.players.filter((player) => !racerNames.has(player.name));
   const [name, setName] = useState("");
   const [icon, setIcon] = useState("🚀");
 
@@ -330,6 +332,32 @@ function RacersSection() {
           </li>
         ))}
       </ul>
+      {canAddContestant(room) && bettorsNotRacing.length > 0 && (
+        <div className="quick-add">
+          <span>{t("参加者を対戦者に追加", "Add a bettor as a racer")}</span>
+          <div className="chip-scroller">
+            {bettorsNotRacing.map((player) => (
+              <button
+                key={player.id}
+                type="button"
+                className="person-chip"
+                onClick={() =>
+                  void actions.addContestant({
+                    name: player.name,
+                    icon: player.emoji,
+                    isCpu: false,
+                    cpuLevel: 5,
+                    odds: 3,
+                  })
+                }
+              >
+                <Plus size={14} aria-hidden="true" />
+                {player.emoji} {player.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {canAddContestant(room) && (
         <form
           className="add-row"

@@ -188,6 +188,12 @@ export async function transactRoom(
   return result.committed ? committed : null;
 }
 
+/** A participant withdraws their own ticket while betting is open. */
+export async function removeRemoteBet(roomId: string, betId: string) {
+  const { database } = await services();
+  await database.remove(await roomRef(roomId, `currentRace/bets/${betId}`));
+}
+
 /** Revokes a participant's access, e.g. after the host removes them. */
 export async function removeRemoteMember(roomId: string, uid: string) {
   const { db, database } = await services();

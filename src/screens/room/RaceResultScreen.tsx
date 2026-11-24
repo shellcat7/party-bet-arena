@@ -7,11 +7,13 @@ import { useI18n } from "../../i18n/i18n";
 import { isGameOver } from "../../lib/settlement";
 import type { RaceHistoryEntry, Room } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
+import { useCorrectResult } from "./useCorrectResult";
 
 export function RaceResultScreen(props: { raceId?: string }) {
   const { t, formatDateTime } = useI18n();
   const notify = useNotify();
   const { room, controller, nav } = useOpenRoom();
+  const correctResult = useCorrectResult();
   const entry = props.raceId
     ? room.raceHistory.find((item) => item.raceId === props.raceId)
     : room.raceHistory.at(-1);
@@ -81,7 +83,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
                   {contestant?.icon}
                 </span>
                 <strong>{contestant?.name ?? "?"}</strong>
-                <small>{contestant ? `${contestant.odds.toFixed(2)}${t("倍", "x")}` : ""}</small>
+                <small>{contestant ? `${contestant.odds.toFixed(1)}${t("倍", "x")}` : ""}</small>
               </li>
             );
           })}
@@ -90,6 +92,16 @@ export function RaceResultScreen(props: { raceId?: string }) {
 
       <PayoutTable room={room} entry={entry} highlightId={controller.me?.id} />
       <TicketResults room={room} entry={entry} />
+
+      {controller.role === "host" && isLatest && (
+        <button
+          className="button button--ghost button--block"
+          type="button"
+          onClick={() => void correctResult()}
+        >
+          {t("着順を訂正する", "Correct the finishing order")}
+        </button>
+      )}
 
       {controller.role === "host" && isLatest && (
         <div className="sticky-actions">
@@ -217,7 +229,7 @@ function TicketResults(props: { room: Room; entry: RaceHistoryEntry }) {
               <span className="ticket-results__what">
                 <strong>{player?.name ?? "?"}</strong>
                 <small>
-                  {labels[bet.type].title} · <Points value={bet.amount} /> · ×{bet.multiplier.toFixed(2)}
+                  {labels[bet.type].title} · <Points value={bet.amount} /> · ×{bet.multiplier.toFixed(1)}
                 </small>
               </span>
               <span className="lane-row">

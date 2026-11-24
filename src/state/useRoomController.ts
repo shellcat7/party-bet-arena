@@ -14,6 +14,7 @@ import {
   isFirebaseConfigured,
   joinRemoteRoom,
   placeRemoteBet,
+  removeRemoteBet,
   removeRemoteMember,
   subscribeConnection,
   subscribeRemoteRoom,
@@ -23,7 +24,14 @@ import {
 import { JOIN_CODE_PATTERN, normalizeCodeInput, parseInviteUrl, ROOM_ID_PATTERN } from "../lib/ids";
 import { buildRoomPatch } from "../lib/patch";
 import * as rooms from "../lib/room";
-import { advanceRace, closeBetting, isCompleteResult, reopenBetting, settleRace } from "../lib/settlement";
+import {
+  advanceRace,
+  closeBetting,
+  isCompleteResult,
+  reopenBetting,
+  settleRace,
+  unsettleRace,
+} from "../lib/settlement";
 import type { RoomSummary, Session } from "../lib/storage";
 import {
   forgetRoom,
@@ -562,6 +570,31 @@ export function useRoomController({ t, notify, language }: Options) {
     [notify, t, transition],
   );
 
+  const undoSettlement = useCallback(() => {
+    const id = raceId();
+    return transition((room) => unsettleRace(room, id));
+  }, [transition]);
+
+  /** A participant withdraws their own ticket (to change it) while betting is open. */
+  const cancelOwnBet = useCallback(async () => {
+    const current = roomRef.current;
+    const playerId = session?.playerId;
+    if (!current || !playerId) return false;
+    const bet = current.currentRace.bets.find(
+      (item) => item.playerId === playerId && item.placedBy === "self",
+    );
+    if (!bet || current.currentRace.status !== "betting") return false;
+    if (!isRemoteRoom(current)) return mutate((room) => rooms.removeBet(room, bet.id));
+    try {
+      setRoom(rooms.removeBet(current, bet.id));
+      await withTimeout(removeRemoteBet(current.id, bet.id));
+      return true;
+    } catch (error) {
+      reportError(error);
+      return false;
+    }
+  }, [mutate, reportError, session?.playerId, setRoom]);
+
   const nextRace = useCallback(() => {
     const id = raceId();
     return transition((room) => advanceRace(room, id));
@@ -608,6 +641,8 @@ export function useRoomController({ t, notify, language }: Options) {
       closeBetting: closeBettingAction,
       reopenBetting: reopenBettingAction,
       settle,
+      undoSettlement,
+      cancelOwnBet,
       nextRace,
       renameRoom: (name: string) => mutate((current) => rooms.renameRoom(current, name)),
       updateSettings: (patch: rooms.SettingsPatch) =>
@@ -649,6 +684,8 @@ export function useRoomController({ t, notify, language }: Options) {
       reopenBettingAction,
       grantBonus,
       settle,
+      undoSettlement,
+      cancelOwnBet,
       startDemo,
       switchPerspective,
     ],

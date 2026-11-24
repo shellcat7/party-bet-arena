@@ -209,7 +209,7 @@ describe("room mutations", () => {
   it("switches to manual odds when the host overrides a value", () => {
     const room = setContestantOdds(testRoom({ autoOdds: true }), "B", 3.333);
     expect(room.settings.autoOdds).toBe(false);
-    expect(room.contestants[1].odds).toBe(3.33);
+    expect(room.contestants[1].odds).toBe(3.3);
   });
 
   it("recalculates odds when levels change in auto mode", () => {

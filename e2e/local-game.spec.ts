@@ -51,6 +51,18 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
     if (race === 1) {
       await expect(page.getByRole("heading", { name: "第1レースの結果" })).toBeVisible();
       await expect(page.getByRole("table")).toContainText("ゆうた");
+
+      // The host entered the wrong order: undo the settlement and enter it again.
+      await page.getByRole("button", { name: "着順を訂正する" }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "精算を取り消す" }).click();
+      await expect(page.getByRole("heading", { name: "着順を入力" })).toBeVisible();
+      await picks.nth(0).click();
+      await picks.nth(1).click();
+      await picks.nth(2).click();
+      await page.getByRole("button", { name: "着順を確定して精算" }).click();
+      await page.getByRole("dialog").getByRole("button", { name: "確定して精算" }).click();
+      await expect(page.getByRole("heading", { name: "第1レースの結果" })).toBeVisible();
+      await expect(page.locator(".ticket-results li")).toHaveCount(3);
       await page.getByRole("button", { name: "第2レースを始める" }).click();
       await expect(page.getByRole("heading", { name: /第2レース/ })).toBeVisible();
     }

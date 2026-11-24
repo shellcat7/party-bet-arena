@@ -6,6 +6,7 @@ import { useI18n } from "../../i18n/i18n";
 import { isFinalRace, isGameOver, rankPlayers } from "../../lib/settlement";
 import type { RaceStatus } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
+import { useCorrectResult } from "./useCorrectResult";
 
 const phases: RaceStatus[] = ["betting", "closed", "settled"];
 
@@ -23,6 +24,7 @@ export function HostHomeScreen() {
   );
   const phaseIndex = phases.indexOf(race.status);
   const leaders = rankPlayers(room.players).slice(0, 3);
+  const correctResult = useCorrectResult();
 
   const close = async () => {
     const missing = room.players.filter((player) => !bettorsWithTickets.has(player.id));
@@ -212,6 +214,13 @@ export function HostHomeScreen() {
             >
               {t("このレースの払戻を見る", "View this race's payouts")}
             </button>
+            <button
+              className="button button--ghost button--block"
+              type="button"
+              onClick={() => void correctResult()}
+            >
+              {t("着順を訂正する", "Correct the finishing order")}
+            </button>
           </div>
         )}
       </section>
@@ -262,7 +271,7 @@ export function HostHomeScreen() {
                 {contestant.icon}
               </span>
               <span className="odds-board__name">{contestant.name}</span>
-              <strong>{contestant.odds.toFixed(2)}</strong>
+              <strong>{contestant.odds.toFixed(1)}</strong>
             </li>
           ))}
         </ul>

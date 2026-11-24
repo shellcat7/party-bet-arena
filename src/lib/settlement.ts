@@ -8,7 +8,16 @@ import {
   requiredPickCount,
   resolvePicks,
 } from "./odds";
-import type { BetType, Player, RaceBetResult, RaceHistoryEntry, RacePayout, RaceStatus, Room } from "./types";
+import type {
+  Bet,
+  BetType,
+  Player,
+  RaceBetResult,
+  RaceHistoryEntry,
+  RacePayout,
+  RaceStatus,
+  Room,
+} from "./types";
 
 export function isBetHit(type: BetType, contestantIds: string[], resultIds: string[]) {
   if (!contestantIds.length) return false;
@@ -162,6 +171,47 @@ export function settleRace(room: Room, raceId: string, resultIds: string[], now 
   if (room.currentRace.id !== raceId || room.currentRace.status === "settled") return null;
   if (!isCompleteResult(room, resultIds)) return null;
   return settleRoom(setRaceStatus(room, "closed", now), resultIds, now);
+}
+
+/**
+ * Reverts the latest settlement so the host can correct a wrong finishing order: balances move
+ * back by exactly what the settlement changed (bonuses given since are kept), the tickets return
+ * to the race and the race is closed again. Only possible until the next race starts.
+ */
+export function unsettleRace(room: Room, raceId: string, now = Date.now()): Room | null {
+  const entry = room.raceHistory.at(-1);
+  if (room.currentRace.id !== raceId || room.currentRace.status !== "settled" || entry?.raceId !== raceId) {
+    return null;
+  }
+  const deltas = new Map(entry.payouts.map((row) => [row.playerId, row.delta]));
+  const players = room.players.map((player) => ({
+    ...player,
+    balance: player.balance - (deltas.get(player.id) ?? 0),
+  }));
+  const bets: Bet[] = entry.bets.map((result) => {
+    const bet: Bet = {
+      id: result.id,
+      playerId: result.playerId,
+      contestantId: result.contestantIds[0],
+      contestantIds: [...result.contestantIds],
+      type: result.type,
+      amount: result.amount,
+      placedBy: result.placedBy,
+      createdAt: result.createdAt,
+    };
+    const uid =
+      result.placedBy === "self" ? players.find((player) => player.id === result.playerId)?.uid : undefined;
+    if (uid) bet.uid = uid;
+    return bet;
+  });
+  const { settledAt: _settledAt, ...race } = room.currentRace;
+  return {
+    ...room,
+    players,
+    raceHistory: room.raceHistory.slice(0, -1),
+    currentRace: { ...race, status: "closed", resultIds: [], bets },
+    updatedAt: now,
+  };
 }
 
 export function advanceRace(room: Room, raceId: string, now = Date.now()): Room | null {

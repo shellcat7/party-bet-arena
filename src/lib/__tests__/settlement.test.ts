@@ -13,6 +13,7 @@ import {
   rankPlayers,
   reopenBetting,
   settleRace,
+  unsettleRace,
   settleRoom,
   startNextRace,
 } from "../settlement";
@@ -200,5 +201,52 @@ describe("ticket types the field makes impossible to lose", () => {
     const settled = settleRoom(small, ["C", "B", "A"]);
     expect(settled.players[0].balance).toBe(1000);
     expect(settled.raceHistory[0].bets[0]).toMatchObject({ voided: true, payout: 0, delta: 0 });
+  });
+});
+
+describe("unsettleRace", () => {
+  it("restores balances and tickets so the host can correct the finishing order", () => {
+    let room = withBet(testRoom(), "alice", "win", ["C"], 100);
+    room = withBet(room, "bob", "exacta", ["A", "B"], 200);
+    const raceId = room.currentRace.id;
+    const settled = settleRace(room, raceId, order)!;
+    const withBonus = {
+      ...settled,
+      players: settled.players.map((p) => (p.id === "bob" ? { ...p, balance: p.balance + 50 } : p)),
+    };
+    const reverted = unsettleRace(withBonus, raceId)!;
+    expect(reverted.currentRace).toMatchObject({ id: raceId, status: "closed", resultIds: [] });
+    expect(reverted.currentRace).not.toHaveProperty("settledAt");
+    expect(reverted.raceHistory).toEqual([]);
+    expect(reverted.players.map((p) => p.balance)).toEqual([1000, 1050]);
+    expect(
+      reverted.currentRace.bets.map(({ id, playerId, contestantIds, type, amount }) => ({
+        id,
+        playerId,
+        contestantIds,
+        type,
+        amount,
+      })),
+    ).toEqual(
+      room.currentRace.bets.map(({ id, playerId, contestantIds, type, amount }) => ({
+        id,
+        playerId,
+        contestantIds,
+        type,
+        amount,
+      })),
+    );
+    const corrected = settleRace(reverted, raceId, ["A", "B", "C", "D"])!;
+    expect(corrected.players.map((p) => p.balance)).toEqual([
+      900,
+      1050 - 200 + Math.floor(200 * corrected.raceHistory[0].bets[1].multiplier),
+    ]);
+  });
+
+  it("is refused once the next race has started or for an unsettled race", () => {
+    const room = testRoom();
+    expect(unsettleRace(room, room.currentRace.id)).toBeNull();
+    const settled = settleRace(room, room.currentRace.id, order)!;
+    expect(unsettleRace(startNextRace(settled), room.currentRace.id)).toBeNull();
   });
 });

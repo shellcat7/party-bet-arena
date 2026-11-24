@@ -257,7 +257,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
                     </small>
                   </span>
                   <span className="racer__odds">
-                    {single.toFixed(2)}
+                    {single.toFixed(1)}
                     <small>{pickCount === 1 ? t("倍", "x") : t("単勝", "win")}</small>
                   </span>
                   <span className="racer__check" aria-hidden="true">
@@ -344,7 +344,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
         <div className="ticket__payout">
           <span>
             {t("的中時の払戻", "Payout if it hits")}
-            {multiplier > 0 && <small> ×{multiplier.toFixed(2)}</small>}
+            {multiplier > 0 && <small> ×{multiplier.toFixed(1)}</small>}
           </span>
           <strong>{multiplier > 0 ? <Points value={payout} /> : "—"}</strong>
         </div>
@@ -379,6 +379,17 @@ function PlacedTicket(props: { room: Room; bet: Bet }) {
   const labels = betTypeCopy(t);
   const picks = getBetPickIds(bet).map((id) => room.contestants.find((contestant) => contestant.id === id));
   const multiplier = getDraftMultiplier(room, { type: bet.type, contestantIds: getBetPickIds(bet) });
+  const confirm = useConfirm();
+  const { controller } = useOpenRoom();
+  const cancel = async () => {
+    const ok = await confirm({
+      title: t("ベットを取り消しますか？", "Cancel this bet?"),
+      message: t("締切までなら、もう一度ベットできます。", "You can bet again until betting closes."),
+      confirmLabel: t("取り消す", "Cancel bet"),
+      tone: "danger",
+    });
+    if (ok) await controller.actions.cancelOwnBet();
+  };
   const waitingFor = room.players.length - new Set(room.currentRace.bets.map((item) => item.playerId)).size;
 
   return (
@@ -426,6 +437,15 @@ function PlacedTicket(props: { room: Room; bet: Bet }) {
           </dd>
         </div>
       </dl>
+      {room.currentRace.status === "betting" && (
+        <button
+          className="button button--secondary button--block"
+          type="button"
+          onClick={() => void cancel()}
+        >
+          {t("取り消して選び直す", "Cancel and choose again")}
+        </button>
+      )}
     </section>
   );
 }

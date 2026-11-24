@@ -10,7 +10,7 @@ export const LIMITS = {
   maxStartingBalance: 1_000_000_000,
   maxNameLength: 40,
   maxRoomNameLength: 40,
-  minOdds: 1.01,
+  minOdds: 1.1,
   maxOdds: 99,
 } as const;
 

@@ -1246,7 +1246,28 @@
   display: contents;
 }
 
-.edit-list--racers .racer-controls {
+.edit-list--racers .quick-add {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.quick-add > span {
+  color: var(--text-3);
+  font-size: 0.82rem;
+}
+
+.quick-add .chip-scroller {
+  padding-right: 0;
+}
+
+.quick-add .person-chip {
+  padding: 3px 12px;
+  gap: 4px;
+}
+
+.racer-controls {
   grid-column: 1 / -1;
   grid-row: 2;
   justify-content: space-between;

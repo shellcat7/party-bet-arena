@@ -6,7 +6,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { addBet, createBet } from "../src/lib/betting";
 import { buildRoomPatch, toRoomPayload } from "../src/lib/patch";
 import { createRoom, defaultCreateInput, normalizeRoom } from "../src/lib/room";
-import { setRaceStatus, settleRace, settleRoom } from "../src/lib/settlement";
+import { setRaceStatus, settleRace, settleRoom, unsettleRace } from "../src/lib/settlement";
 import type { Room } from "../src/lib/types";
 
 const roomId = "SECUREABC234";
@@ -165,7 +165,26 @@ describe("participant writes", () => {
     await assertFails(
       set(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`), selfBet({ amount: 1 })),
     );
-    await assertFails(remove(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`)));
+  });
+
+  it("can cancel their own bet while betting is open, but not someone else's or after closing", async () => {
+    await assertSucceeds(set(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`), selfBet()));
+    await assertSucceeds(remove(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`)));
+    await assertSucceeds(
+      set(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`), selfBet({ amount: 20 })),
+    );
+    const proxy = createBet({
+      playerId: playerUid,
+      contestantIds: [room.contestants[1].id],
+      type: "win",
+      amount: 5,
+      placedBy: "host",
+    });
+    await assertSucceeds(
+      update(ref(as(hostUid), `rooms/${roomId}`), { [`currentRace/bets/${proxy.id}`]: proxy }),
+    );
+    await assertFails(remove(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${proxy.id}`)));
+    await assertSucceeds(update(ref(as(hostUid), `rooms/${roomId}`), { "currentRace/status": "closed" }));
   });
 
   it("cannot bet once the host has closed the race", async () => {
@@ -227,6 +246,16 @@ describe("host writes", () => {
     const stored = (await get(ref(as(hostUid), `rooms/${roomId}`))).val();
     expect(stored.currentRace.status).toBe("settled");
     expect(stored.raceHistory[0].bets).toHaveLength(1);
+    // The host can undo it to correct the order; the participant's ticket is restored.
+    const undone = await runTransaction(ref(as(hostUid), `rooms/${roomId}`), (raw) => {
+      if (raw === null) return raw;
+      const next = unsettleRace(normalizeRoom(raw), room.currentRace.id);
+      return next ? toRoomPayload(next) : undefined;
+    });
+    expect(undone.committed).toBe(true);
+    const reverted = (await get(ref(as(hostUid), `rooms/${roomId}`))).val();
+    expect(reverted.currentRace.status).toBe("closed");
+    expect(reverted.currentRace.bets[playerUid].uid).toBe(playerUid);
     // A participant cannot run the same transaction.
     await assertFails(
       runTransaction(ref(as(playerUid), `rooms/${roomId}`), (raw) =>

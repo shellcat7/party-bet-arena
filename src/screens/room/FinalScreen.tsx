@@ -111,8 +111,8 @@ export function FinalScreen() {
                   <span>
                     <Points value={highlights.biggestWin.payout} />
                     {t(
-                      `（${raceName(t, highlights.biggestWin.raceNumber)}・${labels[highlights.biggestWin.type].title} ${highlights.biggestWin.multiplier.toFixed(2)}倍）`,
-                      ` (race ${highlights.biggestWin.raceNumber}, ${labels[highlights.biggestWin.type].title} ×${highlights.biggestWin.multiplier.toFixed(2)})`,
+                      `（${raceName(t, highlights.biggestWin.raceNumber)}・${labels[highlights.biggestWin.type].title} ${highlights.biggestWin.multiplier.toFixed(1)}倍）`,
+                      ` (race ${highlights.biggestWin.raceNumber}, ${labels[highlights.biggestWin.type].title} ×${highlights.biggestWin.multiplier.toFixed(1)})`,
                     )}
                   </span>
                 </dd>

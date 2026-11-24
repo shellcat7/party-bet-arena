@@ -1,11 +1,11 @@
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import {
+  ChevronLeft,
   CloudOff,
   Eye,
   History,
   House,
-  LogOut,
   QrCode,
   Settings2,
   Ticket,
@@ -119,7 +119,8 @@ function usePlayerAutoNavigation() {
     if (controller.role !== "player") return;
     if (before.id === race.id && before.status !== "settled" && race.status === "settled") {
       push(gameOver ? { name: "final" } : { name: "race", raceId: race.id });
-    } else if (before.id !== race.id) {
+    } else if (before.id !== race.id || (before.status === "settled" && race.status !== "settled")) {
+      // A new race opened, or the host undid the settlement to correct the order.
       reset({ name: "bet" });
     }
   }, [race.id, race.status, controller.role, gameOver, push, reset]);
@@ -137,10 +138,10 @@ function RoomTopBar() {
         className="icon-button icon-button--quiet"
         type="button"
         onClick={controller.actions.closeRoom}
-        aria-label={t("ルームを出る", "Leave room")}
+        aria-label={t("ルーム一覧に戻る", "Back to rooms")}
         title={t("ルーム一覧に戻る", "Back to rooms")}
       >
-        <LogOut size={20} />
+        <ChevronLeft size={22} />
       </button>
       <div className="topbar__title">
         <strong>{room.name}</strong>
