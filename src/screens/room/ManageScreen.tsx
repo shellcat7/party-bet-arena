@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Gift, Plus, QrCode, RefreshCw, RotateCcw, Trash2, UserPlus } from "lucide-react";
+import { Plus, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { useConfirm, useNotify } from "../../components/feedback";
 import { EmojiPicker, Field, SegmentedControl, Stepper, Toggle } from "../../components/ui";
 import { useI18n } from "../../i18n/i18n";
@@ -189,8 +189,7 @@ function BettorsSection() {
           type="button"
           onClick={() => nav.push({ name: "invite" })}
         >
-          <QrCode size={18} />
-          {t("QRで友だちを招待", "Invite friends with a QR code")}
+          {t("参加者を招待", "Invite players")}
         </button>
       )}
     </>
@@ -451,11 +450,11 @@ function RulesSection() {
         </div>
         <div className="setting-row">
           <span>
-            <strong>{t("初期コイン", "Starting coins")}</strong>
+            <strong>{t("初期ポイント", "Starting points")}</strong>
             <small>{t("これから参加する人に適用", "Applies to people who join later")}</small>
           </span>
           <Stepper
-            label={t("初期コイン", "starting coins")}
+            label={t("初期ポイント", "starting points")}
             value={room.startingBalance}
             min={0}
             max={100_000}
@@ -472,6 +471,7 @@ function RulesSection() {
           label={t("オッズを自動計算", "Automatic odds")}
           description={t("強さ（CPUレベル）から倍率を決めます", "Odds follow each racer's strength")}
           onChange={(autoOdds) => void actions.updateSettings({ autoOdds })}
+          disabled={room.currentRace.status !== "betting"}
         />
         <Toggle
           checked={room.settings.marketOdds}
@@ -485,16 +485,18 @@ function RulesSection() {
           label={t("借金ベットを許可", "Allow betting into debt")}
           description={t("残高がマイナスでもベットできます", "Bettors can go below zero")}
           onChange={(allowDebt) => void actions.updateSettings({ allowDebt })}
+          disabled={room.currentRace.status !== "betting"}
         />
       </section>
 
       {room.players.length > 0 && (
         <section className="card form-card">
-          <h2 className="card__title">
-            <Gift size={18} aria-hidden="true" /> {t("ボーナスを配る", "Give a bonus")}
-          </h2>
+          <h2 className="card__title">{t("ポイントを付与", "Give points")}</h2>
           <p className="form-help">
-            {t("ゲーム内の特別ルールや救済措置に。", "For house rules or a comeback boost.")}
+            {t(
+              "特別ルールなどで、参加者にポイントを追加します。",
+              "Add points to a bettor, e.g. for a house rule.",
+            )}
           </p>
           <div className="add-row">
             <select
@@ -549,7 +551,6 @@ function RulesSection() {
           type="button"
           onClick={() => void deleteRoom()}
         >
-          {room.isDemo ? <RotateCcw size={18} /> : <Trash2 size={18} />}
           {room.isDemo ? t("デモを最初からやり直す", "Restart the demo") : t("ルームを削除", "Delete room")}
         </button>
       </section>

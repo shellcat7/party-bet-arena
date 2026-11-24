@@ -32,6 +32,15 @@ figure {
   margin: 0;
 }
 
+h1,
+h2,
+h3,
+strong,
+b,
+th {
+  font-weight: 600;
+}
+
 ol,
 ul {
   padding: 0;
@@ -56,7 +65,7 @@ button:disabled {
 }
 
 :focus-visible {
-  outline: 3px solid var(--focus);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 
@@ -98,13 +107,6 @@ table {
 
 .muted {
   color: var(--text-3);
-}
-
-.eyebrow {
-  color: var(--text-3);
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
 }
 
 @media (prefers-reduced-motion: reduce) {

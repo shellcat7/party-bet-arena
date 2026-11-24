@@ -1,5 +1,5 @@
-import { ArrowDown, ArrowUp, ChevronRight, History, Trophy } from "lucide-react";
-import { Avatar, Coins, EmptyState, RankBadge } from "../../components/ui";
+import { ArrowDown, ArrowUp, ChevronRight, Trophy } from "lucide-react";
+import { Avatar, Points, EmptyState, RankBadge } from "../../components/ui";
 import { useI18n } from "../../i18n/i18n";
 import { isGameOver, rankMovement, rankPlayers } from "../../lib/settlement";
 import { useOpenRoom } from "../../state/AppContext";
@@ -36,7 +36,6 @@ export function RankingScreen() {
   const lastRace = room.raceHistory.at(-1);
   const lastDelta = new Map(lastRace?.payouts.map((row) => [row.playerId, row.delta]));
   const meId = controller.me?.id;
-  const podium = [ranking[1], ranking[0], ranking[2]].filter(Boolean);
 
   if (ranking.length === 0) {
     return (
@@ -64,25 +63,10 @@ export function RankingScreen() {
       {isGameOver(room) && (
         <button className="callout" type="button" onClick={() => nav.push({ name: "final" })}>
           <Trophy size={20} aria-hidden="true" />
-          <span>{t("全レース終了！最終結果を見る", "All races done! See the final results")}</span>
+          <span>{t("最終結果を見る", "View final results")}</span>
           <ChevronRight size={18} aria-hidden="true" />
         </button>
       )}
-
-      <section className="podium" aria-label={t("トップ3", "Top three")}>
-        {podium.map(({ player, rank }) => (
-          <article
-            key={player.id}
-            className={`podium__place podium__place--${rank}${player.id === meId ? " is-me" : ""}`}
-          >
-            <RankBadge rank={rank} />
-            <Avatar emoji={player.emoji} accent={player.accent} size={rank === 1 ? "xl" : "lg"} />
-            <strong>{player.name}</strong>
-            <Coins value={player.balance} />
-            <Movement value={movement.get(player.id)} />
-          </article>
-        ))}
-      </section>
 
       <section className="card card--flush" aria-label={t("全員の順位", "Full standings")}>
         <ol className="standings">
@@ -104,8 +88,8 @@ export function RankingScreen() {
                   </small>
                 </span>
                 <span className="standings__value">
-                  <Coins value={player.balance} />
-                  {delta !== undefined && delta !== 0 && <Coins value={delta} signed unit={false} />}
+                  <Points value={player.balance} />
+                  {delta !== undefined && delta !== 0 && <Points value={delta} signed unit={false} />}
                 </span>
                 <Movement value={movement.get(player.id)} />
               </li>
@@ -120,8 +104,7 @@ export function RankingScreen() {
           type="button"
           onClick={() => nav.push({ name: "history" })}
         >
-          <History size={18} />
-          {t("レース履歴と推移グラフ", "Race history & chart")}
+          {t("レース履歴", "Race history")}
         </button>
       )}
     </div>

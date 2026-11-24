@@ -1,6 +1,13 @@
 import { LIMITS } from "./constants";
 import { createId } from "./ids";
-import { getBetPickIds, getEffectiveMultiplier, isValidStake, requiredPickCount, resolvePicks } from "./odds";
+import {
+  getBetPickIds,
+  getEffectiveMultiplier,
+  isBetTypeAvailable,
+  isValidStake,
+  requiredPickCount,
+  resolvePicks,
+} from "./odds";
 import type { BetType, Player, RaceBetResult, RaceHistoryEntry, RacePayout, RaceStatus, Room } from "./types";
 
 export function isBetHit(type: BetType, contestantIds: string[], resultIds: string[]) {
@@ -65,8 +72,12 @@ export function settleRoom(room: Room, resultIds: string[], now = Date.now()): R
         createdAt: bet.createdAt,
       };
 
-      if (!isValidStake(bet.amount) || picks.length !== requiredPickCount(bet.type)) {
-        betResults.push({ ...base, multiplier: 0, payout: 0, delta: 0, hit: false });
+      if (
+        !isValidStake(bet.amount) ||
+        picks.length !== requiredPickCount(bet.type) ||
+        !isBetTypeAvailable(bet.type, room.contestants.length)
+      ) {
+        betResults.push({ ...base, multiplier: 0, payout: 0, delta: 0, hit: false, voided: true });
         continue;
       }
 
@@ -128,6 +139,35 @@ export function isFinalRace(room: Room) {
 
 export function isGameOver(room: Room) {
   return room.currentRace.status === "settled" && isFinalRace(room);
+}
+
+/*
+ * Guarded transitions. Each returns null when the room is no longer in the state the caller saw
+ * (another device or tab got there first), so online rooms can run them inside a database
+ * transaction and abort instead of overwriting newer data.
+ */
+
+export function closeBetting(room: Room, raceId: string, now = Date.now()): Room | null {
+  if (room.currentRace.id !== raceId || room.currentRace.status !== "betting") return null;
+  return setRaceStatus(room, "closed", now);
+}
+
+export function reopenBetting(room: Room, raceId: string, now = Date.now()): Room | null {
+  if (room.currentRace.id !== raceId || room.currentRace.status !== "closed") return null;
+  return setRaceStatus(room, "betting", now);
+}
+
+/** Closes (if needed) and settles in one step, from exactly the pool the server holds. */
+export function settleRace(room: Room, raceId: string, resultIds: string[], now = Date.now()): Room | null {
+  if (room.currentRace.id !== raceId || room.currentRace.status === "settled") return null;
+  if (!isCompleteResult(room, resultIds)) return null;
+  return settleRoom(setRaceStatus(room, "closed", now), resultIds, now);
+}
+
+export function advanceRace(room: Room, raceId: string, now = Date.now()): Room | null {
+  if (room.currentRace.id !== raceId || room.currentRace.status !== "settled" || isFinalRace(room))
+    return null;
+  return startNextRace(room, now);
 }
 
 export function startNextRace(room: Room, now = Date.now()): Room {

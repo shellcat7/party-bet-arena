@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Check, Flag, Hourglass, Lock, Minus, Plus, Trash2, X } from "lucide-react";
+import { Check, Flag, Lock, Minus, Plus, Trash2, Users, X } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { Avatar, Coins, EmptyState, Lane, SegmentedControl } from "../../components/ui";
+import { Avatar, Points, EmptyState, Lane, SegmentedControl } from "../../components/ui";
 import { betErrorMessage, betTypeCopy, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import type { BetError } from "../../lib/betting";
@@ -44,7 +44,7 @@ export function BetScreen() {
     return (
       <div className="screen">
         <EmptyState
-          icon={<Avatar emoji="🎟️" accent="#ffc400" size="lg" />}
+          icon={<Users size={28} />}
           title={t("まだ参加者がいません", "No bettors yet")}
           action={
             <button
@@ -143,13 +143,6 @@ export function BetScreen() {
       )}
 
       {isHost && race.bets.length > 0 && <TicketList room={room} />}
-
-      <p className="fine-print">
-        {t(
-          "遊び用コインのみ。現金や景品とは交換できません。",
-          "Play coins only — not exchangeable for money or prizes.",
-        )}
-      </p>
     </div>
   );
 }
@@ -306,7 +299,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
             <label htmlFor="bet-amount">{t("ベット額", "Stake")}</label>
             <small>
               {t("使える残高", "Available")}{" "}
-              <Coins
+              <Points
                 value={room.settings.allowDebt ? (getPlayer(room, bettorId)?.balance ?? 0) : available}
               />
             </small>
@@ -353,10 +346,10 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
             {t("的中時の払戻", "Payout if it hits")}
             {multiplier > 0 && <small> ×{multiplier.toFixed(2)}</small>}
           </span>
-          <strong>{multiplier > 0 ? <Coins value={payout} /> : "—"}</strong>
+          <strong>{multiplier > 0 ? <Points value={payout} /> : "—"}</strong>
         </div>
         {room.settings.marketOdds && (
-          <p className="fine-print">
+          <p className="form-help">
             {t(
               "人気で倍率が変わるため、払戻は締切時のオッズで確定します。",
               "Pool-based odds: the final multiplier is fixed when betting closes.",
@@ -373,7 +366,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
           type="submit"
           disabled={Boolean(error) || submitting}
         >
-          {submitting ? t("送信中…", "Placing…") : t("この内容でベット", "Place bet")}
+          {submitting ? t("送信中…", "Placing…") : t("ベットする", "Place bet")}
         </button>
       </section>
     </form>
@@ -395,16 +388,18 @@ function PlacedTicket(props: { room: Room; bet: Bet }) {
           <Check size={20} strokeWidth={3} />
         </span>
         <div>
-          <h2 id="placed-title">{t("ベット完了！", "You're in!")}</h2>
+          <h2 id="placed-title">{t("ベットを受け付けました", "Bet placed")}</h2>
           <p>
             {room.currentRace.status === "betting"
               ? waitingFor > 0
                 ? t(`あと${waitingFor}人のベットを待っています`, `Waiting for ${waitingFor} more`)
-                : t("全員ベットしました。締切を待っています", "Everyone's in. Waiting for the host")
-              : t("締め切られました。結果を待っています", "Betting closed. Waiting for the result")}
+                : t(
+                    "全員ベットしました。締切を待っています",
+                    "Everyone has bet. Waiting for the host to close betting",
+                  )
+              : t("ベットは締め切られました。結果を待っています", "Betting closed. Waiting for the result")}
           </p>
         </div>
-        <Hourglass size={20} className="placed-ticket__wait" aria-hidden="true" />
       </header>
       <dl className="placed-ticket__body">
         <div>
@@ -421,13 +416,13 @@ function PlacedTicket(props: { room: Room; bet: Bet }) {
         <div>
           <dt>{t("ベット額", "Stake")}</dt>
           <dd>
-            <Coins value={bet.amount} />
+            <Points value={bet.amount} />
           </dd>
         </div>
         <div>
           <dt>{t("的中時（目安）", "If it hits (est.)")}</dt>
           <dd>
-            <Coins value={Math.floor(bet.amount * multiplier)} />
+            <Points value={Math.floor(bet.amount * multiplier)} />
           </dd>
         </div>
       </dl>
@@ -441,7 +436,7 @@ function BettorStatus(props: { room: Room }) {
   return (
     <section className="card bettor-status" aria-labelledby="bettor-status-title">
       <div className="bettor-status__head">
-        <strong id="bettor-status-title">{t("みんなのベット状況", "Who's in")}</strong>
+        <strong id="bettor-status-title">{t("ベット状況", "Bet status")}</strong>
         <span>
           {placed.size} / {props.room.players.length}
         </span>
@@ -513,7 +508,7 @@ function TicketList(props: { room: Room }) {
                   })}
                 </span>
               </span>
-              <Coins value={bet.amount} />
+              <Points value={bet.amount} />
               {room.currentRace.status === "betting" && (
                 <button
                   className="icon-button icon-button--quiet"

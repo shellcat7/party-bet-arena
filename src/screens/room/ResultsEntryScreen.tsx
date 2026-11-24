@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { Flag, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { Avatar, Coins, Lane, PageHeader } from "../../components/ui";
+import { Avatar, Points, Lane, PageHeader } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { isCompleteResult, isFinalRace, previewSettlement } from "../../lib/settlement";
@@ -124,7 +124,7 @@ export function ResultsEntryScreen() {
                       {player && <Avatar emoji={player.emoji} accent={player.accent} size="sm" />}
                       <span>{player?.name}</span>
                       {row.hits > 0 && <span className="badge badge--success">{t("的中", "Hit")}</span>}
-                      <Coins value={row.delta} signed />
+                      <Points value={row.delta} signed />
                     </li>
                   );
                 })}
@@ -140,7 +140,6 @@ export function ResultsEntryScreen() {
           onClick={() => void submit()}
           disabled={!complete || settled || controller.busy}
         >
-          <Flag size={18} />
           {controller.busy ? t("精算しています…", "Settling…") : t("着順を確定して精算", "Confirm & pay out")}
         </button>
       </div>

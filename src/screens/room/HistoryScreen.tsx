@@ -1,6 +1,6 @@
 import { ChevronRight, History } from "lucide-react";
 import { BalanceChart } from "../../components/BalanceChart";
-import { Coins, EmptyState, Lane, PageHeader } from "../../components/ui";
+import { Points, EmptyState, Lane, PageHeader } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { useOpenRoom } from "../../state/AppContext";
@@ -73,12 +73,12 @@ export function HistoryScreen() {
                       {mine ? (
                         <>
                           <small>{t("あなた", "You")}</small>
-                          <Coins value={mine.delta} signed />
+                          <Points value={mine.delta} signed />
                         </>
                       ) : best && best.delta > 0 ? (
                         <>
                           <small>{bestPlayer?.name}</small>
-                          <Coins value={best.delta} signed />
+                          <Points value={best.delta} signed />
                         </>
                       ) : (
                         <small>{raceName(t, entry.raceNumber)}</small>

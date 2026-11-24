@@ -52,7 +52,7 @@ export function betErrorMessage(t: Translate, error: BetError) {
     "duplicate-pick": t("同じ対戦者を複数の着順に選べません", "A racer can only fill one position"),
     "unknown-pick": t("選んだ対戦者が見つかりません", "That racer no longer exists"),
     "invalid-amount": t("ベット額を入力してください", "Enter a bet amount"),
-    "insufficient-balance": t("残高が足りません", "Not enough coins"),
+    "insufficient-balance": t("残高が足りません", "Not enough points"),
     "unavailable-type": t(
       "対戦者の人数が少ないため、この券種は使えません",
       "Not enough racers for this ticket type",

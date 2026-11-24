@@ -1,7 +1,7 @@
-import { ArrowRight, Share2, Trophy } from "lucide-react";
+import { Share2, Trophy } from "lucide-react";
 import { useNotify } from "../../components/feedback";
 import { shareText } from "../../lib/share";
-import { Avatar, Coins, EmptyState, Lane, PageHeader, RankBadge } from "../../components/ui";
+import { Avatar, Points, EmptyState, Lane, PageHeader, RankBadge } from "../../components/ui";
 import { betTypeCopy, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { isGameOver } from "../../lib/settlement";
@@ -56,7 +56,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
             className="icon-button"
             type="button"
             onClick={share}
-            aria-label={t("結果をシェア", "Share result")}
+            aria-label={t("結果を共有", "Share result")}
           >
             <Share2 size={18} />
           </button>
@@ -99,8 +99,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
               type="button"
               onClick={() => nav.replace({ name: "final" })}
             >
-              <Trophy size={18} />
-              {t("最終結果を発表", "Reveal final results")}
+              {t("最終結果を表示", "Show final results")}
             </button>
           ) : (
             <button
@@ -115,7 +114,6 @@ export function RaceResultScreen(props: { raceId?: string }) {
                 `${raceName(t, entry.raceNumber + 1)}を始める`,
                 `Start ${raceName(t, entry.raceNumber + 1)}`,
               )}
-              <ArrowRight size={18} />
             </button>
           )}
         </div>
@@ -129,30 +127,28 @@ function PersonalResult(props: { entry: RaceHistoryEntry; playerId: string }) {
   const row = props.entry.payouts.find((item) => item.playerId === props.playerId);
   if (!row || row.stake === 0) {
     return (
-      <section className="result-banner result-banner--neutral">
-        <strong>{t("このレースはベットなし", "You sat this one out")}</strong>
-      </section>
+      <p className="notice" role="status">
+        {t("このレースではベットしていません。", "You didn't bet on this race.")}
+      </p>
     );
   }
   const won = row.hits > 0;
   return (
-    <section
-      className={won ? "result-banner result-banner--win" : "result-banner result-banner--lose"}
-      aria-live="polite"
-    >
-      <span className="result-banner__emoji" aria-hidden="true">
-        {won ? "🎉" : "😢"}
-      </span>
+    <section className={won ? "result-summary result-summary--hit" : "result-summary"} aria-live="polite">
       <div>
-        <small>{won ? t("的中！", "Winner!") : t("ハズレ…", "No luck this time")}</small>
+        <span className={won ? "badge badge--success" : "badge"}>
+          {won ? t("的中", "Hit") : t("不的中", "Miss")}
+        </span>
         <strong>
-          <Coins value={row.delta} signed />
+          <Points value={row.delta} signed />
         </strong>
       </div>
-      <div className="result-banner__balance">
-        <small>{t("残高", "Balance")}</small>
-        <Coins value={row.balanceAfter} />
-      </div>
+      <dl>
+        <dt>{t("残高", "Balance")}</dt>
+        <dd>
+          <Points value={row.balanceAfter} />
+        </dd>
+      </dl>
     </section>
   );
 }
@@ -186,13 +182,13 @@ function PayoutTable(props: { room: Room; entry: RaceHistoryEntry; highlightId?:
                   </span>
                 </th>
                 <td>
-                  <Coins value={row.stake} unit={false} />
+                  <Points value={row.stake} unit={false} />
                 </td>
                 <td>
-                  <Coins value={row.payout} unit={false} />
+                  <Points value={row.payout} unit={false} />
                 </td>
                 <td>
-                  <Coins value={row.delta} signed unit={false} />
+                  <Points value={row.delta} signed unit={false} />
                 </td>
               </tr>
             );
@@ -221,7 +217,7 @@ function TicketResults(props: { room: Room; entry: RaceHistoryEntry }) {
               <span className="ticket-results__what">
                 <strong>{player?.name ?? "?"}</strong>
                 <small>
-                  {labels[bet.type].title} · <Coins value={bet.amount} /> · ×{bet.multiplier.toFixed(2)}
+                  {labels[bet.type].title} · <Points value={bet.amount} /> · ×{bet.multiplier.toFixed(2)}
                 </small>
               </span>
               <span className="lane-row">
@@ -233,7 +229,11 @@ function TicketResults(props: { room: Room; entry: RaceHistoryEntry }) {
                 })}
               </span>
               <span className={bet.hit ? "badge badge--success" : "badge"}>
-                {bet.hit ? t("的中", "Hit") : t("ハズレ", "Miss")}
+                {bet.voided
+                  ? t("無効（返金）", "Void (refunded)")
+                  : bet.hit
+                    ? t("的中", "Hit")
+                    : t("不的中", "Miss")}
               </span>
             </li>
           );

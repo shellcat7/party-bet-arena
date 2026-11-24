@@ -94,9 +94,9 @@ export function CreateRoomScreen() {
           </div>
 
           <div className="setting-block">
-            <strong>{t("初期コイン", "Starting coins")}</strong>
+            <strong>{t("初期ポイント", "Starting points")}</strong>
             <SegmentedControl
-              label={t("初期コイン", "Starting coins")}
+              label={t("初期ポイント", "Starting points")}
               value={customBalance ? "custom" : String(draft.startingBalance)}
               options={[
                 ...balancePresets.map((value) => ({ value: String(value), label: formatNumber(value) })),
@@ -115,7 +115,7 @@ export function CreateRoomScreen() {
                 min={0}
                 max={LIMITS.maxStartingBalance}
                 value={draft.startingBalance}
-                aria-label={t("初期コイン", "Starting coins")}
+                aria-label={t("初期ポイント", "Starting points")}
                 onChange={(event) => update({ startingBalance: clampBalance(Number(event.target.value)) })}
               />
             )}

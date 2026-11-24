@@ -1,12 +1,12 @@
 import { readFileSync } from "node:fs";
 import type { RulesTestEnvironment } from "@firebase/rules-unit-testing";
 import { assertFails, assertSucceeds, initializeTestEnvironment } from "@firebase/rules-unit-testing";
-import { get, ref, remove, set, update } from "firebase/database";
+import { get, ref, remove, runTransaction, set, update } from "firebase/database";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { addBet, createBet } from "../src/lib/betting";
 import { buildRoomPatch, toRoomPayload } from "../src/lib/patch";
-import { createRoom, defaultCreateInput } from "../src/lib/room";
-import { setRaceStatus, settleRoom } from "../src/lib/settlement";
+import { createRoom, defaultCreateInput, normalizeRoom } from "../src/lib/room";
+import { setRaceStatus, settleRace, settleRoom } from "../src/lib/settlement";
 import type { Room } from "../src/lib/types";
 
 const roomId = "SECUREABC234";
@@ -202,7 +202,6 @@ describe("host writes", () => {
     await assertSucceeds(update(ref(as(hostUid), `rooms/${roomId}`), buildRoomPatch(room, withProxy)));
     await assertSucceeds(remove(ref(as(hostUid), `rooms/${roomId}/currentRace/bets/${proxy.id}`)));
 
-    const { normalizeRoom } = await import("../src/lib/room");
     const fresh = normalizeRoom((await get(ref(as(hostUid), `rooms/${roomId}`))).val());
     const closed = setRaceStatus(fresh, "closed");
     const settled = settleRoom(
@@ -213,6 +212,47 @@ describe("host writes", () => {
     const stored = (await get(ref(as(hostUid), `rooms/${roomId}`))).val();
     expect(stored.currentRace.status).toBe("settled");
     expect(stored.raceHistory[0].bets).toHaveLength(1);
+  });
+
+  it("settles inside a full-room transaction against the server's state", async () => {
+    await joinAsPlayer();
+    await assertSucceeds(set(ref(as(playerUid), `rooms/${roomId}/currentRace/bets/${playerUid}`), selfBet()));
+    const order = room.contestants.map((item) => item.id);
+    const outcome = await runTransaction(ref(as(hostUid), `rooms/${roomId}`), (raw) => {
+      if (raw === null) return raw;
+      const next = settleRace(normalizeRoom(raw), room.currentRace.id, order);
+      return next ? toRoomPayload(next) : undefined;
+    });
+    expect(outcome.committed).toBe(true);
+    const stored = (await get(ref(as(hostUid), `rooms/${roomId}`))).val();
+    expect(stored.currentRace.status).toBe("settled");
+    expect(stored.raceHistory[0].bets).toHaveLength(1);
+    // A participant cannot run the same transaction.
+    await assertFails(
+      runTransaction(ref(as(playerUid), `rooms/${roomId}`), (raw) =>
+        raw ? { ...raw, name: "hijacked" } : raw,
+      ),
+    );
+  });
+
+  it("revokes a removed participant's access", async () => {
+    await joinAsPlayer();
+    await assertSucceeds(remove(ref(as(hostUid), `roomMembers/${roomId}/${playerUid}`)));
+    await assertFails(get(ref(as(playerUid), `rooms/${roomId}`)));
+  });
+
+  it("deletes the room and its memberships in one atomic write", async () => {
+    await joinAsPlayer();
+    await assertFails(
+      update(ref(as(playerUid)), { [`rooms/${roomId}`]: null, [`roomMembers/${roomId}`]: null }),
+    );
+    await assertSucceeds(
+      update(ref(as(hostUid)), { [`rooms/${roomId}`]: null, [`roomMembers/${roomId}`]: null }),
+    );
+    await environment.withSecurityRulesDisabled(async (context) => {
+      expect((await get(ref(context.database(), `rooms/${roomId}`))).exists()).toBe(false);
+      expect((await get(ref(context.database(), `roomMembers/${roomId}`))).exists()).toBe(false);
+    });
   });
 
   it("cannot change the host, schema or join code, and can delete the room", async () => {

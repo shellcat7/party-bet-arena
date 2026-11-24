@@ -161,8 +161,41 @@ export async function placeRemoteBet(roomId: string, bet: Bet) {
   await database.set(await roomRef(roomId, `currentRace/bets/${bet.id}`), stripUndefined(bet));
 }
 
+/**
+ * Applies `update` to the room inside a Realtime Database transaction: it always runs against the
+ * server's current value and is retried if anything changed meanwhile. `update` returns null to
+ * abort when the room is no longer in the state the caller expected (e.g. another tab settled it).
+ * Resolves to the committed room, or null if aborted.
+ */
+export async function transactRoom(
+  roomId: string,
+  update: (room: Room) => Room | null,
+): Promise<Room | null> {
+  const { database } = await services();
+  let committed: Room | null = null;
+  const result = await database.runTransaction(await roomRef(roomId), (raw: unknown) => {
+    // An empty local cache shows up as null; the SDK retries with the server value.
+    if (raw === null) return raw;
+    let next: Room | null;
+    try {
+      next = update(normalizeRoom(raw));
+    } catch {
+      next = null;
+    }
+    committed = next;
+    return next ? toRoomPayload(next) : undefined;
+  });
+  return result.committed ? committed : null;
+}
+
+/** Revokes a participant's access, e.g. after the host removes them. */
+export async function removeRemoteMember(roomId: string, uid: string) {
+  const { db, database } = await services();
+  await database.remove(database.ref(db, `roomMembers/${roomId}/${uid}`));
+}
+
+/** Deletes the room and every membership in one atomic write, so listeners see a clean removal. */
 export async function deleteRemoteRoom(roomId: string) {
   const { db, database } = await services();
-  await database.remove(database.ref(db, `roomMembers/${roomId}`));
-  await database.remove(database.ref(db, `rooms/${roomId}`));
+  await database.update(database.ref(db), { [`rooms/${roomId}`]: null, [`roomMembers/${roomId}`]: null });
 }

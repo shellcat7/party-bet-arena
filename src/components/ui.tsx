@@ -202,7 +202,7 @@ export function EmptyState(props: {
   );
 }
 
-export function Coins(props: { value: number; signed?: boolean; unit?: boolean }) {
+export function Points(props: { value: number; signed?: boolean; unit?: boolean }) {
   const { formatNumber, formatSigned } = useI18n();
   const tone = props.signed
     ? props.value > 0
@@ -212,7 +212,7 @@ export function Coins(props: { value: number; signed?: boolean; unit?: boolean }
         : "neutral"
     : undefined;
   return (
-    <span className={tone ? `coins coins--${tone}` : "coins"}>
+    <span className={tone ? `points points--${tone}` : "points"}>
       {props.signed ? formatSigned(props.value) : formatNumber(props.value)}
       {props.unit !== false && <small>pt</small>}
     </span>

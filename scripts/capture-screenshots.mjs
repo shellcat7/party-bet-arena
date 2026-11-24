@@ -43,7 +43,7 @@ let page = await newPage();
 await shot(page, "launch");
 
 // Host view of the demo
-await page.getByRole("button", { name: /デモで試す/ }).click();
+await page.getByRole("button", { name: "デモを見る" }).click();
 await shot(page, "host-home");
 
 // A participant's bet slip
@@ -53,10 +53,10 @@ await page.locator(".racer").nth(1).click();
 await page.locator(".racer").nth(3).click();
 await page.getByLabel("ベット額").fill("150");
 await shot(page, "bet");
-await page.getByRole("button", { name: "この内容でベット" }).click();
+await page.getByRole("button", { name: "ベットする" }).click();
 
 // Host closes the final race and enters the result
-await page.getByLabel("デモ・表示中の視点").selectOption({ label: "👑 幹事" });
+await page.getByLabel("デモ・表示中の視点").selectOption({ label: "幹事" });
 await tab(page, "管理").click();
 await page.getByRole("radio", { name: "ルール" }).click();
 const races = page.getByRole("group", { name: "レース数" });
@@ -88,7 +88,7 @@ await shot(page, "history");
 
 // Dark theme
 const dark = await newPage({ colorScheme: "dark" });
-await dark.getByRole("button", { name: /デモで試す/ }).click();
+await dark.getByRole("button", { name: "デモを見る" }).click();
 await tab(dark, "ベット").click();
 await dark.locator(".racer").nth(2).click();
 await shot(dark, "bet-dark");

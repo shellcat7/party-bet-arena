@@ -101,6 +101,8 @@ export type RaceBetResult = {
   payout: number;
   delta: number;
   hit: boolean;
+  /** Refunded without effect: malformed, or a ticket type the final field made impossible to lose. */
+  voided?: boolean;
   placedBy: "self" | "host";
   createdAt: number;
 };

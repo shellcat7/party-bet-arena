@@ -12,7 +12,7 @@ import {
   Trophy,
   UserX,
 } from "lucide-react";
-import { Coins, EmptyState } from "../../components/ui";
+import { Points, EmptyState } from "../../components/ui";
 import { raceStatusCopy } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getAvailableBalance } from "../../lib/betting";
@@ -156,7 +156,7 @@ function RoomTopBar() {
       {me ? (
         <div className="balance-chip" aria-label={t("あなたの残高", "Your balance")}>
           <small>{t("残高", "Balance")}</small>
-          <Coins value={room.settings.allowDebt ? me.balance : getAvailableBalance(room, me.id)} />
+          <Points value={room.settings.allowDebt ? me.balance : getAvailableBalance(room, me.id)} />
         </div>
       ) : controller.isOnlineRoom ? (
         <button
@@ -239,7 +239,7 @@ function DemoBanner() {
             nav.reset({ name: next ? "bet" : "home" });
           }}
         >
-          <option value="host">{t("👑 幹事", "👑 Host")}</option>
+          <option value="host">{t("幹事", "Host")}</option>
           {room.players.map((player) => (
             <option key={player.id} value={player.id}>
               {player.emoji} {player.name}

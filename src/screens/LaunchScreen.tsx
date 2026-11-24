@@ -1,19 +1,4 @@
-import {
-  ChevronRight,
-  Crown,
-  Github,
-  LogIn,
-  Monitor,
-  Moon,
-  Play,
-  Plus,
-  QrCode,
-  Sun,
-  Ticket,
-  Trash2,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { ChevronRight, Github, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useConfirm } from "../components/feedback";
 import { BrandMark } from "../components/ui";
 import { raceStatusCopy } from "../i18n/copy";
@@ -61,12 +46,12 @@ export function ThemeSwitch() {
       type="button"
       onClick={() => setPreferences({ theme: next })}
       aria-label={t(
-        `テーマ: ${labels[preferences.theme]}（タップで${labels[next]}）`,
+        `表示テーマ：${labels[preferences.theme]}（${labels[next]}に切り替え）`,
         `Theme: ${labels[preferences.theme]} (switch to ${labels[next]})`,
       )}
       title={labels[preferences.theme]}
     >
-      <Icon size={20} />
+      <Icon size={18} />
     </button>
   );
 }
@@ -74,7 +59,8 @@ export function ThemeSwitch() {
 export function LaunchScreen() {
   const { t } = useI18n();
   const { controller, nav } = useApp();
-  const { actions, summaries, busy } = controller;
+  const { actions, summaries } = controller;
+  const hasRooms = summaries.length > 0;
 
   const startDemo = () => {
     actions.startDemo();
@@ -84,162 +70,129 @@ export function LaunchScreen() {
   return (
     <div className="launch">
       <header className="launch__bar">
-        <div className="brand">
-          <BrandMark size={36} />
-          <strong>{t("ランクパーティ", "Rank Party")}</strong>
-        </div>
+        {hasRooms ? (
+          <div className="brand">
+            <BrandMark size={28} />
+            <strong>{t("ランクパーティ", "Rank Party")}</strong>
+          </div>
+        ) : (
+          <span />
+        )}
         <div className="launch__tools">
           <LanguageSwitch />
           <ThemeSwitch />
         </div>
       </header>
 
-      <div className="launch__layout">
-        <section className="launch__hero">
-          <p className="eyebrow">{t("パーティゲーム用ベッティングアプリ", "Betting for game nights")}</p>
-          <h1>{t("いつもの勝負を、\n賭けて盛り上がろう。", "Bet on your\ngame night.")}</h1>
-          <p className="launch__lead">
-            {t(
-              "対戦ゲーム、カラオケ、ボードゲーム。身内の勝負に、競馬のようなオッズとベット、リアルタイムのランキングを。お金は使わず、遊び用コインだけで楽しめます。",
-              "Racing games, karaoke, board games — add race-track odds, bets and a live leaderboard to any friendly match. Play coins only, no real money.",
-            )}
-          </p>
+      <main className={hasRooms ? "launch__body" : "launch__body launch__body--intro"}>
+        {hasRooms ? (
+          <SavedRooms summaries={summaries} />
+        ) : (
+          <div className="launch__intro">
+            <BrandMark size={72} />
+            <h1>{t("ランクパーティ", "Rank Party")}</h1>
+            <p>
+              {t(
+                "ゲーム大会のオッズ・ベット・順位をまとめて管理",
+                "Odds, bets and standings for game nights",
+              )}
+            </p>
+          </div>
+        )}
+      </main>
 
-          <ol className="launch__steps">
-            <li>
-              <span>
-                <QrCode size={20} />
-              </span>
-              <div>
-                <strong>{t("ルームを作ってQRで招待", "Create a room, share the QR")}</strong>
-                <small>{t("アカウント登録は不要です", "No sign-up needed")}</small>
-              </div>
-            </li>
-            <li>
-              <span>
-                <Ticket size={20} />
-              </span>
-              <div>
-                <strong>{t("各自のスマホでベット", "Everyone bets from their phone")}</strong>
-                <small>{t("単勝・複勝・2連単・3連単", "Win, place, exacta, trifecta")}</small>
-              </div>
-            </li>
-            <li>
-              <span>
-                <Trophy size={20} />
-              </span>
-              <div>
-                <strong>{t("着順を入れると自動で精算", "Enter the finish, payouts are automatic")}</strong>
-                <small>{t("ランキングが全員の画面に即反映", "Rankings update on every screen")}</small>
-              </div>
-            </li>
-          </ol>
-        </section>
-
-        <section className="launch__actions" aria-label={t("はじめる", "Get started")}>
-          <button
-            className="launch-card launch-card--primary"
-            type="button"
-            onClick={() => nav.push({ name: "create" })}
-          >
-            <span className="launch-card__icon">
-              <Plus size={30} />
-            </span>
-            <span className="launch-card__copy">
-              <strong>{t("ルームを作る", "Create a room")}</strong>
-              <small>{t("幹事として勝負を始める", "Host a new game")}</small>
-            </span>
-            <ChevronRight size={22} aria-hidden="true" />
-          </button>
-          <button className="launch-card" type="button" onClick={() => nav.push({ name: "join" })}>
-            <span className="launch-card__icon launch-card__icon--dark">
-              <LogIn size={28} />
-            </span>
-            <span className="launch-card__copy">
-              <strong>{t("ルームに参加", "Join a room")}</strong>
-              <small>{t("招待コードかQRで参加", "Use an invite code or QR")}</small>
-            </span>
-            <ChevronRight size={22} aria-hidden="true" />
-          </button>
-          <button className="demo-link" type="button" onClick={startDemo}>
-            <Play size={18} />
-            <span>
-              <strong>{t("デモで試す", "Try the demo")}</strong>
-              <small>
-                {t("1台で幹事と参加者の両方を体験", "Explore host and player views on one device")}
-              </small>
-            </span>
-          </button>
-
-          {summaries.length > 0 && <SavedRooms summaries={summaries} busy={busy} />}
-        </section>
+      <div className="launch__actions">
+        <button
+          className="button button--primary button--block button--lg"
+          type="button"
+          onClick={() => nav.push({ name: "create" })}
+        >
+          {t("ルームを作成", "Create a room")}
+        </button>
+        <button
+          className="button button--secondary button--block button--lg"
+          type="button"
+          onClick={() => nav.push({ name: "join" })}
+        >
+          {t("招待コードで参加", "Join with a code")}
+        </button>
+        <button className="button button--ghost button--block" type="button" onClick={startDemo}>
+          {t("デモを見る", "View demo")}
+        </button>
       </div>
 
       <footer className="launch__footer">
         <p>
           {t(
-            "遊び用コインのみを扱います。現金・換金・景品のやり取りには使えません。",
-            "Play coins only. Not for real money, prizes or gambling.",
+            "ポイントは遊び用です。現金や景品とは交換できません。",
+            "Points are for play only and can't be exchanged for money or prizes.",
           )}
         </p>
         <a href={REPOSITORY_URL} target="_blank" rel="noreferrer">
-          <Github size={16} />
-          {t("ソースコード", "Source code")}
+          <Github size={14} aria-hidden="true" />
+          GitHub
         </a>
       </footer>
     </div>
   );
 }
 
-function SavedRooms(props: { summaries: RoomSummary[]; busy: boolean }) {
+function SavedRooms(props: { summaries: RoomSummary[] }) {
   const { t } = useI18n();
   const { controller, nav } = useApp();
-  const { actions } = controller;
+  const { actions, busy } = controller;
   const confirm = useConfirm();
   const status = raceStatusCopy(t);
+
   const remove = async (summary: RoomSummary) => {
     const ok = await confirm({
       title: t(`「${summary.name}」を削除しますか？`, `Delete “${summary.name}”?`),
       message:
         summary.role === "host"
           ? t(
-              "ルームと全員の記録が削除され、元に戻せません。",
-              "The room and everyone's records are deleted permanently.",
+              "ルームと全員の記録が削除されます。この操作は取り消せません。",
+              "The room and everyone's records will be deleted. This can't be undone.",
             )
-          : t("この端末の一覧から外します。ルーム自体は残ります。", "This removes it from this device only."),
-      confirmLabel: summary.role === "host" ? t("削除する", "Delete") : t("一覧から外す", "Remove"),
+          : t(
+              "この端末の一覧から削除します。ルームは削除されません。",
+              "This only removes it from this device.",
+            ),
+      confirmLabel: t("削除", "Delete"),
       tone: "danger",
     });
     if (ok) await actions.deleteRoom(summary.id);
   };
+
   const open = async (summary: RoomSummary) => {
-    if (await actions.openRoom(summary.id)) nav.reset(homeScreenFor(summary.role));
+    const role = await actions.openRoom(summary.id);
+    if (role) nav.reset(homeScreenFor(role));
   };
 
   return (
-    <section className="saved-rooms" aria-labelledby="saved-rooms-title">
-      <h2 id="saved-rooms-title">{t("最近のルーム", "Recent rooms")}</h2>
-      <ul>
+    <section aria-labelledby="saved-rooms-title">
+      <h2 id="saved-rooms-title" className="section-label">
+        {t("最近のルーム", "Recent rooms")}
+      </h2>
+      <ul className="list">
         {props.summaries.map((summary) => (
-          <li key={summary.id}>
+          <li key={summary.id} className="list__row saved-room">
             <button
               type="button"
-              className="saved-room"
+              className="saved-room__open"
               onClick={() => void open(summary)}
-              disabled={props.busy}
+              disabled={busy}
             >
-              <span className="saved-room__icon" aria-hidden="true">
-                {summary.role === "host" ? <Crown size={18} /> : <Users size={18} />}
-              </span>
               <span className="saved-room__copy">
                 <strong>{summary.name}</strong>
                 <small>
-                  {summary.role === "host" ? t("幹事", "Host") : t("参加者", "Player")} ·{" "}
+                  {summary.role === "host" ? t("幹事", "Host") : t("参加者", "Player")}
+                  {" ・ "}
                   {t(
                     `第${summary.currentRaceNumber}/${summary.maxRaces}レース`,
                     `Race ${summary.currentRaceNumber}/${summary.maxRaces}`,
-                  )}{" "}
-                  · {status[summary.status]}
+                  )}
+                  {" ・ "}
+                  {status[summary.status]}
                 </small>
               </span>
               <ChevronRight size={18} aria-hidden="true" />

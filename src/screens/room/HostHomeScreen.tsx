@@ -1,17 +1,6 @@
-import {
-  ArrowRight,
-  Check,
-  ClipboardList,
-  Flag,
-  Lock,
-  QrCode,
-  Ticket,
-  Trophy,
-  Unlock,
-  UserPlus,
-} from "lucide-react";
+import { Check } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { Avatar, Coins, Lane } from "../../components/ui";
+import { Avatar, Points, Lane } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { isFinalRace, isGameOver, rankPlayers } from "../../lib/settlement";
@@ -59,13 +48,10 @@ export function HostHomeScreen() {
     <div className="screen">
       <section className="card stage-card" aria-labelledby="stage-title">
         <div className="stage-card__head">
-          <div>
-            <span className="eyebrow">{t("現在のレース", "Current race")}</span>
-            <h2 id="stage-title">
-              {raceName(t, race.number)}
-              <small> / {room.settings.maxRaces}</small>
-            </h2>
-          </div>
+          <h2 id="stage-title">
+            {raceName(t, race.number)}
+            <small>{t(`（全${room.settings.maxRaces}レース）`, ` of ${room.settings.maxRaces}`)}</small>
+          </h2>
           {isFinalRace(room) && !gameOver && (
             <span className="badge badge--accent">{t("最終レース", "Final race")}</span>
           )}
@@ -114,7 +100,6 @@ export function HostHomeScreen() {
                       type="button"
                       onClick={() => nav.push({ name: "invite" })}
                     >
-                      <QrCode size={18} />
                       {t("招待する", "Invite")}
                     </button>
                   )}
@@ -123,7 +108,6 @@ export function HostHomeScreen() {
                     type="button"
                     onClick={() => nav.replace({ name: "manage", section: "bettors" })}
                   >
-                    <UserPlus size={18} />
                     {t("参加者を追加", "Add bettors")}
                   </button>
                 </div>
@@ -160,7 +144,6 @@ export function HostHomeScreen() {
                     onClick={() => void close()}
                     disabled={busy}
                   >
-                    <Lock size={18} />
                     {t("ベットを締め切る", "Close betting")}
                   </button>
                   <button
@@ -168,7 +151,6 @@ export function HostHomeScreen() {
                     type="button"
                     onClick={() => nav.replace({ name: "bet" })}
                   >
-                    <Ticket size={18} />
                     {t("代行でベットを入力", "Enter a bet for someone")}
                   </button>
                 </div>
@@ -190,7 +172,6 @@ export function HostHomeScreen() {
               type="button"
               onClick={() => nav.push({ name: "results" })}
             >
-              <Flag size={18} />
               {t("着順を入力する", "Enter results")}
             </button>
             <button
@@ -199,7 +180,6 @@ export function HostHomeScreen() {
               onClick={() => void actions.reopenBetting()}
               disabled={busy}
             >
-              <Unlock size={18} />
               {t("ベット受付を再開", "Reopen betting")}
             </button>
           </div>
@@ -213,8 +193,7 @@ export function HostHomeScreen() {
                 type="button"
                 onClick={() => nav.push({ name: "final" })}
               >
-                <Trophy size={18} />
-                {t("最終結果を発表", "Reveal final results")}
+                {t("最終結果を表示", "Show final results")}
               </button>
             ) : (
               <button
@@ -224,7 +203,6 @@ export function HostHomeScreen() {
                 disabled={busy}
               >
                 {t(`${raceName(t, race.number + 1)}を始める`, `Start ${raceName(t, race.number + 1)}`)}
-                <ArrowRight size={18} />
               </button>
             )}
             <button
@@ -232,29 +210,37 @@ export function HostHomeScreen() {
               type="button"
               onClick={() => nav.push({ name: "race", raceId: race.id })}
             >
-              <ClipboardList size={18} />
               {t("このレースの払戻を見る", "View this race's payouts")}
             </button>
           </div>
         )}
       </section>
 
-      <section className="stat-grid" aria-label={t("このレースの状況", "This race")}>
-        <div>
-          <small>{t("ベット総額", "Total pool")}</small>
-          <Coins value={pool} />
-        </div>
-        <div>
-          <small>{t("チケット", "Tickets")}</small>
-          <strong>{race.bets.length}</strong>
-        </div>
-        <div>
-          <small>{t("参加者", "Bettors")}</small>
-          <strong>
-            {room.players.length}
-            <small>/{room.settings.maxPlayers}</small>
-          </strong>
-        </div>
+      <section className="card" aria-labelledby="summary-title">
+        <h2 id="summary-title" className="card__title">
+          {t("このレース", "This race")}
+        </h2>
+        <dl className="summary">
+          <div>
+            <dt>{t("ベット総額", "Total staked")}</dt>
+            <dd>
+              <Points value={pool} />
+            </dd>
+          </div>
+          <div>
+            <dt>{t("チケット", "Tickets")}</dt>
+            <dd>{t(`${race.bets.length}枚`, `${race.bets.length}`)}</dd>
+          </div>
+          <div>
+            <dt>{t("参加者", "Bettors")}</dt>
+            <dd>
+              {t(
+                `${room.players.length} / ${room.settings.maxPlayers}人`,
+                `${room.players.length} / ${room.settings.maxPlayers}`,
+              )}
+            </dd>
+          </div>
+        </dl>
       </section>
 
       <section className="card" aria-labelledby="odds-title">
@@ -296,7 +282,7 @@ export function HostHomeScreen() {
                 <span className={`rank-badge rank-badge--${rank}`}>{rank}</span>
                 <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
                 <span>{player.name}</span>
-                <Coins value={player.balance} />
+                <Points value={player.balance} />
               </li>
             ))}
           </ol>

@@ -14,17 +14,18 @@ import {
   isFirebaseConfigured,
   joinRemoteRoom,
   placeRemoteBet,
+  removeRemoteMember,
   subscribeConnection,
   subscribeRemoteRoom,
+  transactRoom,
   updateRemoteRoom,
 } from "../lib/firebase";
 import { JOIN_CODE_PATTERN, normalizeCodeInput, parseInviteUrl, ROOM_ID_PATTERN } from "../lib/ids";
 import { buildRoomPatch } from "../lib/patch";
 import * as rooms from "../lib/room";
-import { isCompleteResult, setRaceStatus, settleRoom, startNextRace } from "../lib/settlement";
+import { advanceRace, closeBetting, isCompleteResult, reopenBetting, settleRace } from "../lib/settlement";
 import type { RoomSummary, Session } from "../lib/storage";
 import {
-  clearRoomSnapshot,
   forgetRoom,
   loadRoomSnapshot,
   loadRoomSummaries,
@@ -145,13 +146,11 @@ export function useRoomController({ t, notify, language }: Options) {
         setSummaries(rememberRoom(next, "host", true));
         return true;
       }
-      // Keep a local copy until the server confirms, so nothing is lost if the tab closes offline.
-      saveRoomSnapshot(next);
       try {
         // While offline the SDK queues the write and the promise stays pending; stop waiting after
-        // a while and tell the host, but the queued write still syncs once the connection returns.
+        // a while and tell the host. The queued write is sent when the connection returns, as long
+        // as the app stays open.
         await withTimeout(updateRemoteRoom(next.id, buildRoomPatch(previous, next)));
-        clearRoomSnapshot(next.id, next.updatedAt);
         return true;
       } catch (error) {
         reportError(error);
@@ -200,6 +199,8 @@ export function useRoomController({ t, notify, language }: Options) {
       (remote) => {
         if (cancelled) return;
         if (!remote) {
+          // Deleting a room also revokes read access; that follow-up error is expected.
+          cancelled = true;
           if (deletingRoomId.current === remoteRoomId) return;
           notify.info(t("このルームは幹事によって削除されました。", "The host deleted this room."));
           setSummaries(forgetRoom(remoteRoomId));
@@ -207,12 +208,19 @@ export function useRoomController({ t, notify, language }: Options) {
           return;
         }
         setRoom(remote);
-        clearRoomSnapshot(remote.id, remote.updatedAt);
       },
       (error) => {
-        if (cancelled) return;
-        reportError(error);
-        if (getFirebaseIssueKind(error) === "permission") closeRoom();
+        if (cancelled || deletingRoomId.current === remoteRoomId) return;
+        if (getFirebaseIssueKind(error) === "permission") {
+          // Membership was revoked (removed by the host) or the room no longer exists.
+          notify.info(
+            t("このルームにはアクセスできなくなりました。", "You no longer have access to this room."),
+          );
+          setSummaries(forgetRoom(remoteRoomId));
+          closeRoom();
+        } else {
+          reportError(error);
+        }
       },
     )
       .then((cleanup) => (cancelled ? cleanup() : (unsubscribe = cleanup)))
@@ -482,38 +490,39 @@ export function useRoomController({ t, notify, language }: Options) {
 
   /* ---------------------------------------------------------------------------- race control */
 
-  const closeBetting = useCallback(() => mutate((room) => setRaceStatus(room, "closed")), [mutate]);
-  const reopenBetting = useCallback(() => mutate((room) => setRaceStatus(room, "betting")), [mutate]);
-
   /**
-   * Settles from the freshest server copy: the race is closed first so the database rules stop
-   * accepting bets, then the result is applied to exactly the pool that was closed.
+   * Race transitions and payouts. Demo/offline rooms apply them locally; online rooms run them as
+   * database transactions against the server's current state, so a stale tab or a cached copy can
+   * never reopen a settled race, pay out twice, or settle without bets the server accepted.
    */
-  const settle = useCallback(
-    async (resultIds: string[]) => {
+  const transition = useCallback(
+    async (apply: (room: Room) => Room | null) => {
       const current = roomRef.current;
       if (!current) return false;
-      if (!isCompleteResult(current, resultIds)) {
+      if (!isRemoteRoom(current)) {
+        const next = apply(current);
+        if (!next) return false;
+        return mutate(() => next);
+      }
+      if (connection !== "online") {
         notify.error(
-          t("1着から最下位まで、すべての着順を選んでください。", "Rank every racer from first to last."),
+          t(
+            "オフラインのため実行できません。接続を確認してください。",
+            "You're offline. Reconnect and try again.",
+          ),
         );
         return false;
       }
-      if (!isRemoteRoom(current)) {
-        return mutate((room) => settleRoom(setRaceStatus(room, "closed"), resultIds));
-      }
       setBusy(true);
       try {
-        if (current.currentRace.status === "betting") {
-          await withTimeout(
-            updateRemoteRoom(current.id, buildRoomPatch(current, setRaceStatus(current, "closed"))),
+        const next = await withTimeout(transactRoom(current.id, apply));
+        if (!next) {
+          notify.info(
+            t("ほかの端末ですでに更新されています。", "This was already updated on another device."),
           );
+          return false;
         }
-        const fresh = (await withTimeout(fetchRemoteRoom(current.id))) ?? current;
-        if (fresh.currentRace.status === "settled") return true;
-        const settled = settleRoom(fresh, resultIds);
-        setRoom(settled);
-        await withTimeout(updateRemoteRoom(settled.id, buildRoomPatch(fresh, settled)));
+        setRoom(next);
         return true;
       } catch (error) {
         reportError(error);
@@ -522,10 +531,64 @@ export function useRoomController({ t, notify, language }: Options) {
         setBusy(false);
       }
     },
-    [mutate, notify, reportError, setRoom, t],
+    [connection, mutate, notify, reportError, setRoom, t],
   );
 
-  const nextRace = useCallback(() => mutate((room) => startNextRace(room)), [mutate]);
+  const raceId = () => roomRef.current?.currentRace.id ?? "";
+
+  const closeBettingAction = useCallback(() => {
+    const id = raceId();
+    return transition((room) => closeBetting(room, id));
+  }, [transition]);
+
+  const reopenBettingAction = useCallback(() => {
+    const id = raceId();
+    return transition((room) => reopenBetting(room, id));
+  }, [transition]);
+
+  const settle = useCallback(
+    (resultIds: string[]) => {
+      const current = roomRef.current;
+      if (!current) return Promise.resolve(false);
+      if (!isCompleteResult(current, resultIds)) {
+        notify.error(
+          t("1着から最下位まで、すべての着順を選んでください。", "Rank every racer from first to last."),
+        );
+        return Promise.resolve(false);
+      }
+      const id = current.currentRace.id;
+      return transition((room) => settleRace(room, id, resultIds));
+    },
+    [notify, t, transition],
+  );
+
+  const nextRace = useCallback(() => {
+    const id = raceId();
+    return transition((room) => advanceRace(room, id));
+  }, [transition]);
+
+  const grantBonus = useCallback(
+    (playerId: string, amount: number) =>
+      transition((room) =>
+        room.players.some((player) => player.id === playerId)
+          ? rooms.grantBonus(room, playerId, amount)
+          : null,
+      ),
+    [transition],
+  );
+
+  const removePlayer = useCallback(
+    async (playerId: string) => {
+      const current = roomRef.current;
+      const uid = current?.players.find((player) => player.id === playerId)?.uid;
+      const ok = await mutate((room) => rooms.removePlayer(room, playerId));
+      if (ok && current && uid && isRemoteRoom(current)) {
+        await removeRemoteMember(current.id, uid).catch(reportError);
+      }
+      return ok;
+    },
+    [mutate, reportError],
+  );
 
   /* ------------------------------------------------------------------------- derived values */
 
@@ -542,8 +605,8 @@ export function useRoomController({ t, notify, language }: Options) {
       closeRoom,
       deleteRoom,
       placeBet,
-      closeBetting,
-      reopenBetting,
+      closeBetting: closeBettingAction,
+      reopenBetting: reopenBettingAction,
       settle,
       nextRace,
       renameRoom: (name: string) => mutate((current) => rooms.renameRoom(current, name)),
@@ -555,10 +618,9 @@ export function useRoomController({ t, notify, language }: Options) {
         ),
       updatePlayer: (playerId: string, patch: Parameters<typeof rooms.updatePlayer>[2]) =>
         mutate((current) => rooms.updatePlayer(current, playerId, patch)),
-      removePlayer: (playerId: string) => mutate((current) => rooms.removePlayer(current, playerId)),
+      removePlayer,
       removeBet: (betId: string) => mutate((current) => rooms.removeBet(current, betId)),
-      grantBonus: (playerId: string, amount: number) =>
-        mutate((current) => rooms.grantBonus(current, playerId, amount)),
+      grantBonus,
       addContestant: (input: rooms.NewContestantInput) =>
         mutate((current) =>
           rooms.canAddContestant(current) ? rooms.addContestant(current, input) : current,
@@ -574,7 +636,7 @@ export function useRoomController({ t, notify, language }: Options) {
       recalculateOdds: () => mutate((current) => rooms.recalculateOdds(current)),
     }),
     [
-      closeBetting,
+      closeBettingAction,
       closeRoom,
       createRoom,
       deleteRoom,
@@ -583,7 +645,9 @@ export function useRoomController({ t, notify, language }: Options) {
       nextRace,
       openRoom,
       placeBet,
-      reopenBetting,
+      removePlayer,
+      reopenBettingAction,
+      grantBonus,
       settle,
       startDemo,
       switchPerspective,

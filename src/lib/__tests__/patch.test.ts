@@ -38,10 +38,16 @@ describe("buildRoomPatch", () => {
     expect(buildRoomPatch(room, next)).toMatchObject({ "players/alice": null });
   });
 
-  it("updates one player record without touching the others", () => {
+  it("updates only the changed field of a player, so a stale view can't roll back a balance", () => {
     const room = testRoom();
     const patch = buildRoomPatch(room, updatePlayer(room, "bob", { emoji: "🚀" }));
-    expect(Object.keys(patch).sort()).toEqual(["players/bob", "updatedAt"]);
+    expect(patch).toEqual({ "players/bob/emoji": "🚀", updatedAt: expect.any(Number) });
+  });
+
+  it("writes a new player as a whole record", () => {
+    const room = testRoom();
+    const next = { ...room, players: [...room.players, { ...room.players[0], id: "carol", uid: "carol" }] };
+    expect(buildRoomPatch(room, next)["players/carol"]).toMatchObject({ id: "carol" });
   });
 
   it("only changes status when the host closes betting", () => {
@@ -62,7 +68,7 @@ describe("buildRoomPatch", () => {
       "currentRace/resultIds",
       "currentRace/settledAt",
       "currentRace/status",
-      "players/alice",
+      "players/alice/balance",
       "raceHistory",
       "updatedAt",
     ]);

@@ -156,6 +156,35 @@ describe("room mutations", () => {
     expect(next.currentRace.bets.map((bet) => bet.playerId)).toEqual(["bob"]);
   });
 
+  it("voids place tickets when removing a racer leaves three or fewer", () => {
+    const room = addBet(
+      testRoom(),
+      createBet({ playerId: "alice", contestantIds: ["B"], type: "place", amount: 100, placedBy: "host" }),
+    );
+    expect(removeContestant(room, "D").currentRace.bets).toEqual([]);
+  });
+
+  it("freezes everything that affects payouts once betting closes", () => {
+    const room = testRoom({ autoOdds: false, allowDebt: false });
+    const closed = { ...room, currentRace: { ...room.currentRace, status: "closed" as const } };
+    const updated = updateSettings(closed, {
+      autoOdds: true,
+      allowDebt: true,
+      marketOdds: true,
+      maxRaces: 12,
+    });
+    expect(updated.settings).toMatchObject({
+      autoOdds: false,
+      allowDebt: false,
+      marketOdds: false,
+      maxRaces: 12,
+    });
+    expect(setContestantOdds(closed, "A", 9)).toBe(closed);
+    expect(updateContestant(closed, "A", { cpuLevel: 1 })).toBe(closed);
+    expect(updateContestant(closed, "A", { name: "Renamed" }).contestants[0].name).toBe("Renamed");
+    expect(removeContestant(closed, "A")).toBe(closed);
+  });
+
   it("removes a bettor together with their open tickets", () => {
     const room = addBet(
       testRoom(),

@@ -121,8 +121,8 @@ export function JoinScreen() {
         {prefilled && (
           <p className="notice notice--success" role="status">
             {t(
-              "招待リンクからルーム情報を入力しました。表示名を決めて参加しましょう。",
-              "Room details filled in from your invitation. Pick a display name and join.",
+              "招待リンクの情報を入力しました。表示名を入力して参加してください。",
+              "Invitation details filled in. Enter a display name to join.",
             )}
           </p>
         )}

@@ -6,7 +6,7 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
   await freshStart(page);
 
   // Create a room with two races.
-  await page.getByRole("button", { name: /ルームを作る/ }).click();
+  await page.getByRole("button", { name: "ルームを作成" }).click();
   await page.getByLabel("ルーム名").fill("E2E カップ");
   const races = page.getByRole("group", { name: "レース数" });
   while ((await races.locator("output").textContent()) !== "2") {
@@ -14,7 +14,7 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
   }
   await page.getByRole("button", { name: "ルームを作成" }).click();
   await expect(page.getByRole("heading", { name: "ルームを作成しました" })).toBeVisible();
-  await page.getByRole("button", { name: "幹事画面へ進む" }).click();
+  await page.getByRole("button", { name: "進行画面へ" }).click();
 
   // Add three bettors who don't have phones.
   await page.getByRole("button", { name: "参加者を追加" }).first().click();
@@ -29,7 +29,7 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
     await nav(page, "ベット").click();
     for (let index = 0; index < 3; index += 1) {
       await page.locator(".racer").nth(index).click();
-      await page.getByRole("button", { name: "この内容でベット" }).click();
+      await page.getByRole("button", { name: "ベットする" }).click();
       await expect(page.getByRole("status").filter({ hasText: "ベットを受け付けました" })).toBeVisible();
     }
     await expect(page.locator(".ticket-list li")).toHaveCount(3);
@@ -63,7 +63,7 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
 
   // Browser back returns to the host screen instead of leaving the app.
   await page.goBack();
-  await expect(page.getByRole("button", { name: "最終結果を発表" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "最終結果を表示" })).toBeVisible();
 
   // The room survives a reload.
   await page.reload();
@@ -75,13 +75,13 @@ test("a host runs a complete two-race game on one device", async ({ page }) => {
 
 test("betting validates the stake against the available balance", async ({ page }) => {
   await freshStart(page);
-  await page.getByRole("button", { name: /デモで試す/ }).click();
+  await page.getByRole("button", { name: "デモを見る" }).click();
   await nav(page, "ベット").click();
   await page.getByRole("radio", { name: /たくみ/ }).click();
   await page.locator(".racer").first().click();
   await page.getByLabel("ベット額").fill("999999");
   await expect(page.getByRole("alert")).toHaveText("残高が足りません");
-  await expect(page.getByRole("button", { name: "この内容でベット" })).toBeDisabled();
+  await expect(page.getByRole("button", { name: "ベットする" })).toBeDisabled();
   await page.getByRole("button", { name: "全額" }).click();
-  await expect(page.getByRole("button", { name: "この内容でベット" })).toBeEnabled();
+  await expect(page.getByRole("button", { name: "ベットする" })).toBeEnabled();
 });

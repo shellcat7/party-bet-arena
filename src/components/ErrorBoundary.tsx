@@ -23,9 +23,6 @@ export class ErrorBoundary extends Component<Props, State> {
       <main className="app">
         <section className="app-frame">
           <div className="screen crash">
-            <span className="crash__icon" aria-hidden="true">
-              ⚠️
-            </span>
             <h1>{ja ? "問題が発生しました" : "Something went wrong"}</h1>
             <p>
               {ja

@@ -9,7 +9,7 @@ import {
   PLAYER_COLORS,
 } from "./constants";
 import { createId, createJoinCode, createRoomId } from "./ids";
-import { calculateAutoOdds, clampOdds, clampRating } from "./odds";
+import { calculateAutoOdds, clampOdds, clampRating, isBetTypeAvailable } from "./odds";
 import { raceLabel, settleRoom, startNextRace } from "./settlement";
 import type {
   Bet,
@@ -259,8 +259,14 @@ export function renameRoom(room: Room, name: string): Room {
 
 export type SettingsPatch = Partial<RoomSettings> & { startingBalance?: number };
 
+/** Settings that change what a ticket pays; frozen once betting closes. */
+const PAYOUT_SETTINGS = ["autoOdds", "marketOdds", "allowDebt"] as const;
+
+const isBettingOpen = (room: Room) => room.currentRace.status === "betting";
+
 export function updateSettings(room: Room, patch: SettingsPatch): Room {
   const { startingBalance, ...settingsPatch } = patch;
+  if (!isBettingOpen(room)) for (const key of PAYOUT_SETTINGS) delete settingsPatch[key];
   const settings: RoomSettings = { ...room.settings, ...settingsPatch };
   settings.maxRaces = Math.max(clampRaceCount(settings.maxRaces), room.currentRace.number);
   settings.maxPlayers = Math.max(clampBettorLimit(settings.maxPlayers), Math.min(room.players.length, 8));
@@ -268,8 +274,9 @@ export function updateSettings(room: Room, patch: SettingsPatch): Room {
   settings.specialBonus = clampInt(settings.specialBonus, 0, LIMITS.maxStake, 100);
   const next: Room = { ...room, settings };
   if (startingBalance !== undefined) next.startingBalance = clampBalance(startingBalance);
-  if (patch.autoOdds === true && !room.settings.autoOdds)
+  if (settingsPatch.autoOdds === true && !room.settings.autoOdds) {
     next.contestants = calculateAutoOdds(room.contestants);
+  }
   return touch(next);
 }
 
@@ -383,14 +390,18 @@ export function canRemoveContestant(room: Room) {
 
 /** Removing a racer voids every open ticket that includes them. */
 export function removeContestant(room: Room, contestantId: string): Room {
+  if (!canRemoveContestant(room)) return room;
   const contestants = room.contestants.filter((contestant) => contestant.id !== contestantId);
   return touch({
     ...room,
     contestants: room.settings.autoOdds ? calculateAutoOdds(contestants) : contestants,
     currentRace: {
       ...room.currentRace,
+      // Void tickets on the removed racer, and tickets the smaller field makes impossible to lose.
       bets: room.currentRace.bets.filter(
-        (bet) => !(bet.contestantIds ?? [bet.contestantId]).includes(contestantId),
+        (bet) =>
+          !(bet.contestantIds ?? [bet.contestantId]).includes(contestantId) &&
+          isBetTypeAvailable(bet.type, contestants.length),
       ),
       resultIds: room.currentRace.resultIds.filter((id) => id !== contestantId),
     },
@@ -411,6 +422,7 @@ export function updateContestant(room: Room, contestantId: string, patch: Contes
       : contestant,
   );
   const affectsOdds = patch.cpuLevel !== undefined || patch.isCpu !== undefined;
+  if (affectsOdds && !isBettingOpen(room)) return room;
   return touch({
     ...room,
     contestants: affectsOdds && room.settings.autoOdds ? calculateAutoOdds(contestants) : contestants,
@@ -419,6 +431,7 @@ export function updateContestant(room: Room, contestantId: string, patch: Contes
 
 /** Manually editing odds switches the room to manual odds so the value sticks. */
 export function setContestantOdds(room: Room, contestantId: string, odds: number): Room {
+  if (!isBettingOpen(room)) return room;
   return touch({
     ...room,
     settings: { ...room.settings, autoOdds: false },
@@ -429,6 +442,7 @@ export function setContestantOdds(room: Room, contestantId: string, odds: number
 }
 
 export function recalculateOdds(room: Room): Room {
+  if (!isBettingOpen(room)) return room;
   return touch({
     ...room,
     settings: { ...room.settings, autoOdds: true },

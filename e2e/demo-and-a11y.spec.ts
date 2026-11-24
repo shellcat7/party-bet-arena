@@ -24,7 +24,7 @@ async function expectAccessible(page: Page) {
 test("the demo shows both the host and a participant's view", async ({ page }) => {
   const errors = trackErrors(page);
   await freshStart(page);
-  await page.getByRole("button", { name: /デモで試す/ }).click();
+  await page.getByRole("button", { name: "デモを見る" }).click();
 
   await expect(page.getByRole("heading", { name: /第3レース/ })).toBeVisible();
   await expect(page.getByText("2 / 4人")).toBeVisible();
@@ -36,8 +36,8 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await page.locator(".racer").nth(1).click();
   await page.locator(".racer").nth(0).click();
   await expect(page.locator(".ticket__pick").first()).toContainText("ブルー");
-  await page.getByRole("button", { name: "この内容でベット" }).click();
-  await expect(page.getByRole("heading", { name: "ベット完了！" })).toBeVisible();
+  await page.getByRole("button", { name: "ベットする" }).click();
+  await expect(page.getByRole("heading", { name: "ベットを受け付けました" })).toBeVisible();
   await expect(page.getByText("あと1人のベットを待っています")).toBeVisible();
 
   // History with the balance chart and its table view.
@@ -53,9 +53,9 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
 test("the interface can switch to English", async ({ page }) => {
   await freshStart(page);
   await page.getByRole("radio", { name: "EN" }).click();
-  await expect(page.getByRole("button", { name: /Create a room/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Create a room" })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole("heading", { name: /Bet on your/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Rank Party" })).toBeVisible();
 });
 
 test.describe("accessibility and layout", () => {
@@ -65,10 +65,10 @@ test.describe("accessibility and layout", () => {
     await freshStart(page);
     await expectAccessible(page);
     await expectNoHorizontalOverflow(page);
-    await page.getByRole("button", { name: /ルームに参加/ }).click();
+    await page.getByRole("button", { name: "招待コードで参加" }).click();
     await expectAccessible(page);
     await page.getByRole("button", { name: "戻る" }).click();
-    await page.getByRole("button", { name: /ルームを作る/ }).click();
+    await page.getByRole("button", { name: "ルームを作成" }).click();
     await expectAccessible(page);
     await expectNoHorizontalOverflow(page);
   });
@@ -77,7 +77,7 @@ test.describe("accessibility and layout", () => {
     test(`room screens (${theme})`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: theme });
       await freshStart(page);
-      await page.getByRole("button", { name: /デモで試す/ }).click();
+      await page.getByRole("button", { name: "デモを見る" }).click();
       for (const tab of ["進行", "ベット", "順位", "管理"]) {
         await nav(page, tab).click();
         await expectAccessible(page);
@@ -93,10 +93,10 @@ test.describe("small phones (320px)", () => {
   test("no screen scrolls horizontally", async ({ page }) => {
     await freshStart(page);
     await expectNoHorizontalOverflow(page);
-    await page.getByRole("button", { name: /ルームを作る/ }).click();
+    await page.getByRole("button", { name: "ルームを作成" }).click();
     await expectNoHorizontalOverflow(page);
     await page.getByRole("button", { name: "戻る" }).click();
-    await page.getByRole("button", { name: /デモで試す/ }).click();
+    await page.getByRole("button", { name: "デモを見る" }).click();
     for (const tab of ["進行", "ベット", "順位", "管理"]) {
       await nav(page, tab).click();
       await expectNoHorizontalOverflow(page);

@@ -46,6 +46,7 @@ export function useNavigation(initial: Screen) {
   const [stack, setStack] = useState<Screen[]>([initial]);
   // Mirrors stack.length; kept in a ref so callbacks stay stable and never read render state.
   const depth = useRef(1);
+  const rewinding = useRef(false);
 
   useEffect(() => {
     window.history.replaceState(
@@ -53,6 +54,12 @@ export function useNavigation(initial: Screen) {
       "",
     );
     const onPopState = (event: PopStateEvent) => {
+      if (rewinding.current) {
+        // Finished rewinding after reset(): this entry is now the root of the new stack.
+        rewinding.current = false;
+        window.history.replaceState({ partyBetDepth: 1 } satisfies HistoryState, "");
+        return;
+      }
       const target = Math.max(1, (event.state as HistoryState | null)?.partyBetDepth ?? 1);
       if (target >= depth.current) return;
       depth.current = target;
@@ -73,11 +80,17 @@ export function useNavigation(initial: Screen) {
     setStack((current) => [...current.slice(0, -1), screen]);
   }, []);
 
-  /** Starts a fresh stack, e.g. when entering or leaving a room. */
+  /** Starts a fresh stack, rewinding the browser history so old entries don't pile up. */
   const reset = useCallback((screen: Screen) => {
+    const extra = depth.current - 1;
     depth.current = 1;
-    window.history.replaceState({ partyBetDepth: 1 } satisfies HistoryState, "");
     setStack([screen]);
+    if (extra > 0) {
+      rewinding.current = true;
+      window.history.go(-extra);
+    } else {
+      window.history.replaceState({ partyBetDepth: 1 } satisfies HistoryState, "");
+    }
   }, []);
 
   const back = useCallback(() => {

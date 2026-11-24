@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { addBet, createBet } from "../betting";
 import {
+  advanceRace,
   balanceSeries,
+  closeBetting,
   gameHighlights,
   isBetHit,
   isCompleteResult,
@@ -9,6 +11,8 @@ import {
   previewSettlement,
   rankMovement,
   rankPlayers,
+  reopenBetting,
+  settleRace,
   settleRoom,
   startNextRace,
 } from "../settlement";
@@ -148,5 +152,53 @@ describe("rankings", () => {
     expect(highlights.biggestWin?.playerId).toBe("bob");
     expect(highlights.favouriteWinner).toMatchObject({ contestantId: "C", wins: 1 });
     expect(highlights.sharpshooter?.hits).toBe(1);
+  });
+});
+
+describe("guarded transitions", () => {
+  it("only move forward from the state the caller saw", () => {
+    const room = testRoom();
+    const raceId = room.currentRace.id;
+    const closed = closeBetting(room, raceId)!;
+    expect(closed.currentRace.status).toBe("closed");
+    expect(closeBetting(closed, raceId)).toBeNull();
+    expect(reopenBetting(closed, raceId)?.currentRace.status).toBe("betting");
+    expect(reopenBetting(room, raceId)).toBeNull();
+    expect(closeBetting(room, "another-race")).toBeNull();
+  });
+
+  it("settle once: a second tab can't pay out the same race twice", () => {
+    const room = withBet(testRoom(), "alice", "win", ["C"], 100);
+    const raceId = room.currentRace.id;
+    const settled = settleRace(room, raceId, order)!;
+    expect(settled.players[0].balance).toBe(1300);
+    expect(settleRace(settled, raceId, order)).toBeNull();
+    expect(reopenBetting(settled, raceId)).toBeNull();
+    expect(settleRace(room, raceId, ["C", "A"])).toBeNull();
+  });
+
+  it("start the next race only once, and never past the final race", () => {
+    const settled = settleRoom(testRoom({ maxRaces: 2 }), order);
+    const next = advanceRace(settled, settled.currentRace.id)!;
+    expect(next.currentRace.number).toBe(2);
+    expect(advanceRace(next, settled.currentRace.id)).toBeNull();
+    const last = settleRoom(next, order);
+    expect(advanceRace(last, last.currentRace.id)).toBeNull();
+  });
+});
+
+describe("ticket types the field makes impossible to lose", () => {
+  it("are refunded at settlement", () => {
+    const room = testRoom();
+    const small = withBet(
+      { ...room, contestants: room.contestants.slice(0, 3) },
+      "alice",
+      "place",
+      ["A"],
+      500,
+    );
+    const settled = settleRoom(small, ["C", "B", "A"]);
+    expect(settled.players[0].balance).toBe(1000);
+    expect(settled.raceHistory[0].bets[0]).toMatchObject({ voided: true, payout: 0, delta: 0 });
   });
 });

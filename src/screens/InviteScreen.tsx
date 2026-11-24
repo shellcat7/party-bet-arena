@@ -1,5 +1,5 @@
 import QRCode from "react-qr-code";
-import { Check, Copy, Link2, Share2, WifiOff } from "lucide-react";
+import { Copy, Link2, Share2, WifiOff } from "lucide-react";
 import { useNotify } from "../components/feedback";
 import { PageHeader } from "../components/ui";
 import { useI18n } from "../i18n/i18n";
@@ -29,8 +29,8 @@ export default function InviteScreen(props: { isNew: boolean }) {
 
   const share = async () => {
     const text = t(
-      `「${room.name}」に参加しよう！リンクを開くと参加画面が表示されます。`,
-      `Join “${room.name}”! Open the link to join.`,
+      `「${room.name}」への招待です。リンクを開いて参加してください。`,
+      `You're invited to “${room.name}”. Open the link to join.`,
     );
     if (navigator.share) {
       try {
@@ -48,17 +48,11 @@ export default function InviteScreen(props: { isNew: boolean }) {
 
   return (
     <div className="screen screen--entry invite">
-      {props.isNew ? (
-        <header className="invite__hero">
-          <span className="invite__check" aria-hidden="true">
-            <Check size={30} strokeWidth={3} />
-          </span>
-          <h1>{t("ルームを作成しました", "Your room is ready")}</h1>
-          <p>{room.name}</p>
-        </header>
-      ) : (
-        <PageHeader title={t("友だちを招待", "Invite friends")} subtitle={room.name} onBack={nav.back} />
-      )}
+      <PageHeader
+        title={props.isNew ? t("ルームを作成しました", "Room created") : t("参加者を招待", "Invite players")}
+        subtitle={room.name}
+        onBack={props.isNew ? undefined : nav.back}
+      />
 
       {online ? (
         <>
@@ -149,7 +143,7 @@ export default function InviteScreen(props: { isNew: boolean }) {
 
       <div className="sticky-actions">
         <button className="button button--primary button--block button--lg" type="button" onClick={done}>
-          {props.isNew ? t("幹事画面へ進む", "Go to host screen") : t("閉じる", "Done")}
+          {props.isNew ? t("進行画面へ", "Continue") : t("閉じる", "Done")}
         </button>
       </div>
     </div>

@@ -51,11 +51,23 @@ function diffKeyed(
   prev: Record<string, unknown>,
   next: Record<string, unknown>,
   patch: RoomPatch,
+  perField = false,
 ) {
   for (const key of new Set([...Object.keys(prev), ...Object.keys(next)])) {
-    if (!deepEqual(prev[key], next[key])) patch[`${prefix}/${key}`] = next[key] ?? null;
+    const before = prev[key];
+    const after = next[key];
+    if (deepEqual(before, after)) continue;
+    if (perField && isRecord(before) && isRecord(after)) {
+      // Write only the changed fields, so editing a name from an older view can't roll back a balance.
+      diffKeyed(`${prefix}/${key}`, before, after, patch);
+    } else {
+      patch[`${prefix}/${key}`] = after ?? null;
+    }
   }
 }
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
 
 /**
  * Computes a minimal multi-location update for `update(ref(db, "rooms/<id>"), patch)`.
@@ -81,6 +93,7 @@ export function buildRoomPatch(prevRoom: Room, nextRoom: Room): RoomPatch {
         prev.players as Record<string, unknown>,
         next.players as Record<string, unknown>,
         patch,
+        true,
       );
       continue;
     }
