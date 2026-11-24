@@ -21,7 +21,7 @@ src/
 │   └── navigation.ts          履歴APIと同期するスタック型ナビゲーション
 ├── screens/        画面（room/ 配下はルーム内）
 ├── components/     共通UI
-├── i18n/           日英の文言
+├── i18n/           翻訳の仕組みと各言語のカタログ
 └── styles/         tokens → base → components → screens
 ```
 
@@ -60,9 +60,8 @@ sequenceDiagram
   P->>DB: set rooms/{id}/players/{uid}（初期残高のみ許可）
   P->>DB: set currentRace/bets/{uid}（受付中・残高内・1枚）
   DB-->>H: onValue（ベット状況がリアルタイムに更新）
-  H->>DB: update {currentRace/status: "closed"}
-  H->>DB: get rooms/{id}（締切後の最新プール）
-  H->>DB: update {players/*, raceHistory, currentRace/*}
+  H->>DB: transaction rooms/{id}（受付中なら締切）
+  H->>DB: transaction rooms/{id}（締切済みなら、サーバー上のプールで精算）
   DB-->>P: onValue → 結果画面へ自動遷移
 ```
 
