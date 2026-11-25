@@ -97,15 +97,17 @@ export function PassPicks(props: { picks: PassPick[] }) {
   );
 }
 
+/** The stub states where the ticket stands; it is announced when that changes. */
 export function PassStub(props: {
   status: PassStatus;
   title: string;
   detail?: ReactNode;
   value?: ReactNode;
+  action?: ReactNode;
 }) {
   return (
     <div className={`pass-stub pass-stub--${props.status}`}>
-      <span className="pass-stub__state">
+      <span className="pass-stub__state" role="status">
         <i aria-hidden="true" />
         <span>
           <strong>{props.title}</strong>
@@ -113,6 +115,7 @@ export function PassStub(props: {
         </span>
       </span>
       {props.value && <span className="pass-stub__value">{props.value}</span>}
+      {props.action}
     </div>
   );
 }

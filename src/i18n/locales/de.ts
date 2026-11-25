@@ -28,7 +28,6 @@ const messages: Record<string, string> = {
   "Balance over time": "Guthaben im Verlauf",
   Bet: "Wetten",
   "Bet placed": "Wette abgegeben",
-  "Bet status": "Wettstatus",
   "Bet type": "Wettart",
   Betting: "Wetten",
   "Betting closes automatically when you confirm.":
@@ -45,7 +44,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "Bonusempfänger",
   "By host": "Von der Spielleitung",
   Cancel: "Abbrechen",
-  "Cancel and choose again": "Zurückziehen und neu wählen",
   "Cancel bet": "Zurückziehen",
   "Cancel this bet?": "Wette zurückziehen?",
   "Choose a racer": "Wähle einen Teilnehmer",
@@ -388,18 +386,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "Für alle, die später dazukommen",
   Standings: "Rangliste",
   "You're in": "Wette abgegeben",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "{count, plural, one {Es fehlt noch # Tipper.} other {Es fehlen noch # Tipper.}} Das Rennen beginnt, wenn die Wetten geschlossen werden.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "Alle haben getippt. Das Rennen beginnt, sobald die Spielleitung die Wetten schließt.",
   "Race in progress": "Rennen läuft",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "Die Wetten sind geschlossen. Das Ergebnis erscheint hier, sobald die Spielleitung die Platzierung einträgt.",
   "The result is in": "Das Ergebnis steht fest",
   "Your ticket hit": "Treffer",
   "No luck this time": "Diesmal kein Glück",
-  "You can bet here as soon as the next race opens.":
-    "Sobald das nächste Rennen startet, kannst du hier tippen.",
   "All {max} races finished": "Alle {max} Rennen beendet",
   "The tournament is over": "Das Turnier ist vorbei",
   "See the final standings and records.": "Sieh dir die Endwertung und die Rekorde an.",
@@ -417,22 +407,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "Per Nachricht senden",
   "For joining by hand": "Zum manuellen Beitreten",
   "Send it with the room ID": "Zusammen mit der Raum-ID senden",
-  "Possible until betting closes": "Möglich bis Wettschluss",
   "This ticket was voided": "Diese Wette wurde storniert",
-  "Result and payouts": "Ergebnis und Auszahlungen",
-  "Finishing order and everyone's result": "Platzierung und Bilanz aller",
-  "The odds are fixed when betting closes": "Die Quote steht bei Wettschluss fest",
-  "The race starts when betting closes": "Das Rennen beginnt mit Wettschluss",
   "Ticket for {race}": "Wettschein für {race}",
   Type: "Art",
   "If it hits (est.)": "Bei Treffer (ca.)",
   "If it hits": "Bei Treffer",
   "Placed at": "Abgegeben",
   "Ticket no.": "Nr.",
-  "Rank {rank} of {count}": "Platz {rank} von {count}",
-  "Earlier races": "Frühere Rennen",
-  "{count, plural, one {# race settled} other {# races settled}}":
-    "{count, plural, one {# Rennen abgerechnet} other {# Rennen abgerechnet}}",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count, plural, one {Es fehlt noch # Tipper} other {Es fehlen noch # Tipper}}",
+  "Everyone has bet": "Alle haben getippt",
+  "View result": "Ergebnis ansehen",
+  "You didn't bet on this race. The result will appear here.":
+    "Du hast bei diesem Rennen nicht getippt. Das Ergebnis erscheint hier.",
 };
 
 export default messages;

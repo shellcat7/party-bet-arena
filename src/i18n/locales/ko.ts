@@ -27,7 +27,6 @@ const messages: Record<string, string> = {
   "Balance over time": "잔액 추이",
   Bet: "베팅",
   "Bet placed": "베팅 완료",
-  "Bet status": "베팅 현황",
   "Bet type": "베팅 종류",
   Betting: "베팅 접수",
   "Betting closes automatically when you confirm.": "확정하면 베팅이 자동으로 마감돼요.",
@@ -43,7 +42,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "보너스 받을 참가자",
   "By host": "대리 입력",
   Cancel: "취소",
-  "Cancel and choose again": "취소하고 다시 선택",
   "Cancel bet": "베팅 취소",
   "Cancel this bet?": "베팅을 취소할까요?",
   "Choose a racer": "출전자를 선택해 주세요",
@@ -376,17 +374,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "중간에 참가하는 사람용",
   Standings: "순위",
   "You're in": "베팅 완료",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "아직 {count}명의 베팅을 기다리고 있습니다. 마감되면 경주가 시작됩니다.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "모두 베팅했습니다. 진행자가 마감하면 경주가 시작됩니다.",
   "Race in progress": "경주 진행 중",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "베팅이 마감되었습니다. 진행자가 순위를 입력하면 결과가 이 화면에 표시됩니다.",
   "The result is in": "결과가 나왔습니다",
   "Your ticket hit": "적중했습니다",
   "No luck this time": "이번에는 빗나갔습니다",
-  "You can bet here as soon as the next race opens.": "다음 경주가 시작되면 이 화면에서 베팅할 수 있습니다.",
   "All {max} races finished": "전체 {max}경주 종료",
   "The tournament is over": "대회가 끝났습니다",
   "See the final standings and records.": "최종 순위와 기록을 확인할 수 있습니다.",
@@ -404,21 +395,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "메시지로 보내기",
   "For joining by hand": "직접 입력해 참가하는 사람용",
   "Send it with the room ID": "방 ID와 함께 보내기",
-  "Possible until betting closes": "마감 전까지 변경 가능",
   "This ticket was voided": "이 베팅권은 무효가 되었습니다",
-  "Result and payouts": "결과와 배당",
-  "Finishing order and everyone's result": "순위와 모두의 수지",
-  "The odds are fixed when betting closes": "배당은 마감 시 확정됩니다",
-  "The race starts when betting closes": "마감되면 경주가 시작됩니다",
   "Ticket for {race}": "{race} 베팅권",
   Type: "종류",
   "If it hits (est.)": "적중 시 (예상)",
   "If it hits": "적중 시",
   "Placed at": "접수",
   "Ticket no.": "번호",
-  "Rank {rank} of {count}": "현재 {rank}위 ({count}명 중)",
-  "Earlier races": "지난 결과",
-  "{count, plural, one {# race settled} other {# races settled}}": "{count}경주 확정",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count}명의 베팅을 기다리는 중",
+  "Everyone has bet": "모두 베팅했습니다",
+  "View result": "결과 보기",
+  "You didn't bet on this race. The result will appear here.":
+    "이번 경주에는 베팅하지 않았습니다. 결과는 여기에 표시됩니다.",
 };
 
 export default messages;

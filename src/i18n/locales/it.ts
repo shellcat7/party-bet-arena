@@ -29,7 +29,6 @@ const messages: Record<string, string> = {
   "Balance over time": "Andamento del saldo",
   Bet: "Scommesse",
   "Bet placed": "Scommessa registrata",
-  "Bet status": "Stato delle scommesse",
   "Bet type": "Tipo di scommessa",
   Betting: "Scommesse",
   "Betting closes automatically when you confirm.":
@@ -46,7 +45,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "Destinatario del bonus",
   "By host": "Dall'organizzatore",
   Cancel: "Annulla",
-  "Cancel and choose again": "Ritira e scegli di nuovo",
   "Cancel bet": "Ritira scommessa",
   "Cancel this bet?": "Ritirare la scommessa?",
   "Choose a racer": "Scegli un concorrente",
@@ -390,18 +388,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "Per chi arriva in ritardo",
   Standings: "Classifica",
   "You're in": "Scommessa fatta",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "{count, plural, one {Manca ancora # scommettitore.} other {Mancano ancora # scommettitori.}} La gara inizia alla chiusura delle scommesse.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "Hanno scommesso tutti. La gara inizia quando l'organizzatore chiude le scommesse.",
   "Race in progress": "Gara in corso",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "Le scommesse sono chiuse. Il risultato apparirà qui appena l'organizzatore inserisce l'ordine d'arrivo.",
   "The result is in": "C'è il risultato",
   "Your ticket hit": "Hai indovinato",
   "No luck this time": "Stavolta niente",
-  "You can bet here as soon as the next race opens.":
-    "Potrai scommettere qui appena si apre la prossima gara.",
   "All {max} races finished": "Tutte le {max} gare concluse",
   "The tournament is over": "Il torneo è finito",
   "See the final standings and records.": "Guarda la classifica finale e i record.",
@@ -419,22 +409,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "Mandalo in chat",
   "For joining by hand": "Per entrare a mano",
   "Send it with the room ID": "Mandalo con l'ID della stanza",
-  "Possible until betting closes": "Possibile fino alla chiusura",
   "This ticket was voided": "Questa scommessa è stata annullata",
-  "Result and payouts": "Risultato e vincite",
-  "Finishing order and everyone's result": "Ordine d'arrivo e bilancio di tutti",
-  "The odds are fixed when betting closes": "La quota si fissa alla chiusura",
-  "The race starts when betting closes": "La gara inizia alla chiusura delle scommesse",
   "Ticket for {race}": "Scommessa per {race}",
   Type: "Tipo",
   "If it hits (est.)": "Se vinci (stima)",
   "If it hits": "Se vinci",
   "Placed at": "Ora",
   "Ticket no.": "N.",
-  "Rank {rank} of {count}": "{rank}° su {count}",
-  "Earlier races": "Gare precedenti",
-  "{count, plural, one {# race settled} other {# races settled}}":
-    "{count, plural, one {# gara liquidata} other {# gare liquidate}}",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count, plural, one {Manca ancora # scommettitore} other {Mancano ancora # scommettitori}}",
+  "Everyone has bet": "Hanno scommesso tutti",
+  "View result": "Vedi risultato",
+  "You didn't bet on this race. The result will appear here.":
+    "Non hai scommesso su questa gara. Il risultato apparirà qui.",
 };
 
 export default messages;

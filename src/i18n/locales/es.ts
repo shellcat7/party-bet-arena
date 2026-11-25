@@ -28,7 +28,6 @@ const messages: Record<string, string> = {
   "Balance over time": "Evolución del saldo",
   Bet: "Apostar",
   "Bet placed": "Apuesta realizada",
-  "Bet status": "Estado de las apuestas",
   "Bet type": "Tipo de apuesta",
   Betting: "Apuestas",
   "Betting closes automatically when you confirm.": "Al confirmar, las apuestas se cerrarán automáticamente.",
@@ -44,7 +43,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "Destinatario de la bonificación",
   "By host": "Por el anfitrión",
   Cancel: "Cancelar",
-  "Cancel and choose again": "Cancelar y volver a elegir",
   "Cancel bet": "Cancelar apuesta",
   "Cancel this bet?": "¿Cancelar esta apuesta?",
   "Choose a racer": "Elige un competidor",
@@ -385,18 +383,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "Para quien llegue tarde",
   Standings: "Clasificación",
   "You're in": "Apuesta hecha",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "{count, plural, one {Falta # apostante.} other {Faltan # apostantes.}} La carrera empieza cuando se cierren las apuestas.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "Todos han apostado. La carrera empieza cuando el anfitrión cierre las apuestas.",
   "Race in progress": "Carrera en curso",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "Las apuestas están cerradas. El resultado aparecerá aquí en cuanto el anfitrión introduzca el orden de llegada.",
   "The result is in": "Ya hay resultado",
   "Your ticket hit": "Has acertado",
   "No luck this time": "Esta vez no hubo suerte",
-  "You can bet here as soon as the next race opens.":
-    "Podrás apostar aquí en cuanto empiece la siguiente carrera.",
   "All {max} races finished": "Las {max} carreras han terminado",
   "The tournament is over": "El torneo ha terminado",
   "See the final standings and records.": "Consulta la clasificación final y los récords.",
@@ -414,22 +404,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "Envíalo por chat",
   "For joining by hand": "Para unirse a mano",
   "Send it with the room ID": "Envíalo con el ID de sala",
-  "Possible until betting closes": "Posible hasta el cierre",
   "This ticket was voided": "Esta apuesta se anuló",
-  "Result and payouts": "Resultado y pagos",
-  "Finishing order and everyone's result": "Orden de llegada y el balance de todos",
-  "The odds are fixed when betting closes": "La cuota se fija al cerrar las apuestas",
-  "The race starts when betting closes": "La carrera empieza al cerrar las apuestas",
   "Ticket for {race}": "Apuesta de {race}",
   Type: "Tipo",
   "If it hits (est.)": "Si aciertas (aprox.)",
   "If it hits": "Si aciertas",
   "Placed at": "Hora",
   "Ticket no.": "N.º",
-  "Rank {rank} of {count}": "Puesto {rank} de {count}",
-  "Earlier races": "Carreras anteriores",
-  "{count, plural, one {# race settled} other {# races settled}}":
-    "{count, plural, one {# carrera liquidada} other {# carreras liquidadas}}",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count, plural, one {Falta # apostante} other {Faltan # apostantes}}",
+  "Everyone has bet": "Todos han apostado",
+  "View result": "Ver resultado",
+  "You didn't bet on this race. The result will appear here.":
+    "No apostaste en esta carrera. El resultado aparecerá aquí.",
 };
 
 export default messages;

@@ -233,13 +233,14 @@
 
 .pass-stub {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 
 .pass-stub__state {
   min-width: 0;
+  flex: 1;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -268,6 +269,28 @@
 .pass-stub__state small {
   color: var(--pass-label);
   font-size: 0.8rem;
+}
+
+/* The one action a ticket has (cancel, view result), as a pill on the pass. */
+.pass-stub__action {
+  flex: none;
+  margin-left: auto;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.pass-stub__action:active {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.pass-stub__value {
+  margin-left: auto;
 }
 
 .pass-stub__value .points {
@@ -311,33 +334,35 @@
 
 /* --------------------------------------------------------------- race screen and tiles */
 
+/* A participant's race tab shows just the ticket, centred like a pass opened in Wallet. */
 .race-screen {
-  gap: 18px;
-}
-
-.race-screen__head {
-  display: grid;
-  justify-items: start;
-  gap: 6px;
-  padding: 4px 2px 0;
-}
-
-.race-screen__head h1 {
-  font-size: 1.75rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.race-screen__head p {
-  color: var(--text-2);
+  min-height: calc(100dvh - 170px - var(--safe-top) - var(--safe-bottom));
+  align-content: center;
 }
 
 .no-ticket {
-  padding: 18px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 400px;
+  justify-self: center;
+  padding: 28px 20px;
   border: 1.5px dashed var(--border-strong);
   border-radius: 22px;
-  color: var(--text-3);
   text-align: center;
+}
+
+.no-ticket strong {
+  font-size: 1.05rem;
+}
+
+.no-ticket p {
+  color: var(--text-3);
+}
+
+.no-ticket .button {
+  margin-top: 6px;
 }
 
 /* Action tiles under a pass, as in Wallet. */

@@ -28,7 +28,6 @@ const messages: Record<string, string> = {
   "Balance over time": "Évolution du solde",
   Bet: "Parier",
   "Bet placed": "Pari enregistré",
-  "Bet status": "État des paris",
   "Bet type": "Type de pari",
   Betting: "Paris",
   "Betting closes automatically when you confirm.":
@@ -45,7 +44,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "Bénéficiaire du bonus",
   "By host": "Par l'organisateur",
   Cancel: "Annuler",
-  "Cancel and choose again": "Retirer et choisir à nouveau",
   "Cancel bet": "Retirer le pari",
   "Cancel this bet?": "Retirer ce pari ?",
   "Choose a racer": "Choisissez un concurrent",
@@ -387,18 +385,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "Pour les retardataires",
   Standings: "Classement",
   "You're in": "Pari enregistré",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "{count, plural, one {Encore # parieur attendu.} other {Encore # parieurs attendus.}} La course commence à la clôture des paris.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "Tout le monde a parié. La course commence quand l'organisateur clôt les paris.",
   "Race in progress": "Course en cours",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "Les paris sont clos. Le résultat s'affichera ici dès que l'organisateur aura saisi l'ordre d'arrivée.",
   "The result is in": "Le résultat est tombé",
   "Your ticket hit": "Pari gagnant",
   "No luck this time": "Pas de chance cette fois",
-  "You can bet here as soon as the next race opens.":
-    "Vous pourrez parier ici dès l'ouverture de la course suivante.",
   "All {max} races finished": "Les {max} courses sont terminées",
   "The tournament is over": "Le tournoi est terminé",
   "See the final standings and records.": "Consultez le classement final et les records.",
@@ -416,22 +406,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "Envoyez-le par message",
   "For joining by hand": "Pour rejoindre à la main",
   "Send it with the room ID": "À envoyer avec l'ID du salon",
-  "Possible until betting closes": "Possible jusqu'à la clôture",
   "This ticket was voided": "Ce pari a été annulé",
-  "Result and payouts": "Résultat et gains",
-  "Finishing order and everyone's result": "Ordre d'arrivée et bilan de chacun",
-  "The odds are fixed when betting closes": "La cote est fixée à la clôture des paris",
-  "The race starts when betting closes": "La course commence à la clôture des paris",
   "Ticket for {race}": "Pari pour {race}",
   Type: "Type",
   "If it hits (est.)": "Si gagnant (estim.)",
   "If it hits": "Si gagnant",
   "Placed at": "Heure",
   "Ticket no.": "N°",
-  "Rank {rank} of {count}": "{rank}e sur {count}",
-  "Earlier races": "Courses précédentes",
-  "{count, plural, one {# race settled} other {# races settled}}":
-    "{count, plural, one {# course réglée} other {# courses réglées}}",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count, plural, one {Encore # parieur attendu} other {Encore # parieurs attendus}}",
+  "Everyone has bet": "Tout le monde a parié",
+  "View result": "Voir le résultat",
+  "You didn't bet on this race. The result will appear here.":
+    "Vous n'avez pas parié sur cette course. Le résultat s'affichera ici.",
 };
 
 export default messages;

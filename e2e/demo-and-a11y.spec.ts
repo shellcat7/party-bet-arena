@@ -41,7 +41,7 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await expect(page.getByText(/あと1人のベットを待っています/)).toBeVisible();
 
   // Change of mind before betting closes.
-  await page.getByRole("button", { name: "取り消して選び直す" }).click();
+  await page.getByRole("button", { name: "取り消す", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "取り消す" }).click();
   await expect(page.getByRole("button", { name: "ベットする" })).toBeVisible();
   await page.locator(".racer").nth(0).click();
@@ -58,7 +58,7 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await expect(page.getByRole("heading", { name: "レース中" })).toBeVisible();
   await expect(page.getByText("結果を待っています")).toBeVisible();
   await expect(page.getByRole("button", { name: "ベットする" })).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "取り消して選び直す" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "取り消す", exact: true })).toHaveCount(0);
 
   // History with the balance chart and its table view.
   await nav(page, "履歴").click();

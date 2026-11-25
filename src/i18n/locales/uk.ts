@@ -27,7 +27,6 @@ const messages: Record<string, string> = {
   "Balance over time": "Зміна балансу",
   Bet: "Ставки",
   "Bet placed": "Ставку прийнято",
-  "Bet status": "Стан ставок",
   "Bet type": "Тип ставки",
   Betting: "Ставки",
   "Betting closes automatically when you confirm.": "Після підтвердження ставки закриються автоматично.",
@@ -43,7 +42,6 @@ const messages: Record<string, string> = {
   "Bonus recipient": "Хто отримує бонус",
   "By host": "Ввів ведучий",
   Cancel: "Скасувати",
-  "Cancel and choose again": "Змінити ставку",
   "Cancel bet": "Видалити ставку",
   "Cancel this bet?": "Видалити ставку?",
   "Choose a racer": "Вибери учасника",
@@ -385,18 +383,10 @@ const messages: Record<string, string> = {
   "For anyone joining late": "Для тих, хто приєднується пізніше",
   Standings: "Рейтинг",
   "You're in": "Ставку зроблено",
-  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
-    "{count, plural, one {Чекаємо ще на # гравця.} few {Чекаємо ще на # гравців.} many {Чекаємо ще на # гравців.} other {Чекаємо ще на # гравця.}} Заїзд почнеться, коли ставки закриють.",
-  "Everyone has bet. The race starts when the host closes betting.":
-    "Усі зробили ставки. Заїзд почнеться, коли ведучий закриє ставки.",
   "Race in progress": "Заїзд триває",
-  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
-    "Ставки закрито. Результат з'явиться тут, щойно ведучий введе порядок фінішу.",
   "The result is in": "Результат готовий",
   "Your ticket hit": "Ставка зіграла",
   "No luck this time": "Цього разу не пощастило",
-  "You can bet here as soon as the next race opens.":
-    "Щойно почнеться наступний заїзд, тут можна буде зробити ставку.",
   "All {max} races finished": "Усі заїзди ({max}) завершено",
   "The tournament is over": "Турнір завершено",
   "See the final standings and records.": "Переглянь підсумковий рейтинг і рекорди.",
@@ -414,22 +404,19 @@ const messages: Record<string, string> = {
   "Send it in a chat": "Надіслати в чаті",
   "For joining by hand": "Для входу вручну",
   "Send it with the room ID": "Надішли разом з ID кімнати",
-  "Possible until betting closes": "Можна до закриття ставок",
   "This ticket was voided": "Цю ставку анульовано",
-  "Result and payouts": "Результат і виплати",
-  "Finishing order and everyone's result": "Порядок фінішу та підсумки всіх",
-  "The odds are fixed when betting closes": "Коефіцієнт фіксується при закритті ставок",
-  "The race starts when betting closes": "Заїзд почнеться після закриття ставок",
   "Ticket for {race}": "Квиток на {race}",
   Type: "Тип",
   "If it hits (est.)": "У разі виграшу (орієнт.)",
   "If it hits": "У разі виграшу",
   "Placed at": "Прийнято",
   "Ticket no.": "№",
-  "Rank {rank} of {count}": "{rank}-е місце з {count}",
-  "Earlier races": "Попередні заїзди",
-  "{count, plural, one {# race settled} other {# races settled}}":
-    "{count, plural, one {# заїзд розраховано} few {# заїзди розраховано} many {# заїздів розраховано} other {# заїзду розраховано}}",
+  "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
+    "{count, plural, one {Чекаємо ще на # гравця} few {Чекаємо ще на # гравців} many {Чекаємо ще на # гравців} other {Чекаємо ще на # гравця}}",
+  "Everyone has bet": "Усі зробили ставки",
+  "View result": "Переглянути результат",
+  "You didn't bet on this race. The result will appear here.":
+    "Ти не робив ставку на цей заїзд. Результат з'явиться тут.",
 };
 
 export default messages;
