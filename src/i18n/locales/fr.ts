@@ -406,6 +406,12 @@ const messages: Record<string, string> = {
     "La synchronisation en ligne n'est pas disponible ici. Le salon reste sur cet appareil et l'organisateur saisit les paris de tous.",
   Auto: "Auto",
   "{name} won": "{name} gagne",
+  "A painted coast of sea cliffs": "Peinture d'une côte de falaises",
+  "A painted lavender field": "Peinture d'un champ de lavande",
+  "A painted autumn wood": "Peinture d'un bois en automne",
+  "A painted mountain lake": "Peinture d'un lac de montagne",
+  "A painted row of cherry trees by a river": "Peinture de cerisiers en fleurs au bord d'une rivière",
+  "A painted wheat field": "Peinture d'un champ de blé",
 };
 
 export default messages;

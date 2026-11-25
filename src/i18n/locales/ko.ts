@@ -395,6 +395,12 @@ const messages: Record<string, string> = {
     "이 환경에서는 온라인 동기화를 사용할 수 없습니다. 방은 이 기기에만 저장되고, 진행자가 모두의 베팅을 대신 입력합니다.",
   Auto: "자동",
   "{name} won": "{name} 1착",
+  "A painted coast of sea cliffs": "바닷가 절벽을 그린 유화풍 풍경",
+  "A painted lavender field": "라벤더 밭을 그린 유화풍 풍경",
+  "A painted autumn wood": "단풍 든 숲을 그린 유화풍 풍경",
+  "A painted mountain lake": "산속 호수를 그린 유화풍 풍경",
+  "A painted row of cherry trees by a river": "강가의 벚나무 길을 그린 유화풍 풍경",
+  "A painted wheat field": "익은 밀밭을 그린 유화풍 풍경",
 };
 
 export default messages;

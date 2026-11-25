@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { Meadow } from "./scenes/Meadow";
-import type { Biome } from "../lib/pass";
+import type { Biome, Light } from "../lib/pass";
 import { accentInk, displayAccent } from "../lib/constants";
 import { BrandMark, accentStyle } from "./ui";
 
@@ -26,7 +26,7 @@ export function Pass(props: {
   title: string;
   headerFields: PassField[];
   primary: ReactNode;
-  art?: { biome: Biome; label: string; seed?: number; animate?: boolean };
+  art?: { biome: Biome; light?: Light; label: string; seed?: number; animate?: boolean };
   fields: PassField[];
   stub: ReactNode;
   label: string;
@@ -62,6 +62,7 @@ export function Pass(props: {
             <Meadow
               label={props.art.label}
               biome={props.art.biome}
+              light={props.art.light}
               seed={props.art.seed}
               paused={!props.art.animate}
             />

@@ -385,6 +385,12 @@ const messages: Record<string, string> = {
     "此环境无法使用在线同步。房间只保存在这台设备上，由主持人代为输入所有人的投注。",
   Auto: "自动",
   "{name} won": "{name}获得第1名",
+  "A painted coast of sea cliffs": "油画风格：海边的悬崖",
+  "A painted lavender field": "油画风格：薰衣草田",
+  "A painted autumn wood": "油画风格：秋天的树林",
+  "A painted mountain lake": "油画风格：山间湖泊",
+  "A painted row of cherry trees by a river": "油画风格：河边的樱花树",
+  "A painted wheat field": "油画风格：成熟的麦田",
 };
 
 export default messages;

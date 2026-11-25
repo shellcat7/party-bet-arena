@@ -7,7 +7,7 @@ import { PageHeader, Points } from "../components/ui";
 import { landscapeLabel } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
 import { buildInviteUrl, groupCode } from "../lib/ids";
-import { biomeForRace } from "../lib/pass";
+import { sceneForRace } from "../lib/pass";
 import { useOpenRoom } from "../state/AppContext";
 
 export default function InviteScreen(props: { isNew: boolean }) {
@@ -77,8 +77,8 @@ export default function InviteScreen(props: { isNew: boolean }) {
               </div>
             }
             art={{
-              biome: biomeForRace(room.id.charCodeAt(0)),
-              label: landscapeLabel(t, biomeForRace(room.id.charCodeAt(0))),
+              ...sceneForRace(room.id.charCodeAt(0)),
+              label: landscapeLabel(t, sceneForRace(room.id.charCodeAt(0)).biome),
               seed: room.id.charCodeAt(1),
             }}
             fields={[

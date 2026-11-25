@@ -407,6 +407,12 @@ const messages: Record<string, string> = {
     "Online-Synchronisierung ist hier nicht verfügbar. Der Raum bleibt auf diesem Gerät, und die Spielleitung trägt alle Wetten ein.",
   Auto: "Automatisch",
   "{name} won": "{name} gewinnt",
+  "A painted coast of sea cliffs": "Gemälde einer Steilküste",
+  "A painted lavender field": "Gemälde eines Lavendelfelds",
+  "A painted autumn wood": "Gemälde eines Herbstwalds",
+  "A painted mountain lake": "Gemälde eines Bergsees",
+  "A painted row of cherry trees by a river": "Gemälde blühender Kirschbäume an einem Fluss",
+  "A painted wheat field": "Gemälde eines Weizenfelds",
 };
 
 export default messages;

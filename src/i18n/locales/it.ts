@@ -408,6 +408,12 @@ const messages: Record<string, string> = {
     "Qui la sincronizzazione online non è disponibile. La stanza resta su questo dispositivo e l'organizzatore inserisce le scommesse di tutti.",
   Auto: "Automatico",
   "{name} won": "Vince {name}",
+  "A painted coast of sea cliffs": "Dipinto di una costa di scogliere",
+  "A painted lavender field": "Dipinto di un campo di lavanda",
+  "A painted autumn wood": "Dipinto di un bosco d'autunno",
+  "A painted mountain lake": "Dipinto di un lago di montagna",
+  "A painted row of cherry trees by a river": "Dipinto di ciliegi in fiore lungo un fiume",
+  "A painted wheat field": "Dipinto di un campo di grano",
 };
 
 export default messages;

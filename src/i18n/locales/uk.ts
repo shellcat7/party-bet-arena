@@ -403,6 +403,12 @@ const messages: Record<string, string> = {
     "Онлайн-синхронізація тут недоступна. Кімната зберігається лише на цьому пристрої, а ведучий вносить ставки за всіх.",
   Auto: "Авто",
   "{name} won": "Переміг {name}",
+  "A painted coast of sea cliffs": "Картина морського узбережжя зі скелями",
+  "A painted lavender field": "Картина лавандового поля",
+  "A painted autumn wood": "Картина осіннього лісу",
+  "A painted mountain lake": "Картина гірського озера",
+  "A painted row of cherry trees by a river": "Картина вишневих дерев уздовж річки",
+  "A painted wheat field": "Картина пшеничного поля",
 };
 
 export default messages;

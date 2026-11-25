@@ -404,6 +404,12 @@ const messages: Record<string, string> = {
     "Aquí no hay sincronización en línea. La sala se guarda solo en este dispositivo y el anfitrión registra las apuestas de todos.",
   Auto: "Automático",
   "{name} won": "Ganó {name}",
+  "A painted coast of sea cliffs": "Pintura de una costa de acantilados",
+  "A painted lavender field": "Pintura de un campo de lavanda",
+  "A painted autumn wood": "Pintura de un bosque en otoño",
+  "A painted mountain lake": "Pintura de un lago de montaña",
+  "A painted row of cherry trees by a river": "Pintura de cerezos en flor junto a un río",
+  "A painted wheat field": "Pintura de un campo de trigo",
 };
 
 export default messages;

@@ -9,7 +9,7 @@ import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
 import { frameColor } from "../../lib/constants";
 import { getBetPickIds } from "../../lib/odds";
-import { biomeForRace } from "../../lib/pass";
+import { sceneForRace } from "../../lib/pass";
 import { isGameOver } from "../../lib/settlement";
 import type { BetType, Room } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
@@ -206,6 +206,7 @@ function TicketPass(props: {
   const { t } = useI18n();
   const { room, ticket, status } = props;
   const labels = betTypeCopy(t);
+  const scene = sceneForRace(props.raceNumber);
   const positions = [t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")];
   const picks: PassPick[] = ticket.contestantIds.map((id, index) => {
     const lane = props.contestants.findIndex((contestant) => contestant.id === id);
@@ -269,8 +270,8 @@ function TicketPass(props: {
       ]}
       primary={<PassPicks picks={picks} />}
       art={{
-        biome: biomeForRace(props.raceNumber),
-        label: landscapeLabel(t, biomeForRace(props.raceNumber)),
+        ...scene,
+        label: landscapeLabel(t, scene.biome),
         seed: 1875 + props.raceNumber,
         animate: status === "closed",
       }}
