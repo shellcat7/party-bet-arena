@@ -413,6 +413,7 @@ const messages: Record<string, string> = {
   Placed: "Registrata",
   "An oil-painting-style landscape of wind moving across a meadow":
     "Paesaggio in stile pittura a olio: il vento attraversa un prato",
+  "Payout if it hits (est.)": "Vincita se indovini (stima)",
 };
 
 export default messages;

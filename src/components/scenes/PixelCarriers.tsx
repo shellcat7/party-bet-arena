@@ -540,9 +540,10 @@ function resetStack(world: World) {
   });
 }
 
-function createWorld(W: number, H: number, seed: number): World {
+/** `floorRows` extends the ground downward, lifting the walking line clear of UI laid over the bottom. */
+function createWorld(W: number, H: number, seed: number, floorRows = 0): World {
   const rng = mulberry32(seed * 7919 + 17);
-  const groundH = H >= 80 ? 12 : H >= 56 ? 10 : 8;
+  const groundH = (H >= 80 ? 12 : H >= 56 ? 10 : 8) + floorRows;
   const groundY = H - groundH;
   const world: World = {
     W,
@@ -1499,7 +1500,7 @@ function startScene(
   let art: Art | null = null;
   let raf = 0;
   let last = -1;
-  let size = { W: 0, H: 0 };
+  let size = { W: 0, H: 0, floorRows: 0 };
 
   const draw = () => {
     if (!world) return;
@@ -1538,13 +1539,16 @@ function startScene(
     const s = pickScale(devW, devH);
     const W = Math.ceil(devW / s);
     const H = Math.ceil(devH / s);
+    // `--pixel-scene-floor` (CSS px) keeps the bottom of the scene clear, e.g. behind a floating tab bar.
+    const floorPx = parseFloat(getComputedStyle(root).getPropertyValue("--pixel-scene-floor")) || 0;
+    const floorRows = Math.min(Math.round((floorPx * dpr) / s), Math.max(0, H - 48));
     canvas.style.width = `${(W * s) / dpr}px`;
     canvas.style.height = `${(H * s) / dpr}px`;
-    if (W !== size.W || H !== size.H) {
-      size = { W, H };
+    if (W !== size.W || H !== size.H || floorRows !== size.floorRows) {
+      size = { W, H, floorRows };
       canvas.width = W;
       canvas.height = H;
-      world = createWorld(W, H, seed);
+      world = createWorld(W, H, seed, floorRows);
       prewarm(world);
       art = null;
     }

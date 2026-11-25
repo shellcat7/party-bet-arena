@@ -411,6 +411,7 @@ const messages: Record<string, string> = {
   Placed: "Abgegeben",
   "An oil-painting-style landscape of wind moving across a meadow":
     "Landschaft im Stil eines Ölgemäldes: Wind streicht über eine Wiese",
+  "Payout if it hits (est.)": "Auszahlung bei Treffer (ca.)",
 };
 
 export default messages;

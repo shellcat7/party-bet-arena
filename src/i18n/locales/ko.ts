@@ -397,6 +397,7 @@ const messages: Record<string, string> = {
   "See final results": "최종 결과 보기",
   Placed: "접수됨",
   "An oil-painting-style landscape of wind moving across a meadow": "바람이 초원을 지나가는 유화풍 풍경",
+  "Payout if it hits (est.)": "적중 시 배당금(예상)",
 };
 
 export default messages;

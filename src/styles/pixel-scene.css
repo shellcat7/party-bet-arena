@@ -1,3 +1,10 @@
+/* Registered so its value is computed to px (env() and calc() included) before the scene reads it. */
+@property --pixel-scene-floor {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
 /*
  * Pixel waiting scene (PixelCarriers). The canvas is drawn at a low logical resolution and scaled
  * up by an integer factor in device pixels; the component sets the canvas size inline.

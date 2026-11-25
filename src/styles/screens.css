@@ -484,6 +484,31 @@
   opacity: 1;
 }
 
+.bettor-status--compact li,
+.bettor-status--compact li.is-done {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.bettor-status--compact li svg {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 16px;
+  height: 16px;
+  padding: 3px;
+  border: 2px solid var(--surface);
+  border-radius: 50%;
+  background: var(--positive);
+  color: var(--surface);
+}
+
+.bettor-status--compact li.is-done svg {
+  color: var(--surface);
+}
+
 .odds-board,
 .mini-leaderboard {
   display: grid;
@@ -1349,18 +1374,19 @@
 
 /* ----------------------------------------------------------- waiting screens (participants) */
 
-/* The scene fills the screen behind (down to the tab bar); the details sit on a card at the top. */
+/* The scene fills the whole screen; the bars float over it as cards and the details sit on a card
+   at the top, leaving the lower part of the scene, where things move, in view. */
 .waiting {
   position: relative;
   isolation: isolate;
-  min-height: calc(100dvh - 57px - var(--safe-top) - var(--nav-height) - var(--safe-bottom));
+  min-height: calc(100dvh - 140px - var(--safe-top) - var(--nav-height) - var(--safe-bottom));
   padding: 12px var(--screen-pad, 16px) 24px;
 }
 
 .waiting__scene {
   position: fixed;
   z-index: -1;
-  inset: 0 0 calc(var(--nav-height) + var(--safe-bottom));
+  inset: 0;
   background: var(--surface-2);
 }
 
@@ -1369,26 +1395,35 @@
   height: 100%;
 }
 
-/* Banners (demo, offline) stay above the scene. */
+/* Keep the walking line of the pixel scene clear of the floating tab bar. */
+.waiting__scene .pixel-scene {
+  --pixel-scene-floor: calc(var(--nav-height) + 22px + var(--safe-bottom));
+}
+
+.room:has(.waiting) .topbar {
+  top: calc(8px + var(--safe-top));
+  margin: calc(8px + var(--safe-top)) 12px 0;
+  padding-top: 6px;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: var(--shadow-overlay);
+}
+
 .room:has(.waiting) > .banner {
   position: relative;
   z-index: 1;
+  margin: 8px 12px 0;
+  border: 0;
+  border-radius: 14px;
 }
 
-/* On screens wider than the app column the scene fills the window, so the bars span it too. */
-.room:has(.waiting) .topbar,
-.room:has(.waiting) .bottom-nav,
-.room:has(.waiting) > .banner {
-  box-shadow: 0 0 0 100vmax var(--surface);
-  clip-path: inset(0 -100vmax);
-}
-
-.room:has(.waiting) > .banner--demo {
-  box-shadow: 0 0 0 100vmax var(--brand-tint);
-}
-
-.room:has(.waiting) > .banner--warning {
-  box-shadow: 0 0 0 100vmax var(--negative-tint);
+.room:has(.waiting) .bottom-nav {
+  bottom: calc(10px + var(--safe-bottom));
+  width: min(100% - 24px, var(--frame-width) - 24px);
+  padding-bottom: 4px;
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--shadow-overlay);
 }
 
 .waiting__panel {

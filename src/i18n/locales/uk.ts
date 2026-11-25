@@ -408,6 +408,7 @@ const messages: Record<string, string> = {
   Placed: "Прийнято",
   "An oil-painting-style landscape of wind moving across a meadow":
     "Пейзаж у стилі олійного живопису: вітер біжить лукою",
+  "Payout if it hits (est.)": "Виплата в разі виграшу (орієнт.)",
 };
 
 export default messages;

@@ -387,6 +387,7 @@ const messages: Record<string, string> = {
   "See final results": "查看最终结果",
   Placed: "已受理",
   "An oil-painting-style landscape of wind moving across a meadow": "油画风格的风景：风吹过草原",
+  "Payout if it hits (est.)": "猜中时的派彩（预估）",
 };
 
 export default messages;

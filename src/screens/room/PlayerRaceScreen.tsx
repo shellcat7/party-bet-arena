@@ -264,21 +264,17 @@ function TicketCard(props: { room: Room; ticket: Bet }) {
           </dd>
         </div>
         <div>
-          <dt>{t("的中時の払戻", "Payout if it hits")}</dt>
+          <dt>
+            {room.settings.marketOdds && open
+              ? t("的中時の払戻（目安）", "Payout if it hits (est.)")
+              : t("的中時の払戻", "Payout if it hits")}
+          </dt>
           <dd>
             <Points value={estimate} />
             <small>×{multiplier.toFixed(1)}</small>
           </dd>
         </div>
       </dl>
-      {room.settings.marketOdds && open && (
-        <p className="form-help">
-          {t(
-            "人気で倍率が変わるため、払戻は締切時のオッズで確定します。",
-            "Pool-based odds: the final multiplier is fixed when betting closes.",
-          )}
-        </p>
-      )}
       {open && (
         <button className="button button--ghost button--block" type="button" onClick={() => void cancel()}>
           {t("取り消して選び直す", "Cancel and choose again")}
@@ -288,11 +284,12 @@ function TicketCard(props: { room: Room; ticket: Bet }) {
   );
 }
 
+/** Who has bet so far, as a row of avatars (names on hover and for screen readers). */
 function BettorStatus(props: { room: Room }) {
   const { t } = useI18n();
   const placed = new Set(props.room.currentRace.bets.map((bet) => bet.playerId));
   return (
-    <section className="bettor-status" aria-labelledby="bettor-status-title">
+    <section className="bettor-status bettor-status--compact" aria-labelledby="bettor-status-title">
       <div className="bettor-status__head">
         <strong id="bettor-status-title">{t("ベット状況", "Bet status")}</strong>
         <span>
@@ -301,12 +298,13 @@ function BettorStatus(props: { room: Room }) {
       </div>
       <ul>
         {props.room.players.map((player) => (
-          <li key={player.id} className={placed.has(player.id) ? "is-done" : undefined}>
+          <li key={player.id} className={placed.has(player.id) ? "is-done" : undefined} title={player.name}>
             <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
-            <span>{player.name}</span>
-            {placed.has(player.id) && (
-              <Check size={14} strokeWidth={3} aria-label={t("ベット済み", "Bet placed")} />
-            )}
+            <span className="sr-only">
+              {player.name}
+              {placed.has(player.id) ? `: ${t("ベット済み", "Bet placed")}` : ""}
+            </span>
+            {placed.has(player.id) && <Check size={10} strokeWidth={4} aria-hidden="true" />}
           </li>
         ))}
       </ul>
