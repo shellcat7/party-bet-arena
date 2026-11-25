@@ -22,7 +22,7 @@ export function Pass(props: {
   brand: string;
   headerFields: PassField[];
   primary: ReactNode;
-  art?: { biome: Biome; label: string; animate?: boolean };
+  art?: { biome: Biome; label: string; seed?: number; animate?: boolean };
   fields: PassField[];
   auxFields?: PassField[];
   stub: ReactNode;
@@ -55,7 +55,12 @@ export function Pass(props: {
 
       {props.art && (
         <div className="pass__art">
-          <Meadow label={props.art.label} biome={props.art.biome} paused={!props.art.animate} />
+          <Meadow
+            label={props.art.label}
+            biome={props.art.biome}
+            seed={props.art.seed}
+            paused={!props.art.animate}
+          />
         </div>
       )}
 

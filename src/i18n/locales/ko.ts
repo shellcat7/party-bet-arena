@@ -391,7 +391,6 @@ const messages: Record<string, string> = {
   "Invitation to “{room}”": "“{room}” 초대장",
   Capacity: "정원",
   Invitation: "초대장",
-  "An oil-painting-style landscape": "유화풍 풍경",
   "Send it in a chat": "메시지로 보내기",
   "For joining by hand": "직접 입력해 참가하는 사람용",
   "Send it with the room ID": "방 ID와 함께 보내기",
@@ -408,6 +407,9 @@ const messages: Record<string, string> = {
   "View result": "결과 보기",
   "You didn't bet on this race. The result will appear here.":
     "이번 경주에는 베팅하지 않았습니다. 결과는 여기에 표시됩니다.",
+  "A painted, windswept meadow": "바람 부는 초원을 그린 유화풍 풍경",
+  "A painted snowy mountain range": "설산을 그린 유화풍 풍경",
+  "A painted desert of dunes and mesas": "모래언덕과 메사가 있는 사막을 그린 유화풍 풍경",
 };
 
 export default messages;

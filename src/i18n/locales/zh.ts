@@ -382,7 +382,6 @@ const messages: Record<string, string> = {
   "Invitation to “{room}”": "“{room}”的邀请函",
   Capacity: "名额",
   Invitation: "邀请函",
-  "An oil-painting-style landscape": "油画风格的风景",
   "Send it in a chat": "通过消息发送",
   "For joining by hand": "给手动输入加入的人",
   "Send it with the room ID": "和房间ID一起发送",
@@ -398,6 +397,9 @@ const messages: Record<string, string> = {
   "Everyone has bet": "所有人都已投注",
   "View result": "查看结果",
   "You didn't bet on this race. The result will appear here.": "本场没有投注。结果出来后会显示在这里。",
+  "A painted, windswept meadow": "油画风格：风吹过的草原",
+  "A painted snowy mountain range": "油画风格：雪山",
+  "A painted desert of dunes and mesas": "油画风格：沙丘与方山的沙漠",
 };
 
 export default messages;

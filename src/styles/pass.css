@@ -549,3 +549,11 @@ button.tile:active {
   letter-spacing: 0.02em;
   overflow-wrap: anywhere;
 }
+
+/* On the dark theme a black (gate 2) pass needs an edge to stand off the page. */
+:root[data-theme="dark"] .pass:not(.pass--light) {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 14px 34px rgba(0, 0, 0, 0.4);
+}

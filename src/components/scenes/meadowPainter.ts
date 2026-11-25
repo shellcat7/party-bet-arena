@@ -1,30 +1,36 @@
 /**
- * Procedural, stroke-by-stroke painting of a windy hilltop in the manner of Monet's
- * "Woman with a Parasol – Madame Monet and Her Son" (1875). Pure canvas code, no React.
+ * Procedural, stroke-by-stroke landscape painting in an Impressionist manner: broken brushwork,
+ * a luminous sky with drifting cumulus and the wind moving through the land. Three biomes:
+ *  - meadow: blue hills, a stand of poplars and a lone tree, a flowering meadow with a faint path
+ *  - snow:   a mountain range with blue-violet shadows, a snowfield and dark spruces close by
+ *  - desert: violet mesas, a sunlit butte, dunes with long violet shadows and a few shrubs
+ * Composed for ticket artwork (16:10 to 3:1). Pure canvas code, no React.
  *
  * Layers (bottom to top), each a <canvas> owned by the component:
  *  - sky:    sky and clouds, painted once as a horizontally tileable strip (2 tiles wide)
  *            that drifts slowly by moving its CSS transform (compositor only, no repaint)
- *  - ground: hill, grass, child and woman, painted once
- *  - motion: wind-blown grass blades and the hem, repainted at ~30 fps; the canvas only
- *            covers the band that moves, so little has to be rasterised per frame
- *  - veil:   a small canvas for the fluttering veil
+ *  - ground: the land, painted once
+ *  - trees:  the trees, painted once into a small sprite sheet and redrawn leaning with the wind
+ *            at ~10 fps; the canvas only covers the trees
+ *  - motion: wind-blown grass, nodding flowers and blowing snow or sand, repainted at ~30 fps at a
+ *            reduced resolution; the canvas only covers the foreground
  * A canvas-weave tile (generated once) and a vignette are laid on top with CSS (scenes.css).
  *
  * Generation is time-sliced (a few ms per task) so it never blocks the main thread for long.
+ * Paused from the start, the engine paints one still frame and never starts an animation loop.
  */
 
 type Ctx = CanvasRenderingContext2D;
-type Gen = Generator<string | undefined, void, void>;
+type Gen<R = void> = Generator<string | undefined, R, void>;
 
 export interface MeadowCanvases {
   root: HTMLElement;
   sky: HTMLCanvasElement;
   ground: HTMLCanvasElement;
-  /** Grass band (and the hem); sized and positioned by the engine. */
+  /** The trees; sized and positioned by the engine. */
+  trees: HTMLCanvasElement;
+  /** The meadow's moving grass and flowers; sized and positioned by the engine. */
   motion: HTMLCanvasElement;
-  /** Veil strands; sized and positioned by the engine. */
-  veil: HTMLCanvasElement;
 }
 
 export interface MeadowEngine {
@@ -33,22 +39,17 @@ export interface MeadowEngine {
 }
 
 const TAU = Math.PI * 2;
+const HALF_PI = Math.PI / 2;
 const FRAME_MS = 1000 / 30;
 const SLICE_MS = 8;
 const RESIZE_DEBOUNCE_MS = 220;
 const MAX_DPR = 2;
 const MAX_LAYER_PIXELS = 2_400_000;
-const SKY_DRIFT_PX_PER_S = 2.6;
-const STILL_TIME = 2.2;
-
-/* Reference-painting coordinates (px in a 1568×1962 reproduction) used to place the figures. */
-const REF_FEET_X = 878;
-const REF_CREST_Y = 1318; // where the grass crest crosses the woman's skirt
-const REF_TOP_Y = 15; // top of the parasol
-const REF_LEFT_X = 401; // left tip of the parasol
-const REF_RIGHT_X = 1140; // right edge of the bustle
-const REF_CHILD_X = 430;
-const REF_CHILD_CREST_Y = 1300;
+/** The moving grass is soft brushwork: it is drawn at a lower resolution than the static layers. */
+const MOTION_DPR = 1.25;
+const SKY_DRIFT_PX_PER_S = 3.2;
+/** The moment shown as a still frame (paused or reduced motion). */
+const STILL_TIME = 6.5;
 
 /* ------------------------------------------------------------------ maths & random */
 
@@ -205,95 +206,190 @@ function rampAt(r: Ramp, t: number): Lab {
 }
 const labs = (list: string[]) => list.map(hexLab);
 
-/* Palette sampled from the reference (converted from Display P3 to sRGB). */
+/* Palette: a high summer sky, blue distance, fresh greens in yellow-green light. */
 const SKY = ramp([
-  [0, "#3282c2"],
-  [0.3, "#4393cc"],
-  [0.62, "#66a8d4"],
-  [0.85, "#93c1d8"],
-  [1, "#b3ccd0"],
+  [0, "#2f7cc0"],
+  [0.25, "#3d8cca"],
+  [0.55, "#5ca1d2"],
+  [0.8, "#8bbcd8"],
+  [0.93, "#b2ced8"],
+  [1, "#cad6d2"],
 ]);
-const SKY_DEEP = labs(["#2a88c8", "#3a86bc", "#4a8fc4", "#5b8db6"]);
+const SKY_DEEP = labs(["#2a74bc", "#3480c4", "#2c84c8", "#4688c0"]);
+const SKY_TURQ = labs(["#6cb6da", "#7ec2da", "#5cb0de"]);
 const CLOUD_SHADE = ramp([
-  [0, "#7f8fae"],
-  [0.35, "#9a9dbd"],
-  [0.65, "#aab4c2"],
-  [1, "#c2bfb2"],
+  [0, "#7886b0"],
+  [0.35, "#929cc2"],
+  [0.65, "#acb2ca"],
+  [1, "#c8c6c6"],
 ]);
 const CLOUD_LIGHT = ramp([
-  [0, "#c9bea6"],
-  [0.4, "#e2d6ba"],
-  [0.75, "#efe6cd"],
-  [1, "#fbf6e6"],
+  [0, "#cdc5b6"],
+  [0.4, "#e4dac2"],
+  [0.75, "#f2e9d2"],
+  [1, "#fdf8ea"],
 ]);
-const CLOUD_WARM = labs(["#e9d9b0", "#f0dfc4", "#e8cfc0", "#f2e8b8"]);
+const CLOUD_WARM = labs(["#eed9b6", "#f3dfca", "#ecd2c6", "#f4e6be"]);
+const CLOUD_LAV = labs(["#a29bc4", "#b2a9cd", "#9a97c0", "#a8a2c8"]);
+const HAZE = labs(["#d8d6c6", "#d0d8d4", "#e2d8ca", "#c8d6da", "#d6cfd6"]);
+
+const HILL_FAR = labs(["#8496c2", "#8d9cc6", "#8a9fc2", "#93a0c4", "#8a92bc"]);
+const HILL_FAR_LIT = labs(["#bcbed4", "#c8c0d0", "#b6c0d4", "#c6c4d6", "#d0c8cc"]);
+const HILL_NEAR = labs(["#6a84a6", "#64809c", "#6f86a2", "#748aa0", "#5f7a98", "#668892"]);
+const HILL_NEAR_LIT = labs(["#8fa4a6", "#9cab9e", "#8aa49c", "#a4ae9e"]);
+const TREE_LINE = labs(["#3d5d72", "#46657a", "#4b5d78", "#38566a", "#526a7c"]);
+const TREE_LINE_LIT = labs(["#7b9072", "#899a70", "#6f8a76", "#92a07c"]);
+const FIELD_FAR = labs(["#8fa294", "#98a88e", "#a0ac8a", "#86a09a", "#93a69c"]);
+const FIELD_SUN = labs(["#b4bc72", "#c0c47a", "#aab86c"]);
+const FIELD_GOLD = labs(["#d2c262", "#cabe60", "#dccc70", "#d6c46c"]);
+const FIELD_SHADE = labs(["#6e8c88", "#76908e", "#7c90a0", "#6a8682"]);
+
+const POPLAR_DARK = labs(["#3a5562", "#40576a", "#36525a", "#455a6c"]);
+const POPLAR_MID = labs(["#577262", "#5e7860", "#55706a", "#64785e"]);
+const POPLAR_LIT = labs(["#8e9e62", "#9ca86a", "#a8ae72", "#86985e", "#b0b47a"]);
+const POPLAR_COOL = labs(["#5e6f98", "#66789c", "#58709a"]);
+const TRUNK = hexLab("#4a3f44");
 
 const GRASS = {
-  deep: labs(["#0e3d22", "#1a3a24", "#22442c", "#173c2a"]),
-  dark: labs(["#2a533c", "#3a6418", "#264428", "#447060", "#3c5a2e"]),
-  mid: labs(["#525f41", "#626d0a", "#757339", "#5b5f39", "#55700d", "#6a7a2a", "#7a8054"]),
-  sun: labs(["#858406", "#8b8c11", "#9a8c2c", "#abaa3d", "#9e935b", "#a6b040", "#b8b44e", "#a3c046"]),
-  cool: labs(["#618492", "#447060", "#6f8f86", "#7d98a8", "#5c7f78"]),
-  pale: labs(["#b5b19d", "#989578", "#c2c0a6", "#a9ac8a"]),
-  earth: labs(["#423a21", "#5e4c26", "#7a6a3a", "#9e935b"]),
-  accent: labs(["#9a3c30", "#7e3a4a", "#6a4a86", "#b0603a", "#8c2f3a", "#7a5a9a"]),
-  flower: labs(["#e4d24a", "#efdf6e", "#d8c83c", "#dfe060", "#f1e78e"]),
+  deep: labs(["#1d4a2e", "#24482f", "#2a5135", "#1f4638"]),
+  dark: labs(["#355f3e", "#3e6a2c", "#2f5a3b", "#476e56", "#43662f"]),
+  mid: labs(["#5e7b3a", "#6a8631", "#76893d", "#607e45", "#6f9035", "#7c9141"]),
+  sun: labs(["#9aad3b", "#a8b545", "#b7bd4d", "#a4c14f", "#c1c561", "#b1c959"]),
+  cool: labs(["#4f7a6f", "#5a8079", "#4a6f6a", "#5f8781", "#567a84"]),
+  haze: labs(["#a8b48c", "#9fb092", "#b4bc8e", "#98aa96", "#aeb4a0"]),
+  pale: labs(["#c6caa2", "#b3ba92", "#d2d2ac", "#bdc5a2"]),
+  earth: labs(["#5e5429", "#7a6a37", "#8e7c45"]),
+  violet: labs(["#7a6a9e", "#8a75a8", "#6c6092"]),
 };
+const BUTTERCUP = labs(["#f0d63c", "#f5e05a", "#e9c931", "#f6e47b"]);
+const DAISY = labs(["#f7f3e3", "#fcf9ef", "#edebdf"]);
+const POPPY = labs(["#d9432a", "#e1512c", "#c93b29", "#e9633b"]);
+const CORNFLOWER = labs(["#5b79c8", "#6a6fc0", "#7b85d0"]);
+const PATH = labs(["#d4c78c", "#dccf9c", "#c9b984", "#e0d6a8", "#cfc28e"]);
+const PATH_SHADE = labs(["#b8a884", "#b0a490", "#bcaa86", "#aaa888"]);
 
-const SKIRT = ramp([
-  [0, "#3e5878"],
-  [0.25, "#536d8e"],
-  [0.45, "#6983a2"],
-  [0.65, "#859cb6"],
-  [0.83, "#a5b6c6"],
-  [1, "#cad3d4"],
-]);
-const LAVENDER = labs(["#8c8cb8", "#a09cc6", "#8888b0", "#ab9fc6"]);
-const REFLECT_BLUE = labs(["#5fa8dc", "#74b6de", "#4f9bd2"]);
-const JACKET_WARM = ramp([
-  [0, "#9e9a62"],
-  [0.5, "#bdb575"],
-  [1, "#d8cf94"],
-]);
-const JACKET_COOL = ramp([
-  [0, "#55707f"],
-  [0.5, "#6f8a98"],
-  [1, "#8fa4ab"],
-]);
-const JACKET_PALE = ramp([
-  [0, "#8fa0a4"],
-  [0.5, "#aeb9b2"],
-  [1, "#d0d3c6"],
-]);
-const HAT = labs(["#3e4b60", "#4f5f78", "#5c6e88", "#34405a"]);
-const PARASOL = ramp([
-  [0, "#173a22"],
-  [0.25, "#245631"],
-  [0.45, "#326e38"],
-  [0.62, "#4c883c"],
-  [0.8, "#73aa50"],
-  [1, "#a4c968"],
-]);
-const EMERALD = labs(["#0f6c47", "#1a8257", "#127a52"]);
-const RIM = ramp([
-  [0, "#a9b6be"],
-  [0.4, "#d9d7c8"],
-  [0.75, "#efeadb"],
-  [1, "#fcf9ef"],
-]);
-const SKIN = labs(["#8a6c56", "#a07e64", "#b48e70", "#7a604c"]);
-const HAIR = labs(["#3e382f", "#4a4236", "#2f2c27"]);
-const SCARF = labs(["#24477e", "#335c9c", "#1c3567", "#3d6aa8"]);
-const SHAFT = labs(["#6b4a2e", "#7e5a36"]);
-const CHILD = ramp([
-  [0, "#2f5f86"],
-  [0.35, "#457aa2"],
-  [0.65, "#6c9cb8"],
-  [1, "#a6d0d4"],
-]);
-const CHILD_FACE = labs(["#d68a76", "#e2a08a", "#c4705e", "#e8b09a"]);
-const STRAW = labs(["#d8c58e", "#e8d7a6", "#b9a36c", "#f0e2b8"]);
-const HAT_BAND = labs(["#c64e38", "#d9674a", "#b44434"]);
+/* Snow: a cold, luminous day; sunlit snow warm white, shadows blue-violet. */
+const SNOW = {
+  far: labs(["#a6b0d8", "#aeb4da", "#9ca8d2", "#b6b6dc"]),
+  farLit: labs(["#e6e0ee", "#eee6ec", "#e0deee"]),
+  lit: labs(["#f8f3ea", "#fdf8f0", "#f2ebe6", "#f7efe6", "#fff9f0"]),
+  half: labs(["#d6d8ea", "#dcdcec", "#cfd4e8", "#e2dfec"]),
+  shade: labs(["#93a0cc", "#9aa4d2", "#8794c4", "#a6a8d6", "#8c8ec6"]),
+  deep: labs(["#6f7cb0", "#7480b4", "#6a74a8"]),
+  rock: labs(["#56608a", "#4a5278", "#62668a", "#5a5a7e"]),
+  forest: labs(["#2a4050", "#2f4858", "#253a48", "#34505c"]),
+  straw: labs(["#a8925e", "#8a7854", "#c4ae78", "#6e6044"]),
+};
+const PINE_DARK = labs(["#1d3436", "#213a3c", "#1a2e34", "#26403e"]);
+const PINE_MID = labs(["#2f4c46", "#35524a", "#2c4650"]);
+const PINE_LIT = labs(["#4e6c52", "#5a7656", "#486a5a"]);
+const PINE_SNOW = labs(["#f4f2f6", "#e6e8f2", "#fbf8f2"]);
+const PINE_SNOW_SHADE = labs(["#c2c8e4", "#b4bce0", "#cdd0ea"]);
+
+/* Desert: warm ochre and rose in the sun, long violet shadows. */
+const DESERT = {
+  far: labs(["#b9a2c2", "#c3a8c2", "#aea2c6", "#c8aebe"]),
+  farLit: labs(["#e8c8b6", "#eed0ba", "#e0c2b4"]),
+  mesa: labs(["#c88a6c", "#d0946e", "#bf8068", "#d69c76"]),
+  mesaLit: labs(["#e8ae80", "#efba8a", "#e2a476", "#f2c496"]),
+  mesaShade: labs(["#8c6a8c", "#7e6286", "#96708a", "#86688e"]),
+  plain: labs(["#dcc4a0", "#d6b890", "#e4cca8", "#cfb48e"]),
+  sage: labs(["#9aa088", "#8c967e", "#a4a68c"]),
+  sand: labs(["#eab67e", "#f0c28c", "#e4aa76", "#f4cc98", "#dea272"]),
+  sandMid: labs(["#d49c74", "#cc9070", "#d8a47c", "#c89276"]),
+  sandLit: labs(["#f8dcb0", "#fbe4bc", "#f6d4a4"]),
+  shadow: labs(["#9a7c9e", "#8c6e98", "#a88aa6", "#7e6a92", "#94789e"]),
+  deep: labs(["#76628c", "#6e5a86"]),
+};
+const SHRUB = labs(["#7e8a6c", "#8a9474", "#6e7a62", "#949a7a"]);
+const SHRUB_LIT = labs(["#b4b48a", "#c0bc92", "#a8ac84"]);
+const SHRUB_SHADE = labs(["#5e5e72", "#585a6e", "#666478"]);
+
+/** The sky of each biome: its gradient, its clouds and how many there are. */
+interface SkyStyle {
+  sky: Ramp;
+  deep: Lab[];
+  turq: Lab[];
+  shade: Ramp;
+  light: Ramp;
+  warm: Lab[];
+  lav: Lab[];
+  haze: Lab[];
+  /** How much of the sky the cumulus cover and how much thin veil there is (1 = the meadow's). */
+  cover: number;
+  veil: number;
+}
+
+const SKIES: Record<MeadowBiome, SkyStyle> = {
+  meadow: {
+    sky: SKY,
+    deep: SKY_DEEP,
+    turq: SKY_TURQ,
+    shade: CLOUD_SHADE,
+    light: CLOUD_LIGHT,
+    warm: CLOUD_WARM,
+    lav: CLOUD_LAV,
+    haze: HAZE,
+    cover: 1,
+    veil: 1,
+  },
+  snow: {
+    sky: ramp([
+      [0, "#2866b4"],
+      [0.3, "#3a80c4"],
+      [0.6, "#68a6d4"],
+      [0.85, "#a6cce2"],
+      [1, "#d8e6ea"],
+    ]),
+    deep: labs(["#2460ac", "#2a6cb6", "#3470b8"]),
+    turq: labs(["#74c0e0", "#88cce2", "#62b4de"]),
+    shade: ramp([
+      [0, "#7a8cb8"],
+      [0.4, "#98a6cc"],
+      [0.7, "#b8c0d8"],
+      [1, "#d4d8e2"],
+    ]),
+    light: ramp([
+      [0, "#d4d8e2"],
+      [0.4, "#e8eaee"],
+      [0.75, "#f4f4f2"],
+      [1, "#fefcf8"],
+    ]),
+    warm: labs(["#f4e6e4", "#f2e0dc", "#f8ece4"]),
+    lav: labs(["#a8acd4", "#b4b6da", "#9ea4ce"]),
+    haze: labs(["#dfe6ee", "#e6e8f0", "#d4dfea", "#ece6ee"]),
+    cover: 0.62,
+    veil: 1.3,
+  },
+  desert: {
+    sky: ramp([
+      [0, "#2f76bc"],
+      [0.3, "#4890c8"],
+      [0.6, "#78b0cc"],
+      [0.85, "#bcd2c8"],
+      [1, "#ecdac0"],
+    ]),
+    deep: labs(["#2a6cb4", "#3478bc", "#3c80c0"]),
+    turq: labs(["#6cbcd0", "#80c6cc", "#5cb2cc"]),
+    shade: ramp([
+      [0, "#9a88ac"],
+      [0.4, "#b49eb8"],
+      [0.7, "#ccb6bc"],
+      [1, "#dccabe"],
+    ]),
+    light: ramp([
+      [0, "#dccab6"],
+      [0.4, "#efdcc4"],
+      [0.75, "#f8ead6"],
+      [1, "#fff6e6"],
+    ]),
+    warm: labs(["#f6d6b6", "#f8ceb2", "#f4dcbc"]),
+    lav: labs(["#b4a2c4", "#c0aac6", "#aa9cc0"]),
+    haze: labs(["#ecdcc6", "#f0e0cc", "#e6d6c8", "#f2dcc4"]),
+    cover: 0.55,
+    veil: 0.8,
+  },
+};
 
 /* ------------------------------------------------------------------ brush */
 
@@ -345,42 +441,45 @@ class Brush {
     ctx.fill();
 
     const devWidth = wid * this.scale;
-    if (texture <= 0 || devWidth < 2.6) return;
-    // bristle streaks spread across the width; some run past the end (dry brush)
+    if (texture <= 0 || devWidth < 3.2) return;
+    // bristle streaks spread across the width, some a little lighter than the body and some darker;
+    // some run past the end (dry brush). Each set is one path of thin quads that follow the curve,
+    // so a stroke costs at most three fills.
     const n = Math.min(6, Math.max(2, Math.round(devWidth / 3.2)));
-    for (let i = 0; i < n; i++) {
-      const o = (((i + 0.5) / n - 0.5) * 1.7 + rng.signed(0.18)) * h;
-      const s0 = rng.range(0, 0.25);
-      const s1 = rng.range(0.6, 1.08);
-      const ox = nx * o;
-      const oy = ny * o;
-      const a0 = (1 - s0) * (1 - s0);
-      const a1 = 2 * (1 - s0) * s0;
-      const a2 = s0 * s0;
-      const b0 = (1 - s1) * (1 - s1);
-      const b1 = 2 * (1 - s1) * s1;
-      const b2 = s1 * s1;
-      const m0 = (1 - s0) * (1 - s1);
-      const m1 = (1 - s0) * s1 + s0 * (1 - s1);
-      const m2 = s0 * s1;
-      const light = rng.chance(0.55);
-      const shade = lighten(col, light ? rng.range(0.04, 0.11) : -rng.range(0.035, 0.1));
-      ctx.strokeStyle = vary(shade, rng, 0.01, 0.08, 0.05);
-      ctx.globalAlpha = alpha * texture * rng.range(0.32, 0.7);
-      ctx.lineWidth = Math.max(0.6 / this.scale, wid * rng.range(0.07, 0.15));
+    const lit = rng.int(1 << n);
+    const minW = 0.3 / this.scale;
+    for (let pass = 0; pass < 2; pass++) {
+      let count = 0;
       ctx.beginPath();
-      ctx.moveTo(a0 * x + a1 * cx + a2 * x2 + ox, a0 * y + a1 * cy + a2 * y2 + oy);
-      ctx.quadraticCurveTo(
-        m0 * x + m1 * cx + m2 * x2 + ox,
-        m0 * y + m1 * cy + m2 * y2 + oy,
-        b0 * x + b1 * cx + b2 * x2 + ox,
-        b0 * y + b1 * cy + b2 * y2 + oy,
-      );
-      ctx.stroke();
+      for (let i = 0; i < n; i++) {
+        if (((lit >> i) & 1) !== pass) continue;
+        count++;
+        const o = (((i + 0.5) / n - 0.5) * 1.7 + rng.signed(0.18)) * h;
+        const s0 = rng.range(0, 0.25);
+        const s1 = rng.range(0.6, 1.08);
+        const bw = Math.max(minW, wid * rng.range(0.035, 0.075));
+        for (let k = 0; k < 6; k++) {
+          // along one side (k < 3) and back along the other, thinning towards the tip
+          const j = k < 3 ? k : 5 - k;
+          const t = s0 + ((s1 - s0) * j) / 2;
+          const u = 1 - t;
+          const off = o + (k < 3 ? bw : -bw) * (1 - j * 0.2);
+          const px = u * u * x + 2 * u * t * cx + t * t * x2 + nx * off;
+          const py = u * u * y + 2 * u * t * cy + t * t * y2 + ny * off;
+          if (k === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+      }
+      if (!count) continue;
+      const shade = lighten(col, pass ? rng.range(0.045, 0.1) : -rng.range(0.04, 0.09));
+      ctx.fillStyle = vary(shade, rng, 0.01, 0.08, 0.05);
+      ctx.globalAlpha = alpha * texture * rng.range(0.4, 0.65);
+      ctx.fill();
     }
   }
 
-  /** A short, fat dab (flowers, faces, highlights). */
+  /** A short, fat dab (flowers, foliage). */
   dab(x: number, y: number, r: number, ang: number, col: Lab, alpha: number): void {
     const { ctx, rng } = this;
     ctx.globalAlpha = alpha;
@@ -389,493 +488,6 @@ class Brush {
     ctx.ellipse(x, y, r, r * rng.range(0.55, 0.85), ang, 0, TAU);
     ctx.fill();
   }
-}
-
-/* ------------------------------------------------------------------ layout */
-
-interface Layout {
-  w: number;
-  h: number;
-  dpr: number;
-  /** Brush unit for sky and grass strokes (CSS px). */
-  bu: number;
-  /** Figure scale: CSS px per reference-painting px. */
-  k: number;
-  /** Translation that maps reference px to CSS px for the woman: X = tx + k * px. */
-  tx: number;
-  ty: number;
-  /** Same for the child. */
-  cx: number;
-  cy: number;
-  ridge: Float32Array;
-  ridgeMin: number;
-  ridgeMax: number;
-  /** Sky tile period in CSS px (tilePx device px). */
-  tile: number;
-  tilePx: number;
-  skyH: number;
-}
-
-function ridgeAt(L: Layout, x: number): number {
-  const i = clamp(Math.round(x), 0, L.ridge.length - 1);
-  return L.ridge[i];
-}
-
-function computeLayout(w: number, h: number, dpr: number, seed: number): Layout {
-  const aspect = w / h;
-  // 0 for a 3:4 portrait card, 1 for a 3:1 banner
-  const t = clamp(Math.log(aspect / 0.75) / Math.log(4), 0, 1);
-  const crest = h * lerp(0.68, 0.8, t);
-  const top = h * lerp(0.06, 0.08, t);
-  let k = (crest - top) / (REF_CREST_Y - REF_TOP_Y);
-  k = Math.min(k, (w * 0.88) / (REF_RIGHT_X - REF_LEFT_X));
-  const feetX = clamp(
-    w * lerp(0.6, 0.63, t),
-    (REF_FEET_X - REF_LEFT_X) * k + w * 0.04,
-    w - (REF_RIGHT_X - REF_FEET_X) * k - w * 0.03,
-  );
-  const bu = clamp(Math.sqrt(w * h) / 72, 2.3, 7.5);
-
-  const n = Math.ceil(w) + 2;
-  const ridge = new Float32Array(n);
-  const rs = hashInt(seed, 31);
-  const shape = (x: number) => {
-    const d = (x - feetX) / Math.max(w, h * 1.2);
-    return (
-      h * 0.05 * d * d * 2.2 +
-      h * 0.018 * fbm(x / (h * 0.45), 0.5, rs, 0, 3) +
-      h * 0.006 * fbm(x / (h * 0.09), 3.3, rs + 1, 0, 2) +
-      (h * 0.025 * (feetX - x)) / w
-    );
-  };
-  const base = shape(feetX);
-  let ridgeMin = Infinity;
-  let ridgeMax = -Infinity;
-  for (let x = 0; x < n; x++) {
-    // higher ground to the left (the hill continues), lowest point near the right edge
-    const y = crest + (shape(x) - base) - (h * 0.05 * (feetX - x)) / w;
-    ridge[x] = y;
-    ridgeMin = Math.min(ridgeMin, y);
-    ridgeMax = Math.max(ridgeMax, y);
-  }
-
-  const childX = feetX + (REF_CHILD_X - REF_FEET_X) * k;
-  const tilePx = Math.ceil(w * dpr);
-  return {
-    w,
-    h,
-    dpr,
-    bu,
-    k,
-    tx: feetX - REF_FEET_X * k,
-    ty: crest - REF_CREST_Y * k,
-    cx: childX - REF_CHILD_X * k,
-    cy: ridge[clamp(Math.round(childX), 0, n - 1)] - REF_CHILD_CREST_Y * k,
-    ridge,
-    ridgeMin,
-    ridgeMax,
-    tile: tilePx / dpr,
-    tilePx,
-    skyH: Math.min(h, ridgeMax + bu * 3),
-  };
-}
-
-/* ------------------------------------------------------------------ sky */
-
-function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
-  const rng = new Rng(hashInt(seed, 101));
-  const brush = new Brush(ctx, rng);
-  brush.scale = L.dpr;
-  const T = L.tile;
-  const H = L.skyH;
-  const bu = L.bu;
-  const hz = (L.ridgeMin + L.ridgeMax) * 0.5; // the horizon is hidden behind the hill
-  ctx.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
-  ctx.lineCap = "round";
-
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  for (const s of SKY) grad.addColorStop(clamp((s.at * hz) / H, 0, 1), hex(s.c));
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, T, H);
-  yield;
-
-  // Periodic cloud field (period T along x) so the strip tiles seamlessly while drifting.
-  const pBig = Math.max(2, Math.round(T / clamp(L.h * 0.55, 70, 300)));
-  const pDet = Math.max(5, Math.round(T / clamp(L.h * 0.15, 18, 80)));
-  const fBig = pBig / T;
-  const fDet = pDet / T;
-  const sBig = hashInt(seed, 7);
-  const sDet = hashInt(seed, 8);
-  const rawCloud = (x: number, y: number) => {
-    const v = y / hz;
-    const big = fbm(x * fBig, y * fBig * 1.9, sBig, pBig, 4);
-    const det = fbm(x * fDet, y * fDet * 2.6, sDet, pDet, 3);
-    const env = smoothstep(0.0, 0.36, v) * (1 - 0.45 * smoothstep(0.8, 1.05, v));
-    return (0.76 * big + 0.24 * det + 0.3) * env;
-  };
-  // pick the threshold so that every seed gets a similar amount of cloud
-  const samples: number[] = [];
-  for (let gy = 0; gy < 24; gy++) {
-    for (let gx = 0; gx < 48; gx++) samples.push(rawCloud(((gx + 0.5) / 48) * T, ((gy + 0.5) / 24) * hz));
-    if ((gy & 7) === 7) yield;
-  }
-  samples.sort((a, b) => a - b);
-  const th = samples[Math.floor(samples.length * 0.5)];
-  const cloudAt = (x: number, y: number) => smoothstep(th, th + 0.2, rawCloud(x, y));
-
-  const wrapped = (x: number, reach: number, draw: (x: number) => void) => {
-    const st = rng.state;
-    draw(x);
-    const after = rng.state;
-    if (x + reach > T) {
-      rng.state = st;
-      draw(x - T);
-    }
-    if (x - reach < 0) {
-      rng.state = st;
-      draw(x + T);
-    }
-    rng.state = after;
-  };
-
-  const area = T * Math.min(H, hz + bu * 2);
-  // 1. blue underlayer: steep diagonal hatching and flatter wind-driven strokes
-  const nBlue = Math.round(area / (bu * bu * 2.1));
-  for (let i = 0; i < nBlue; i++) {
-    const x = rng.next() * T;
-    const y = rng.range(-bu, Math.min(H, hz + bu * 2));
-    const v = clamp(y / hz + rng.signed(0.1), 0, 1);
-    const r0 = rng.next();
-    const col =
-      v < 0.55 && r0 < 0.05
-        ? mix(rampAt(SKY, v), rng.pick(SKY_DEEP), 0.6)
-        : r0 > 0.88
-          ? rampAt(SKY, clamp(v + rng.range(0.1, 0.24), 0, 1))
-          : rampAt(SKY, v);
-    const steep = rng.chance(0.45);
-    const ang = steep ? -1.05 + rng.signed(0.3) : -0.24 + rng.signed(0.22);
-    const len = bu * rng.range(1.5, 3.2) * (steep ? 0.85 : 1);
-    const wid = bu * rng.range(0.55, 1.05) * (steep ? 1.15 : 1);
-    const bend = rng.signed(0.1);
-    const alpha = rng.range(0.5, 0.88);
-    wrapped(x, len + wid, (px) => brush.stroke(px, y, ang, len, wid, bend, col, alpha, 0.6));
-    if ((i & 31) === 31) yield;
-  }
-
-  // 2. clouds, dark to light: shaded body, lit body, highlights, then broken edges
-  const skyBottom = Math.min(H, hz + bu);
-  const litAt = (x: number, y: number, c: number) => {
-    const up = cloudAt(x, y - bu * 2.2);
-    const dn = cloudAt(x, y + bu * 2.2);
-    return clamp(0.46 + (dn - up) * 1.4 + (c - 0.6) * 0.4 + rng.signed(0.2), 0, 1);
-  };
-  const cloudStroke = (x: number, y: number, col: Lab, size: number, alpha: number) => {
-    const r = rng.next();
-    const ang = r < 0.45 ? -0.22 + rng.signed(0.22) : r < 0.78 ? -0.75 + rng.signed(0.3) : rng.signed(1.4);
-    const s = size * rng.range(0.65, 1.45);
-    const len = bu * rng.range(1.3, 2.8) * s;
-    const wid = bu * rng.range(0.6, 1.05) * s;
-    const bend = rng.chance(0.25) ? rng.signed(0.32) : rng.signed(0.14);
-    wrapped(x, len + wid, (px) =>
-      brush.stroke(
-        px - Math.cos(ang) * len * 0.5,
-        y - Math.sin(ang) * len * 0.5,
-        ang,
-        len,
-        wid,
-        bend,
-        col,
-        alpha,
-      ),
-    );
-  };
-  const passes: [number, number, number][] = [
-    // [count factor, min density, stroke size]
-    [1 / 2.2, 0.22, 1.55],
-    [1 / 1.5, 0.12, 1.05],
-    [1 / 4.5, 0.3, 0.6],
-    [1 / 2.2, 0.04, 0.75],
-  ];
-  for (let p = 0; p < passes.length; p++) {
-    const [factor, minC, size] = passes[p];
-    const count = Math.round((area / (bu * bu)) * factor);
-    for (let i = 0; i < count; i++) {
-      if ((i & 31) === 31) yield;
-      const x = rng.next() * T;
-      const y = rng.range(-bu, skyBottom);
-      const c = cloudAt(x, y);
-      if (c < minC || rng.next() > c * 1.4) {
-        continue;
-      }
-      const lit = litAt(x, y, c);
-      if (p === 0) {
-        const col = lit < 0.55 ? rampAt(CLOUD_SHADE, lit / 0.55) : rampAt(CLOUD_LIGHT, (lit - 0.55) * 1.1);
-        cloudStroke(x, y, col, size, rng.range(0.7, 0.92));
-      } else if (p === 1) {
-        if (lit < 0.42 && rng.chance(0.6)) continue;
-        const col = rng.chance(0.07) ? rng.pick(CLOUD_WARM) : rampAt(CLOUD_LIGHT, (lit - 0.3) / 0.7);
-        cloudStroke(x, y, col, size, rng.range(0.7, 0.93));
-      } else if (p === 2) {
-        if (lit < 0.7) continue;
-        cloudStroke(x, y, rampAt(CLOUD_LIGHT, 0.86 + rng.next() * 0.14), size, rng.range(0.8, 0.97));
-      } else {
-        if (c > 0.45) continue;
-        const col = lit < 0.4 ? rampAt(CLOUD_SHADE, 0.5 + lit) : rampAt(CLOUD_LIGHT, lit * 0.8);
-        cloudStroke(x, y, col, size, rng.range(0.55, 0.85));
-      }
-    }
-  }
-
-  // 3. blue cut back into the cloud edges, as a painter breaks up the masses
-  const nCut = Math.round((area / (bu * bu)) * 0.3);
-  for (let i = 0; i < nCut; i++) {
-    if ((i & 31) === 31) yield;
-    const x = rng.next() * T;
-    const y = rng.range(0, Math.min(H, hz));
-    const c = cloudAt(x, y);
-    if (c < 0.06 || c > 0.55) continue;
-    const col = rampAt(SKY, clamp(y / hz + rng.signed(0.1), 0, 1));
-    const len = bu * rng.range(1.0, 2.2);
-    const wid = bu * rng.range(0.4, 0.8);
-    const ang = -0.3 + rng.signed(0.45);
-    const bend = rng.signed(0.12);
-    const alpha = rng.range(0.55, 0.85);
-    wrapped(x, len + wid, (px) => brush.stroke(px, y, ang, len, wid, bend, col, alpha));
-  }
-}
-
-/* ------------------------------------------------------------------ ground: grass + figures */
-
-/** Light/shade field over the grass, including the figure's shadow falling down-left. */
-function grassLight(L: Layout, seed: number): (x: number, y: number) => number {
-  const { w, h, bu } = L;
-  const patchSeed = hashInt(seed, 41);
-  const shadeSeed = hashInt(seed, 42);
-  const feetX = L.tx + REF_FEET_X * L.k;
-  return (x, y) => {
-    const r = ridgeAt(L, x);
-    const dy = y - r;
-    // large sunlit and shaded masses, broken up by smaller patches
-    const patch =
-      0.6 * fbm(x / (bu * 20), y / (bu * 11), patchSeed + 5, 0, 2) +
-      0.55 * fbm(x / (bu * 8), y / (bu * 4.5), patchSeed, 0, 3);
-    if (dy < bu) return patch + 0.15;
-    const centre = feetX - 0.9 * dy + fbm(x / (bu * 7), y / (bu * 4), shadeSeed, 0, 2) * bu * 4;
-    const half = bu * 2 + 0.34 * dy;
-    const shadow = smoothstep(half, half * 0.45, Math.abs(x - centre)) * smoothstep(bu, bu * 4, dy);
-    return patch - 1.5 * shadow - (0.15 * dy) / Math.max(w, h) + 0.08;
-  };
-}
-
-function grassColor(rng: Rng, patch: number, depth: number): Lab {
-  if (rng.chance(0.025 + 0.02 * (1 - depth))) return rng.pick(GRASS.accent);
-  if (rng.chance(0.07)) return rng.pick(GRASS.earth);
-  if (depth < 0.2 && rng.chance(0.3 * (1 - depth / 0.2))) {
-    return rng.chance(0.6) ? rng.pick(GRASS.cool) : rng.pick(GRASS.pale);
-  }
-  // mix measured from the reference: ~14% deep, 20% dark, 36% olive, 25% sunlit
-  const sun = patch * 1.1 + (0.25 - depth) * 0.35 + rng.signed(0.35);
-  if (sun > 0.18) return rng.pick(GRASS.sun);
-  if (sun > -0.24) return rng.pick(GRASS.mid);
-  if (sun > -0.56) return rng.pick(GRASS.dark);
-  return rng.pick(GRASS.deep);
-}
-
-function pointInPoly(poly: readonly number[], x: number, y: number): boolean {
-  let inside = false;
-  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
-    const xi = poly[i];
-    const yi = poly[i + 1];
-    const xj = poly[j];
-    const yj = poly[j + 1];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
-  }
-  return inside;
-}
-
-function polyBounds(poly: readonly number[]): [number, number, number, number] {
-  let x0 = Infinity;
-  let y0 = Infinity;
-  let x1 = -Infinity;
-  let y1 = -Infinity;
-  for (let i = 0; i < poly.length; i += 2) {
-    x0 = Math.min(x0, poly[i]);
-    x1 = Math.max(x1, poly[i]);
-    y0 = Math.min(y0, poly[i + 1]);
-    y1 = Math.max(y1, poly[i + 1]);
-  }
-  return [x0, y0, x1, y1];
-}
-
-function polyArea(poly: readonly number[]): number {
-  let a = 0;
-  for (let i = 0, j = poly.length - 2; i < poly.length; j = i, i += 2) {
-    a += (poly[j] + poly[i]) * (poly[j + 1] - poly[i + 1]);
-  }
-  return Math.abs(a) / 2;
-}
-
-function fillPoly(ctx: Ctx, poly: readonly number[], color: string, alpha: number): void {
-  ctx.globalAlpha = alpha;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(poly[0], poly[1]);
-  for (let i = 2; i < poly.length; i += 2) ctx.lineTo(poly[i], poly[i + 1]);
-  ctx.closePath();
-  ctx.fill();
-}
-
-type RegionStroke = (x: number, y: number, u: number, v: number) => void;
-
-/** Calls `paint` for `count` random points inside `poly`, with u/v normalised to its bounds. */
-function* strokesIn(rng: Rng, poly: readonly number[], count: number, paint: RegionStroke): Gen {
-  const [x0, y0, x1, y1] = polyBounds(poly);
-  let placed = 0;
-  for (let tries = 0; placed < count && tries < count * 6; tries++) {
-    if ((tries & 15) === 15) yield;
-    const x = rng.range(x0, x1);
-    const y = rng.range(y0, y1);
-    if (!pointInPoly(poly, x, y)) continue;
-    paint(x, y, (x - x0) / (x1 - x0), (y - y0) / (y1 - y0));
-    placed++;
-  }
-}
-
-/* Figure outlines in reference-painting px. */
-const SKIRT_POLY = [
-  822, 795, 795, 850, 772, 910, 748, 970, 725, 1030, 700, 1080, 672, 1120, 640, 1160, 612, 1205, 590, 1250,
-  566, 1300, 600, 1332, 700, 1346, 850, 1352, 1000, 1346, 1100, 1322, 1122, 1260, 1132, 1200, 1136, 1120,
-  1132, 1040, 1124, 970, 1112, 900, 1100, 850, 1086, 812, 1000, 800, 900, 796,
-];
-const JACKET_POLY = [
-  880, 492, 860, 508, 847, 540, 840, 600, 834, 680, 826, 750, 812, 802, 900, 810, 1000, 816, 1080, 822, 1124,
-  834, 1098, 792, 1070, 760, 1056, 700, 1048, 620, 1044, 566, 1034, 532, 1012, 508, 980, 492, 948, 484, 914,
-  484,
-];
-const CANOPY_POLY = [
-  401, 240, 471, 165, 526, 95, 600, 45, 676, 15, 760, 22, 846, 40, 931, 95, 1016, 190, 966, 225, 936, 262,
-  890, 305, 846, 350, 800, 334, 760, 336, 716, 370, 666, 395, 620, 362, 576, 332, 530, 345, 486, 355, 466,
-  300, 430, 270,
-];
-const CANOPY_CENTER: [number, number] = [696, 130];
-const CANOPY_TIPS = [401, 240, 526, 95, 676, 15, 931, 95, 1016, 190, 846, 350, 666, 395, 486, 355];
-const RIM_TOP = [452, 188, 526, 98, 600, 48, 676, 18, 760, 25, 846, 43, 931, 98, 1004, 182];
-const RIM_BOTTOM = [
-  1016, 190, 966, 225, 936, 262, 890, 305, 846, 350, 800, 334, 760, 336, 716, 370, 666, 395, 620, 362, 576,
-  332, 530, 345, 486, 355, 466, 300, 430, 270, 401, 240,
-];
-const CHILD_BODY = [
-  372, 1188, 404, 1172, 462, 1170, 494, 1186, 514, 1226, 522, 1300, 520, 1370, 346, 1370, 340, 1300, 350,
-  1226,
-];
-
-function* paintParasol(b: Brush): Gen {
-  const { ctx, rng } = b;
-  fillPoly(ctx, CANOPY_POLY, "#2a5a32", 1);
-  const [ccx, ccy] = CANOPY_CENTER;
-  const panelTone = [0.36, 0.5, 0.44, 0.72, 0.62, 0.52, 0.4, 0.3];
-  const tipAngles: number[] = [];
-  for (let i = 0; i < CANOPY_TIPS.length; i += 2) {
-    tipAngles.push(Math.atan2(CANOPY_TIPS[i + 1] - ccy, CANOPY_TIPS[i] - ccx));
-  }
-  const panelOf = (a: number) => {
-    // the panel whose angular sector contains a
-    let best = 0;
-    let bestD = Infinity;
-    for (let i = 0; i < tipAngles.length; i++) {
-      const j = (i + 1) % tipAngles.length;
-      let mid = (tipAngles[i] + tipAngles[j]) / 2;
-      if (Math.abs(tipAngles[j] - tipAngles[i]) > Math.PI) mid += Math.PI;
-      const d = Math.abs(Math.atan2(Math.sin(a - mid), Math.cos(a - mid)));
-      if (d < bestD) {
-        bestD = d;
-        best = i;
-      }
-    }
-    return best;
-  };
-  const count = Math.round((polyArea(CANOPY_POLY) / (60 * 15)) * 2.8);
-  // strokes are clipped to the canopy so its scalloped silhouette stays crisp
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(CANOPY_POLY[0], CANOPY_POLY[1]);
-  for (let i = 2; i < CANOPY_POLY.length; i += 2) ctx.lineTo(CANOPY_POLY[i], CANOPY_POLY[i + 1]);
-  ctx.closePath();
-  ctx.clip();
-  yield* strokesIn(rng, CANOPY_POLY, count, (x, y) => {
-    const a = Math.atan2(y - ccy, x - ccx);
-    const r = Math.hypot(x - ccx, y - ccy);
-    const tone = panelTone[panelOf(a)] + Math.min(r / 320, 1) * 0.12 + rng.signed(0.16);
-    const col = rng.chance(0.14) ? rng.pick(EMERALD) : rampAt(PARASOL, tone);
-    const ang = a + rng.signed(0.35) + (rng.chance(0.5) ? Math.PI : 0);
-    centred(b, x, y, ang, rng.range(40, 85), rng.range(11, 19), rng.signed(0.12), col, rng.range(0.7, 0.95));
-  });
-  ctx.restore();
-  // ribs
-  for (let i = 0; i < CANOPY_TIPS.length; i += 2) {
-    const tx = CANOPY_TIPS[i];
-    const ty = CANOPY_TIPS[i + 1];
-    const ang = Math.atan2(ty - ccy, tx - ccx);
-    const len = Math.hypot(tx - ccx, ty - ccy);
-    b.stroke(ccx, ccy, ang, len * 0.96, 6, rng.signed(0.03), hexLab("#1d3d26"), 0.45, 0);
-  }
-  // bottom edge: dark scalloped hem with a cool reflected line
-  for (let i = 0; i + 2 < RIM_BOTTOM.length; i += 2) {
-    const x0 = RIM_BOTTOM[i];
-    const y0 = RIM_BOTTOM[i + 1];
-    const x1 = RIM_BOTTOM[i + 2];
-    const y1 = RIM_BOTTOM[i + 3];
-    const ang = Math.atan2(y1 - y0, x1 - x0);
-    const len = Math.hypot(x1 - x0, y1 - y0);
-    b.stroke(
-      x0,
-      y0,
-      ang,
-      len,
-      12,
-      rng.signed(0.08),
-      hexLab(rng.chance(0.5) ? "#1f4430" : "#2b5448"),
-      0.85,
-      0.6,
-    );
-    if (rng.chance(0.6)) b.stroke(x0, y0 + 6, ang, len * 0.8, 5, rng.signed(0.08), hexLab("#4d7f9e"), 0.6, 0);
-  }
-  yield;
-  // the sunlit outer surface shows as a pale crescent along the upper edge
-  for (let pass = 0; pass < 3; pass++) {
-    for (let i = 0; i + 2 < RIM_TOP.length; i += 2) {
-      const x0 = RIM_TOP[i];
-      const y0 = RIM_TOP[i + 1];
-      const x1 = RIM_TOP[i + 2];
-      const y1 = RIM_TOP[i + 3];
-      const ang = Math.atan2(y1 - y0, x1 - x0);
-      const len = Math.hypot(x1 - x0, y1 - y0);
-      const nx = Math.sin(ang);
-      const ny = -Math.cos(ang);
-      // thicker in the middle of the arc, thin at its ends
-      const mid = 1 - Math.abs(i / (RIM_TOP.length - 4) - 0.5) * 1.4;
-      for (let s = 0; s < 3; s++) {
-        const f = (s + rng.next() * 0.7) / 3;
-        const o = (pass === 0 ? -16 : pass === 1 ? -9 : -4) * mid + rng.signed(4);
-        const x = x0 + (x1 - x0) * f + nx * o - Math.cos(ang) * len * 0.25;
-        const y = y0 + (y1 - y0) * f + ny * o - Math.sin(ang) * len * 0.25;
-        const tone =
-          pass === 0 ? rng.range(0.05, 0.5) : pass === 1 ? rng.range(0.5, 0.9) : rng.range(0.85, 1);
-        const wid = (pass === 2 ? rng.range(10, 16) : rng.range(18, 30)) * (0.45 + 0.55 * mid);
-        b.stroke(
-          x,
-          y,
-          ang + rng.signed(0.15),
-          len * rng.range(0.5, 0.85),
-          wid,
-          rng.signed(0.1),
-          rampAt(RIM, tone),
-          rng.range(0.8, 0.96),
-        );
-      }
-    }
-  }
-  yield;
 }
 
 /** A stroke centred on (x, y) rather than starting there. */
@@ -904,514 +516,1278 @@ function centred(
   );
 }
 
-/** Strokes laid along a line from (x0, y0) to (x1, y1), `n` side by side across `width`. */
-function band(
-  b: Brush,
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  width: number,
-  n: number,
-  pick: (f: number) => Lab,
-  alpha: number,
-) {
-  const ang = Math.atan2(y1 - y0, x1 - x0);
-  const len = Math.hypot(x1 - x0, y1 - y0);
-  const nx = -Math.sin(ang);
-  const ny = Math.cos(ang);
-  for (let i = 0; i < n; i++) {
-    const f = n === 1 ? 0.5 : i / (n - 1);
-    const o = (f - 0.5) * width + b.rng.signed(width * 0.08);
-    const s = b.rng.range(0, 0.12) * len;
-    b.stroke(
-      x0 + nx * o + Math.cos(ang) * s,
-      y0 + ny * o + Math.sin(ang) * s,
-      ang + b.rng.signed(0.06),
-      len * b.rng.range(0.75, 1),
-      (width / n) * b.rng.range(1.3, 1.9),
-      b.rng.signed(0.05),
-      pick(f),
-      alpha,
-    );
-  }
+/* ------------------------------------------------------------------ layout */
+
+export type MeadowBiome = "meadow" | "snow" | "desert";
+
+type TreeKind = "poplar" | "oak" | "pine" | "shrub";
+
+interface Tree {
+  kind: TreeKind;
+  /** Foot of the trunk (CSS px). */
+  x: number;
+  y: number;
+  /** Height and crown width (CSS px). */
+  ht: number;
+  wd: number;
+  /** Lean towards the right (x shift per px of height) and how far the gusts bend it. */
+  lean: number;
+  give: number;
+  phase: number;
 }
 
-function* paintWoman(b: Brush): Gen {
-  const { ctx, rng } = b;
+interface Layout {
+  biome: MeadowBiome;
+  w: number;
+  h: number;
+  dpr: number;
+  /** Brush unit (CSS px): the size of a stroke in the sky and in the foreground. */
+  bu: number;
+  /** Feature scale (CSS px): hills, mountains and trees are sized from it. */
+  F: number;
+  /** Horizon: the foot of the hills, where the far ground begins. */
+  hz: number;
+  /**
+   * Skylines (y for each CSS px column): the farthest range, a nearer one in front of it, and the
+   * crest where the foreground (meadow, snowfield or dunes) begins.
+   */
+  far: Float32Array;
+  near: Float32Array;
+  crest: Float32Array;
+  landTop: number;
+  crestMin: number;
+  /** Mean height of the foreground (CSS px), from its crest to the bottom edge. */
+  meadowH: number;
+  trees: Tree[];
+  /** Meadow: the path's centre line in ground units, gx = a + b * sin(gz * k + ph), and half its width. */
+  path: { a: number; b: number; k: number; ph: number; half: number } | null;
+  /** Snow: the peaks of the main range, as [x, y, half base, ridge slant] for each. */
+  peaks: number[];
+  /** Desert: the crest lines of the dunes in front, far to near (y for each CSS px column). */
+  dunes: Float32Array[];
+  /** Desert: each dune crest's wave (frequency, phase), the first crest included; buttes as [x, half width, height]. */
+  waves: number[];
+  buttes: number[];
+  /** Sky tile period in CSS px (tilePx device px). */
+  tile: number;
+  tilePx: number;
+  skyH: number;
+}
 
-  // the parasol is behind her head
-  yield* paintParasol(b);
+const colAt = (a: Float32Array, x: number) => a[clamp(Math.round(x), 0, a.length - 1)];
 
-  // skirt: diagonal folds swept down-left by the wind, lit from the front-left
-  fillPoly(ctx, SKIRT_POLY, "#6f88a6", 1);
-  const skirtSeed = rng.int(1e9);
-  let count = Math.round((polyArea(SKIRT_POLY) / (80 * 20)) * 3.3);
-  yield* strokesIn(rng, SKIRT_POLY, count, (x, y, u, v) => {
-    // folds run from the waist down to the lower left
-    const fold = Math.sin((u * 2.6 + v * 2.2 + 0.4 * noise2(x / 70, y / 70, skirtSeed, 0)) * Math.PI);
-    let tone = 0.62 - 0.46 * u + 0.3 * fold + rng.signed(0.1);
-    if (u < 0.5 && v > 0.08 && v < 0.75) tone += 0.08;
-    let col = rampAt(SKIRT, tone);
-    const bustle = u > 0.7 && v < 0.48;
-    if (bustle ? rng.chance(0.45) : tone < 0.4 && rng.chance(0.18)) col = mix(col, rng.pick(LAVENDER), 0.55);
-    else if (rng.chance(0.08)) col = rng.pick(REFLECT_BLUE);
-    else if (tone > 0.8 && rng.chance(0.3)) col = hexLab("#e9e4c8");
-    if (v > 0.8 && rng.chance(0.2)) col = mix(col, hexLab("#9ea052"), 0.5);
-    let ang = Math.PI / 2 + 0.78 - 0.55 * u + rng.signed(0.18);
-    if (bustle && rng.chance(0.6)) ang = Math.PI / 2 - 1 + v * 1.8 + rng.signed(0.3);
-    centred(
-      b,
+/** Size of a ground unit at depth d in the foreground (0 at the crest, 1 at the bottom edge). */
+const persp = (d: number) => 0.24 + 0.76 * d;
+
+/** Places one biome's hills, crest and trees; `side` mirrors a composition position. */
+type Scenery = (L: Layout, rng: Rng, seed: number, side: (u: number) => number) => void;
+
+const meadowScenery: Scenery = (L, rng, seed, side) => {
+  const { w, F, hz, far, near, crest } = L;
+  const sFar = hashInt(seed, 12);
+  const sNear = hashInt(seed, 13);
+  const sCrest = hashInt(seed, 14);
+  const swell = rng.range(0.1, 0.4);
+  const swellW = rng.range(0.6, 1.0);
+  const swell2 = rng.range(0.6, 0.95);
+  const dip = rng.range(0.6, 0.85);
+  for (let x = 0; x < far.length; x++) {
+    const u = side(x / w);
+    const hill = Math.exp(-((((u - swell) * w) / (F * swellW)) ** 2));
+    const hill2 = Math.exp(-((((u - swell2) * w) / (F * 0.45)) ** 2));
+    far[x] =
+      hz -
+      F *
+        (0.03 +
+          0.07 * hill +
+          0.035 * hill2 +
+          0.025 * fbm(x / (F * 0.4), 0.3, sFar, 0, 3) +
+          0.006 * fbm(x / (F * 0.1), 1.7, sFar + 1, 0, 2));
+    near[x] = hz - F * (0.014 + 0.022 * (0.5 + 0.5 * fbm(x / (F * 0.3), 2.1, sNear, 0, 3)));
+    // the meadow rises nearly to the horizon on one side and falls away on the other
+    crest[x] =
+      hz +
+      F * (0.006 + 0.12 * smoothstep(0.08, dip + 0.08, u) + 0.012 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  // a stand of poplars on the far fields, where the meadow falls away
+  const nPoplars = 4 + rng.int(4);
+  const gap = F * rng.range(0.02, 0.03);
+  let px = side(rng.range(0.64, 0.8)) * w - ((nPoplars - 1) * gap) / 2;
+  for (let i = 0; i < nPoplars; i++) {
+    const x = px + rng.signed(gap * 0.25);
+    px += gap * rng.range(0.8, 1.25) * (rng.chance(0.15) ? 1.8 : 1);
+    const mid = 1 - Math.abs(i / Math.max(1, nPoplars - 1) - 0.45) * 0.9;
+    const ht = F * rng.range(0.1, 0.16) * (0.7 + 0.45 * mid);
+    L.trees.push({
+      kind: "poplar",
       x,
-      y,
-      ang,
-      rng.range(50, 105),
-      rng.range(15, 24),
-      rng.signed(0.14),
-      col,
-      rng.range(0.75, 0.95),
-    );
+      y: Math.min(hz + F * 0.016, colAt(crest, x) - F * 0.006) + rng.signed(F * 0.002),
+      ht,
+      wd: ht * rng.range(0.17, 0.23),
+      lean: rng.range(0.02, 0.05),
+      give: rng.range(0.8, 1.2),
+      phase: rng.next() * TAU,
+    });
+  }
+  // and a lone round tree on the rise
+  const lx = side(rng.range(0.14, 0.3)) * w;
+  const lt = F * rng.range(0.075, 0.1);
+  L.trees.push({
+    kind: "oak",
+    x: lx,
+    y: Math.min(hz + F * 0.006, colAt(crest, lx) - F * 0.004),
+    ht: lt,
+    wd: lt * rng.range(1.0, 1.3),
+    lean: 0.012,
+    give: 0.45,
+    phase: rng.next() * TAU,
   });
-  // long light sweeps along the front folds
-  for (let i = 0; i < 12; i++) {
-    const x = rng.range(720, 980);
-    const y = rng.range(830, 1180);
-    if (!pointInPoly(SKIRT_POLY, x, y)) continue;
-    centred(
-      b,
+  const dir = side(1) > 0.5 ? 1 : -1;
+  L.path = { a: dir * 0.03, b: dir * 0.3, k: 1.4, ph: -2.97 + rng.signed(0.3), half: 0.05 };
+};
+
+const snowScenery: Scenery = (L, rng, seed, side) => {
+  const { w, h, F, hz, far, near, crest } = L;
+  // the main range: a few peaks, one of them standing out
+  const count = 2 + Math.round(w / (F * 1.1)) + rng.int(2);
+  const hero = Math.min(count - 1, Math.floor(side(rng.range(0.25, 0.6)) * count));
+  const peaks: number[] = [];
+  for (let k = 0; k < count; k++) {
+    const x = ((k + 0.5 + rng.signed(0.4)) / count) * w;
+    const tall = k === hero ? F * rng.range(0.36, 0.44) : F * rng.range(0.12, 0.27);
+    peaks.push(
       x,
-      y,
-      Math.PI / 2 + 0.72 + rng.signed(0.12),
-      rng.range(110, 190),
-      rng.range(10, 16),
-      rng.signed(0.08),
-      rampAt(SKIRT, rng.range(0.84, 1)),
-      0.85,
-    );
-  }
-
-  // jacket: warm light in front, cool blue-grey shadow at the back and under the arm
-  fillPoly(ctx, JACKET_POLY, "#a2ada8", 1);
-  count = Math.round((polyArea(JACKET_POLY) / (45 * 13)) * 3.2);
-  yield* strokesIn(rng, JACKET_POLY, count, (x, y, u, v) => {
-    // pale on the arm side, warm yellow light in front, blue-grey shadow towards the back,
-    // with a thin rim of light along the back edge
-    const uu = u + rng.signed(0.1);
-    let col: Lab;
-    if (uu > 0.93 && rng.chance(0.4)) col = rampAt(JACKET_PALE, rng.range(0.5, 1));
-    else if (uu > 0.6)
-      col = rampAt(JACKET_COOL, clamp(0.8 - (uu - 0.6) * 2 + rng.signed(0.25) - (v < 0.2 ? 0.2 : 0), 0, 1));
-    else if (uu > 0.26 && v > 0.3 && rng.chance(0.75))
-      col = rampAt(JACKET_WARM, clamp(0.25 + v * 0.55 + rng.signed(0.25), 0, 1));
-    else col = rampAt(JACKET_PALE, clamp(0.72 - v * 0.45 + rng.signed(0.25), 0, 1));
-    if (rng.chance(0.06)) col = hexLab("#a6c6da");
-    const r = rng.next();
-    const ang = r < 0.5 ? 2.15 + rng.signed(0.3) : r < 0.8 ? 1.2 + rng.signed(0.25) : rng.signed(0.35);
-    centred(b, x, y, ang, rng.range(30, 60), rng.range(10, 16), rng.signed(0.16), col, rng.range(0.78, 0.95));
-  });
-  yield;
-
-  // cool shadows: under the arm, along the peplum, at the back of the waist
-  band(b, 884, 560, 866, 780, 24, 2, () => rampAt(JACKET_COOL, rng.range(0.15, 0.5)), 0.75);
-  // the peplum throws a soft shadow onto the skirt below it
-  for (let i = 0; i < 7; i++) {
-    const x = rng.range(840, 1100);
-    centred(
-      b,
-      x,
-      836 + (x - 840) * 0.08 + rng.signed(8),
-      0.1 + rng.signed(0.25),
-      rng.range(50, 90),
-      rng.range(12, 18),
-      rng.signed(0.15),
-      rng.chance(0.5) ? rng.pick(LAVENDER) : rampAt(SKIRT, rng.range(0.1, 0.35)),
-      rng.range(0.5, 0.75),
-    );
-  }
-  band(b, 1050, 640, 1080, 790, 22, 2, () => rampAt(JACKET_COOL, rng.range(0.0, 0.3)), 0.7);
-  // her other arm hangs along the back: a cool contour and a rim of light beyond it
-  band(b, 1004, 530, 1030, 770, 14, 1, () => rampAt(JACKET_COOL, rng.range(0.05, 0.3)), 0.7);
-  band(b, 1036, 560, 1052, 720, 10, 1, () => rampAt(JACKET_PALE, rng.range(0.7, 1)), 0.6);
-
-  // sleeve raised along the jacket's front edge to the hand on the shaft
-  band(
-    b,
-    884,
-    500,
-    830,
-    628,
-    54,
-    5,
-    (f) => (f < 0.55 ? rampAt(JACKET_PALE, 0.45 + f) : rampAt(JACKET_COOL, 0.75 - f * 0.4)),
-    0.92,
-  );
-  band(b, 876, 520, 838, 640, 22, 2, () => rampAt(JACKET_WARM, rng.range(0.5, 0.9)), 0.6);
-
-  // neck, scarf
-  // a short, shadowed neck half hidden by the collar
-  for (let i = 0; i < 5; i++)
-    centred(
-      b,
-      912 + rng.signed(10),
-      452 + i * 6,
-      -Math.PI / 2 + rng.signed(0.2),
-      30,
-      24,
-      0,
-      rng.pick([SKIN[0], SKIN[3]]),
-      0.92,
-      0.4,
-    );
-  for (let i = 0; i < 5; i++)
-    centred(
-      b,
-      912 + rng.signed(36),
-      478 + rng.signed(5),
-      rng.signed(0.3),
-      rng.range(26, 40),
-      rng.range(10, 14),
-      0,
-      rampAt(JACKET_PALE, rng.range(0.6, 1)),
-      0.9,
-      0.5,
-    );
-  for (let i = 0; i < 9; i++) {
-    const ang = rng.chance(0.5) ? 0.3 + rng.signed(0.4) : 2.5 + rng.signed(0.35);
-    centred(
-      b,
-      912 + rng.signed(30),
-      498 + rng.signed(12),
-      ang,
-      rng.range(26, 44),
-      rng.range(9, 13),
-      rng.signed(0.15),
-      rng.pick(SCARF),
-      0.92,
-      0.5,
-    );
-  }
-  b.stroke(888, 508, 2.45, 46, 10, 0.12, SCARF[2], 0.9, 0.4);
-
-  // head: hair, a shadowed face with a few dabs for features, small dark bonnet
-  // hair framing the face (dark at the temples, a bun behind)
-  for (let i = 0; i < 14; i++) {
-    const side = rng.chance(0.5) ? -1 : 1;
-    centred(
-      b,
-      902 + side * rng.range(22, 46),
-      345 + rng.signed(22),
-      Math.PI / 2 + rng.signed(0.5),
-      rng.range(26, 44),
-      rng.range(11, 16),
-      rng.signed(0.2),
-      rng.pick(HAIR),
-      0.92,
-      0.4,
-    );
-  }
-  b.dab(962, 328, 24, 0.5, HAIR[1], 0.92);
-  // face: lit cheek on the left, warm shadow on the right and under the brim
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = hex(SKIN[1]);
-  ctx.beginPath();
-  ctx.ellipse(904, 392, 45, 53, 0.1, 0, TAU);
-  ctx.fill();
-  for (let i = 0; i < 20; i++) {
-    const fx = rng.signed(1);
-    const fy = rng.signed(1);
-    if (fx * fx + fy * fy > 1.1) continue;
-    const lit = fx < 0.05 && fy > -0.55;
-    const col = lit
-      ? rng.pick([SKIN[2], hexLab("#c8a080"), hexLab("#d2ab8a")])
-      : rng.pick([SKIN[0], SKIN[3], SKIN[1]]);
-    b.dab(904 + fx * 30, 394 + fy * 42, rng.range(12, 18), 1.4 + rng.signed(0.3), col, 0.88);
-  }
-  b.dab(902, 342, 30, 0, SKIN[3], 0.55);
-  b.dab(888, 380, 7, 0, hexLab("#5a4436"), 0.55);
-  b.dab(921, 378, 7, 0, hexLab("#5a4436"), 0.55);
-  b.dab(893, 406, 10, 0.4, hexLab("#c88a74"), 0.45);
-  b.dab(905, 424, 8, 0, hexLab("#8a5a4c"), 0.45);
-  // small soft bonnet
-  for (let i = 0; i < 8; i++) {
-    centred(
-      b,
-      936 + rng.signed(52),
-      306 + rng.signed(6),
-      rng.signed(0.12),
-      rng.range(44, 76),
-      rng.range(11, 15),
-      rng.signed(0.08),
-      rng.pick(HAT),
-      0.92,
-      0.6,
-    );
-  }
-  for (let i = 0; i < 7; i++) {
-    centred(
-      b,
-      930 + rng.signed(30),
-      284 + rng.signed(10),
+      hz - F * 0.03 - tall,
+      F * (k === hero ? rng.range(0.55, 0.75) : rng.range(0.3, 0.55)),
       rng.signed(0.4),
-      rng.range(28, 46),
-      rng.range(13, 19),
-      rng.signed(0.1),
-      rng.pick(HAT),
-      0.92,
-      0.6,
     );
   }
-  centred(b, 934, 274, -0.1, 56, 10, 0.05, hexLab("#a5b6c6"), 0.75, 0);
+  L.peaks = peaks;
+  const sRock = hashInt(seed, 15);
+  const sFar = hashInt(seed, 16);
+  const sCrest = hashInt(seed, 14);
+  const dip = rng.range(0.55, 0.85);
+  for (let x = 0; x < far.length; x++) {
+    let top = 0;
+    for (let k = 0; k < peaks.length; k += 4) {
+      const d = Math.abs(x - peaks[k]) / peaks[k + 2];
+      if (d < 1) top = Math.max(top, (hz - F * 0.03 - peaks[k + 1]) * Math.pow(1 - d, 1.35));
+    }
+    // broken, rocky edges, sharper up high
+    const high = smoothstep(0, F * 0.3, top);
+    const jag =
+      F *
+      (0.012 + 0.012 * high) *
+      (fbm(x / (F * 0.06), 0.5, sRock, 0, 3) + 0.4 * fbm(x / (F * 0.015), 2.5, sRock + 1, 0, 2));
+    near[x] = hz - F * 0.03 - top + jag;
+    far[x] = hz - F * (0.12 + 0.1 * (0.5 + 0.5 * fbm(x / (F * 0.35), 7.7, sFar, 0, 3)));
+    crest[x] =
+      hz +
+      F *
+        (0.012 +
+          0.08 * smoothstep(0.08, dip + 0.1, side(x / w)) +
+          0.012 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  // dark pines: two or three tall ones close by on one side, and a few small ones further off
+  const nBig = 2 + rng.int(2);
+  for (let i = 0; i < nBig; i++) {
+    const ht = h * rng.range(0.6, 0.85) * (i === 0 ? 1 : 0.82);
+    L.trees.push({
+      kind: "pine",
+      x: side(rng.range(0.02, 0.1) + i * rng.range(0.06, 0.1)) * w,
+      y: h * rng.range(0.94, 1.04),
+      ht,
+      wd: ht * rng.range(0.3, 0.36),
+      lean: rng.range(0.005, 0.02),
+      give: rng.range(0.35, 0.55),
+      phase: rng.next() * TAU,
+    });
+  }
+  const nSmall = 3 + rng.int(3);
+  for (let i = 0; i < nSmall; i++) {
+    const x = side(rng.range(0.45, 0.97)) * w;
+    const d = rng.range(0.08, 0.35);
+    const c = colAt(crest, x);
+    const ht = F * persp(d) * rng.range(0.22, 0.34);
+    L.trees.push({
+      kind: "pine",
+      x,
+      y: c + d * (h - c),
+      ht,
+      wd: ht * rng.range(0.32, 0.4),
+      lean: rng.range(0.005, 0.02),
+      give: rng.range(0.4, 0.7),
+      phase: rng.next() * TAU,
+    });
+  }
+};
 
-  // veil: translucent strokes wrapping the face and streaming downwind
-  for (let i = 0; i < 22; i++) {
-    const across = rng.chance(0.35);
-    const x = across ? rng.range(870, 950) : rng.range(945, 1010);
-    const y = across ? rng.range(330, 430) : rng.range(285, 380);
-    const ang = across ? rng.range(-0.1, 0.35) : rng.range(-0.15, 0.8);
-    const col = rng.chance(0.25) ? hexLab("#c9d4e2") : hexLab("#f4f1e6");
-    b.stroke(
+const desertScenery: Scenery = (L, rng, seed, side) => {
+  const { w, h, F, hz, far, near, crest } = L;
+  // distant mesas: flat tops, steep cliffs and a skirt of fallen rock below
+  const nMesas = 2 + Math.round(w / (F * 1.4)) + rng.int(2);
+  const mesas: number[] = [];
+  for (let k = 0; k < nMesas; k++) {
+    mesas.push(
+      ((k + 0.5 + rng.signed(0.35)) / nMesas) * w,
+      F * rng.range(0.18, 0.5),
+      F * rng.range(0.05, 0.11),
+    );
+  }
+  // and a nearer butte or two on one side
+  const buttes: number[] = [];
+  const nButtes = 1 + rng.int(2);
+  for (let k = 0; k < nButtes; k++) {
+    buttes.push(
+      side(rng.range(0.62, 0.9) - k * 0.22) * w,
+      F * rng.range(0.12, 0.22),
+      F * rng.range(0.14, 0.24),
+    );
+  }
+  L.buttes = buttes;
+  const sTop = hashInt(seed, 20);
+  const plateau = (u: number) => smoothstep(1, 0.84, u) * 0.75 + smoothstep(1.45, 0.95, u) * 0.25;
+  const sFar = hashInt(seed, 16);
+  const sCrest = hashInt(seed, 14);
+  for (let x = 0; x < far.length; x++) {
+    let f = 0;
+    for (let k = 0; k < mesas.length; k += 3)
+      f = Math.max(f, mesas[k + 2] * plateau(Math.abs(x - mesas[k]) / mesas[k + 1]));
+    far[x] = hz - F * 0.018 - f + F * 0.004 * fbm(x / (F * 0.05), 0.4, sFar, 0, 2);
+    let nb = 0;
+    for (let k = 0; k < buttes.length; k += 3) {
+      const u = Math.abs(x - buttes[k]) / buttes[k + 1];
+      // an eroded cap: a step down on one shoulder, a ragged top
+      const cap =
+        buttes[k + 2] *
+        (1 - 0.18 * smoothstep(0.45, 0.6, u) - 0.05 * Math.abs(fbm(x / (F * 0.03), k, sTop, 0, 2)));
+      nb = Math.max(nb, cap * plateau(u));
+    }
+    near[x] = hz - F * 0.004 - nb + F * 0.004 * fbm(x / (F * 0.04), 3.4, sFar + 1, 0, 2);
+    crest[x] =
+      hz +
+      F * (0.035 + 0.025 * Math.sin((x * 3.2) / F + 1.3) + 0.008 * fbm(x / (F * 0.3), 4.2, sCrest, 0, 2));
+  }
+  // dune crests in front, each a long sinuous ridge
+  let mean = 0;
+  for (let x = 0; x < crest.length; x++) mean += crest[x];
+  mean /= crest.length;
+  L.waves.push(3.2 / F, 1.3);
+  for (const at of [0.34, 0.7]) {
+    const line = new Float32Array(far.length);
+    const amp = F * rng.range(0.05, 0.08) * (0.6 + at);
+    const freq = rng.range(4.2, 6.5) / F / (0.6 + at);
+    const ph = rng.next() * TAU;
+    for (let x = 0; x < line.length; x++) {
+      line[x] =
+        mean +
+        (h - mean) * at +
+        amp * Math.sin(x * freq + ph) +
+        F * 0.008 * fbm(x / (F * 0.2), at * 9, sCrest + 2, 0, 2);
+    }
+    L.dunes.push(line);
+    L.waves.push(freq, ph);
+  }
+  // a few low desert shrubs
+  const nShrubs = 3 + rng.int(4);
+  for (let i = 0; i < nShrubs; i++) {
+    const x = rng.next() * w;
+    const d = rng.range(0.15, 0.95);
+    const c = colAt(crest, x);
+    const ht = F * persp(d) * rng.range(0.06, 0.11);
+    L.trees.push({
+      kind: "shrub",
+      x,
+      y: c + d * (h - c),
+      ht,
+      wd: ht * rng.range(1.5, 2.1),
+      lean: 0.01,
+      give: rng.range(0.6, 1),
+      phase: rng.next() * TAU,
+    });
+  }
+};
+
+const SCENERY: Record<MeadowBiome, Scenery> = {
+  meadow: meadowScenery,
+  snow: snowScenery,
+  desert: desertScenery,
+};
+
+function computeLayout(w: number, h: number, dpr: number, seed: number, biome: MeadowBiome): Layout {
+  // 0 for a 16:10 card, 1 for a 3:1 strip (or wider)
+  const t = clamp(Math.log(w / h / 1.6) / Math.log(3 / 1.6), 0, 1);
+  const hz = h * (biome === "snow" ? lerp(0.64, 0.68, t) : lerp(0.6, 0.64, t));
+  const F = Math.min(h, w * 0.9);
+  const bu = clamp(Math.sqrt(w * h) / 52, 2.8, 7.5);
+  const rng = new Rng(hashInt(seed, 11));
+  // mirrored compositions keep the wind blowing left → right
+  const flip = rng.chance(0.5);
+  const n = Math.ceil(w) + 2;
+  const tilePx = Math.ceil(w * dpr);
+  const L: Layout = {
+    biome,
+    w,
+    h,
+    dpr,
+    bu,
+    F,
+    hz,
+    far: new Float32Array(n),
+    near: new Float32Array(n),
+    crest: new Float32Array(n),
+    landTop: 0,
+    crestMin: 0,
+    meadowH: 0,
+    trees: [],
+    path: null,
+    peaks: [],
+    dunes: [],
+    waves: [],
+    buttes: [],
+    tile: tilePx / dpr,
+    tilePx,
+    skyH: Math.min(h, hz + bu * 2),
+  };
+  SCENERY[biome](L, rng, seed, (u) => (flip ? 1 - u : u));
+  let landTop = Infinity;
+  let crestMin = Infinity;
+  let meadowH = 0;
+  for (let x = 0; x < n; x++) {
+    landTop = Math.min(landTop, L.far[x], L.near[x]);
+    crestMin = Math.min(crestMin, L.crest[x]);
+    meadowH += h - L.crest[x];
+  }
+  L.landTop = landTop;
+  L.crestMin = crestMin;
+  L.meadowH = meadowH / n;
+  L.trees.sort((a, b) => a.y - b.y);
+  return L;
+}
+
+/** What the foreground looks like at a point: depth, light, the path and the flowers. */
+interface Meadow {
+  /** 0 at the crest, 1 at the bottom edge. */
+  depth(x: number, y: number): number;
+  /** Ground coordinates of a point: across (gx) and away from the viewer (gz, 1 at the bottom edge). */
+  gx(x: number, d: number): number;
+  /** Sunlit (> 0) or in a cloud's shadow (< 0). */
+  light(x: number, y: number): number;
+  /** 1 on the trodden middle of the path, 0 off it. */
+  path(x: number, y: number): number;
+  /** The flower growing here, if any (r in [0, 1) decides how sparse): see FLOWER_*. */
+  flower(x: number, y: number, r: number): number;
+}
+
+const FLOWER_NONE = 0;
+const FLOWER_BUTTERCUP = 1;
+const FLOWER_DAISY = 2;
+const FLOWER_POPPY = 3;
+const FLOWER_CORNFLOWER = 4;
+
+function meadowAt(L: Layout, seed: number): Meadow {
+  const { w, h, F, crest, path: P } = L;
+  const flowers = L.biome === "meadow";
+  const sLight = hashInt(seed, 41);
+  const sLight2 = hashInt(seed, 42);
+  const sButter = hashInt(seed, 43);
+  const sDaisy = hashInt(seed, 44);
+  const sPoppy = hashInt(seed, 45);
+  const sPath = hashInt(seed, 46);
+  const depth = (x: number, y: number) => {
+    const c = colAt(crest, x);
+    return clamp((y - c) / Math.max(1, h - c), 0, 1);
+  };
+  const gx = (x: number, d: number) => (x - w / 2) / (F * persp(d));
+  return {
+    depth,
+    gx,
+    light(x, y) {
+      const d = depth(x, y);
+      const u = gx(x, d);
+      const v = 1 / persp(d);
+      return 1.0 * fbm(u * 0.8, v * 0.9, sLight, 0, 3) + 0.4 * fbm(u * 2.2, v * 2.6, sLight2, 0, 2) + 0.12;
+    },
+    path(x, y) {
+      if (!P) return 0;
+      const d = depth(x, y);
+      const u = gx(x, d);
+      const v = 1 / persp(d);
+      const centre = P.a + P.b * Math.sin(v * P.k + P.ph);
+      const off = Math.abs(u - centre) / P.half + 0.35 * noise2(u * 9, v * 6, sPath, 0);
+      return (1 - smoothstep(0.55, 1.05, off)) * smoothstep(0, 0.07, d);
+    },
+    flower(x, y, r) {
+      if (!flowers) return FLOWER_NONE;
+      const d = depth(x, y);
+      const u = gx(x, d);
+      const v = 1 / persp(d);
+      const pp = fbm(u * 1.2 + 3, v * 1.6, sPoppy, 0, 2);
+      if (pp > 0.28 && r < (pp - 0.28) * 1.6) return FLOWER_POPPY;
+      const bc = fbm(u * 1.5, v * 1.9, sButter, 0, 2);
+      if (bc > 0.08 && r < (bc - 0.08) * 2.4) return FLOWER_BUTTERCUP;
+      const dz = fbm(u * 2.1 + 9, v * 2.4, sDaisy, 0, 2);
+      if (dz > 0.2 && r < (dz - 0.2) * 2.2) return FLOWER_DAISY;
+      if (r > 0.992) return FLOWER_POPPY;
+      if (r > 0.982) return FLOWER_CORNFLOWER;
+      return FLOWER_NONE;
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ sky */
+
+interface CloudField {
+  /** Grid cell size (CSS px) across (exactly tile / gw) and down. */
+  cx: number;
+  cy: number;
+  gw: number;
+  gh: number;
+  /** Thickness of the cloud: 0 in clear sky, about 1 and above inside a cloud. */
+  body: Float32Array;
+  /** Sunlight on the cloud's surface: 0 in shadow, 1 fully lit. */
+  lit: Float32Array;
+  /** Direction along the billow's surface, for strokes that follow the form. */
+  flow: Float32Array;
+}
+
+/**
+ * Cumulus as heaps of billows (spheres flattened at the base), lit from the upper left, laid out
+ * in rows that grow smaller and flatter towards the horizon. Periodic across the tile.
+ */
+function* cloudField(L: Layout, rng: Rng, cover: number): Gen<CloudField> {
+  const T = L.tile;
+  const hz = L.hz;
+  const cy = Math.max(1.5, L.bu * 0.45);
+  const gw = Math.max(8, Math.round(T / cy));
+  const cx = T / gw;
+  const gh = Math.ceil(L.skyH / cy) + 1;
+  const n = gw * gh;
+  const top = new Float32Array(n);
+  const body = new Float32Array(n);
+  const lit = new Float32Array(n);
+  const flow = new Float32Array(n);
+  // the sun is high on the left
+  const lx = -0.6;
+  const ly = -0.6;
+  const lz = 0.53;
+
+  /**
+   * Adds one billow of a heap (centred on hx, W wide, hc tall, standing on `base`). Its light mixes
+   * the billow's own roundness with the form of the whole heap, so the heap reads as one mass.
+   */
+  const billow = (bx: number, by: number, r: number, base: number, hc: number, hx: number, W: number) => {
+    const i0 = Math.floor((bx - r) / cx);
+    const i1 = Math.ceil((bx + r) / cx);
+    const j0 = Math.max(0, Math.floor((by - r) / cy));
+    const j1 = Math.min(gh - 1, Math.ceil(Math.min(by + r, base + hc * 0.15) / cy));
+    const r2 = r * r;
+    for (let j = j0; j <= j1; j++) {
+      const y = (j + 0.5) * cy;
+      const dy = y - by;
+      const flat = 1 - smoothstep(base - hc * 0.1, base + hc * 0.12, y);
+      if (flat <= 0) continue;
+      const under = smoothstep(base - hc * 0.7, base + hc * 0.05, y);
+      const high = 1 - 2 * clamp((y - (base - hc)) / hc, 0, 1);
+      for (let i = i0; i <= i1; i++) {
+        const dx = (i + 0.5) * cx - bx;
+        const q = 1 - (dx * dx + dy * dy) / r2;
+        if (q <= 0) continue;
+        const nz = Math.sqrt(q);
+        const z = r * nz * flat;
+        const k = j * gw + (((i % gw) + gw) % gw);
+        if (z <= top[k]) continue;
+        top[k] = z;
+        body[k] = Math.min(1.6, z / (hc * 0.3));
+        const nx = dx / r;
+        const ny = dy / r;
+        const form = 0.6 * high - 0.4 * clamp((bx + dx - hx) / (W * 0.5), -1, 1);
+        const shade = 0.7 * (nx * lx + ny * ly + nz * lz) + 0.3 * form;
+        lit[k] = clamp(0.42 + 0.65 * shade - 0.55 * under * under, 0, 1);
+        flow[k] = Math.atan2(ny, nx) + HALF_PI;
+      }
+    }
+  };
+
+  /** One heap: billows along a skyline of one to three domes, its tops sheared downwind. */
+  const heap = (x: number, base: number, W: number, hc: number) => {
+    const shear = rng.range(0.1, 0.4);
+    const domes = 1 + rng.int(W > hc * 3 ? 3 : 2);
+    const du: number[] = [];
+    const dh: number[] = [];
+    for (let k = 0; k < domes; k++) {
+      du.push(rng.signed(0.33));
+      dh.push(rng.range(0.55, 1));
+    }
+    const skyline = (u: number) => {
+      let p = 0.22;
+      for (let k = 0; k < domes; k++) p = Math.max(p, dh[k] * (1 - ((u - du[k]) / 0.34) ** 2));
+      return p;
+    };
+    const nb = Math.max(3, Math.round((W / hc) * 1.5 + 2));
+    for (let b = 0; b < nb; b++) {
+      const u = (b + 0.5) / nb - 0.5 + rng.signed(0.4 / nb);
+      const top = skyline(u);
+      const r = hc * rng.range(0.32, 0.48) * (0.55 + 0.6 * top);
+      const by = base - r * rng.range(0.4, 0.7) - top * hc * rng.range(0.25, 0.5);
+      billow(x + u * W + (base - by) * shear, by, r, base, hc, x, W);
+    }
+    for (let k = 0; k < domes; k++) {
+      const by = base - hc * dh[k] * rng.range(0.68, 0.88);
+      billow(x + du[k] * W + (base - by) * shear, by, hc * rng.range(0.24, 0.34), base, hc, x, W);
+    }
+  };
+
+  // A large heap or two high in the sky, then clouds of every size, scattered with a little overlap
+  // (so some merge into banks): larger and taller high up, smaller and flatter towards the horizon.
+  const size = Math.max(0.5 * hz, Math.min(0.3 * T, 1.1 * hz));
+  const boxes: number[] = [];
+  const want = T * hz * rng.range(0.25, 0.3) * cover;
+  const most = 6 + Math.round(T / Math.max(30, size * 0.3));
+  const heroes = T > size * 2.2 ? 2 : 1;
+  let covered = 0;
+  for (let tries = 0; covered < want && boxes.length < most * 4 && tries < 300; tries++) {
+    const hero = boxes.length < heroes * 4;
+    const v = hero ? rng.range(0.12, 0.34) : rng.range(0.05, 0.97);
+    const s = lerp(1, 0.2, Math.pow(v, 0.85));
+    const bank = !hero && rng.chance(0.3);
+    // distant clouds lie in long, flat banks
+    const far = smoothstep(0.4, 0.95, v);
+    const span =
+      (hero ? rng.range(1.1, 1.6) : bank ? rng.range(1.0, 2.0) : rng.range(0.3, 0.9)) * (1 + 1.2 * far);
+    const W = Math.min(T * 0.85, size * s * span);
+    const hc =
+      size * s * lerp(0.46, 0.2, v) * (hero ? rng.range(1.05, 1.35) : rng.range(0.7, 1.2)) * (bank ? 0.8 : 1);
+    // too small to read as a heap: the veils stand in for those
+    if (W < L.bu * 7) continue;
+    const base = v * hz;
+    const x = rng.next() * T;
+    const x0 = x - W / 2;
+    const x1 = x + W / 2;
+    let clash = false;
+    for (let i = 0; i < boxes.length && !clash; i += 4) {
+      const oy = Math.min(base, boxes[i + 3]) - Math.max(base - hc, boxes[i + 2]);
+      if (oy <= 0) continue;
+      const other = (boxes[i + 1] - boxes[i]) * (boxes[i + 3] - boxes[i + 2]);
+      for (let shift = -T; shift <= T; shift += T) {
+        const ox = Math.min(x1, boxes[i + 1] + shift) - Math.max(x0, boxes[i] + shift);
+        if (ox > 0 && ox * oy > 0.22 * Math.min(W * hc, other)) clash = true;
+      }
+    }
+    if (clash) continue;
+    boxes.push(x0, x1, base - hc, base);
+    covered += W * hc * 0.7;
+    heap(x, base, W, hc);
+    if ((tries & 3) === 3) yield;
+  }
+  return { cx, cy, gw, gh, body, lit, flow };
+}
+
+function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
+  const rng = new Rng(hashInt(seed, 101));
+  const brush = new Brush(ctx, rng);
+  brush.scale = L.dpr;
+  const T = L.tile;
+  const H = L.skyH;
+  const hz = L.hz;
+  const bu = L.bu;
+  const S = SKIES[L.biome];
+  ctx.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
+  ctx.lineCap = "round";
+
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  for (const s of S.sky) grad.addColorStop(clamp((s.at * hz) / H, 0, 1), hex(s.c));
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, T, H);
+  yield;
+
+  const f = yield* cloudField(L, rng, S.cover);
+  const sDet = hashInt(seed, 8);
+  const pDet = Math.max(4, Math.round(T / clamp(hz * 0.1, 12, 48)));
+  const fDet = pDet / T;
+  const cellOf = (x: number, y: number) => {
+    const xi = Math.min(f.gw - 1, Math.floor((((x % T) + T) % T) / f.cx));
+    return clamp(Math.floor(y / f.cy), 0, f.gh - 1) * f.gw + xi;
+  };
+  const coverAt = (x: number, y: number, k: number) =>
+    smoothstep(0.15, 0.55, f.body[k] + 0.45 * fbm(x * fDet, y * fDet * 1.7, sDet, pDet, 3));
+  // distant clouds and the sky near the horizon take smaller strokes
+  const sizeAt = (y: number) => lerp(1.12, 0.42, Math.pow(clamp(y / hz, 0, 1), 1.15));
+
+  const wrapped = (x: number, reach: number, draw: (x: number) => void) => {
+    const st = rng.state;
+    draw(x);
+    const after = rng.state;
+    if (x + reach > T) {
+      rng.state = st;
+      draw(x - T);
+    }
+    if (x - reach < 0) {
+      rng.state = st;
+      draw(x + T);
+    }
+    rng.state = after;
+  };
+  const centredWrapped = (
+    x: number,
+    y: number,
+    ang: number,
+    len: number,
+    wid: number,
+    col: Lab,
+    a: number,
+  ) => {
+    const bend = rng.signed(0.16);
+    wrapped(x, len + wid, (px) =>
+      brush.stroke(
+        px - Math.cos(ang) * len * 0.5,
+        y - Math.sin(ang) * len * 0.5,
+        ang,
+        len,
+        wid,
+        bend,
+        col,
+        a,
+      ),
+    );
+  };
+
+  const bottom = Math.min(H, hz);
+  const area = T * bottom;
+  const unit = area / (bu * bu);
+
+  // 1. blue underlayer: steep diagonal hatching and flatter strokes along the wind
+  const nBlue = Math.round(unit / 3.2);
+  for (let i = 0; i < nBlue; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * T;
+    const y = rng.range(-bu, H);
+    const v = clamp(y / hz + rng.signed(0.08), 0, 1);
+    const r0 = rng.next();
+    const col =
+      r0 < 0.06 && v < 0.6
+        ? rng.pick(S.deep)
+        : r0 > 0.9
+          ? mix(rampAt(S.sky, v), rng.pick(S.turq), 0.5)
+          : r0 > 0.8
+            ? rampAt(S.sky, clamp(v + rng.range(0.08, 0.2), 0, 1))
+            : rampAt(S.sky, v);
+    const steep = rng.chance(0.4);
+    const ang = steep ? -1.0 + rng.signed(0.3) : -0.16 + rng.signed(0.22);
+    const sz = sizeAt(y);
+    centredWrapped(
       x,
       y,
       ang,
-      rng.range(60, 140),
-      rng.range(7, 14),
-      rng.signed(0.18),
+      bu * rng.range(1.5, 3.2) * sz,
+      bu * rng.range(0.55, 1.05) * sz,
       col,
-      across ? rng.range(0.1, 0.22) : rng.range(0.3, 0.55),
-      0.4,
+      rng.range(0.5, 0.88),
     );
   }
-  yield;
 
-  // parasol shaft, then the hand gripping it
-  const [scx, scy] = CANOPY_CENTER;
-  const shaftAng = Math.atan2(700 - scy, 826 - scx);
-  const shaftLen = Math.hypot(826 - scx, 700 - scy);
-  b.stroke(scx, scy, shaftAng, shaftLen, 8, 0.004, SHAFT[0], 0.95, 0);
-  b.stroke(scx - 2, scy, shaftAng, shaftLen * 0.9, 3, 0.004, hexLab("#b38c58"), 0.8, 0);
-  for (let i = 0; i < 6; i++)
-    b.dab(
-      820 + rng.signed(8),
-      618 + rng.signed(16),
-      rng.range(11, 16),
-      1.2,
-      rng.pick([SKIN[2], hexLab("#b8806a"), SKIN[1]]),
-      0.92,
+  // 2. a far layer of thin cloud behind the cumulus, streaked out by the wind
+  const pVeil = Math.max(2, Math.round(T / clamp(hz * 0.7, 60, 360)));
+  const fVeil = pVeil / T;
+  const sVeil = hashInt(seed, 9);
+  const nVeil = Math.round(unit * 0.45 * S.veil);
+  for (let i = 0; i < nVeil; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * T;
+    const y = rng.range(0, bottom);
+    const v = clamp(y / hz, 0, 1);
+    // most in the middle and lower sky, thinning towards the zenith
+    const n = fbm(x * fVeil, y * fVeil * 3.4, sVeil, pVeil, 4) + 0.2 * smoothstep(0.15, 0.7, v) - 0.12;
+    const c = smoothstep(0.12, 0.45, n);
+    if (c < 0.05 || rng.next() > c) continue;
+    const r = rng.next();
+    const sky = rampAt(S.sky, v);
+    const col =
+      r < 0.35
+        ? mix(rampAt(S.light, rng.range(0.35, 0.8)), sky, 0.25)
+        : r < 0.8
+          ? mix(rng.pick(S.lav), sky, 0.45)
+          : mix(rng.pick(S.haze), sky, 0.3);
+    const sz = sizeAt(y);
+    centredWrapped(
+      x,
+      y,
+      -0.08 + rng.signed(0.16),
+      bu * rng.range(2.2, 4.4) * sz,
+      bu * rng.range(0.6, 1.1) * sz,
+      col,
+      rng.range(0.2, 0.42) * (0.5 + 0.5 * c),
     );
+  }
+
+  // 3. cumulus: dark to light, then broken edges and the sky cut back into them. Strokes are placed
+  // only where there is cloud, more (and smaller) ones on the distant clouds near the horizon.
+  const cells: number[] = [];
+  const weights: number[] = [];
+  let total = 0;
+  for (let j = 0; j < f.gh; j++) {
+    const s = sizeAt((j + 0.5) * f.cy);
+    const wgt = (f.cx * f.cy) / (bu * bu * s * s);
+    for (let i = 0; i < f.gw; i++) {
+      const k = j * f.gw + i;
+      if (f.body[k] <= 0.02) continue;
+      total += wgt;
+      cells.push(k);
+      weights.push(total);
+    }
+  }
+  const pickCell = () => {
+    const r = rng.next() * total;
+    let lo = 0;
+    let hi = weights.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (weights[mid] < r) lo = mid + 1;
+      else hi = mid;
+    }
+    return cells[lo];
+  };
+  const cloudStroke = (x: number, y: number, k: number, col: Lab, size: number, alpha: number) => {
+    const r = rng.next();
+    const ang =
+      r < 0.5 ? f.flow[k] + rng.signed(0.4) : r < 0.82 ? -0.12 + rng.signed(0.22) : -0.85 + rng.signed(0.3);
+    const s = size * sizeAt(y) * rng.range(0.7, 1.35);
+    centredWrapped(x, y, ang, bu * rng.range(1.2, 2.6) * s, bu * rng.range(0.55, 1.0) * s, col, alpha);
+  };
+  const passes: [number, number][] = [
+    // [strokes per (local) brush unit² of cloud, kind]
+    [0.35, 6],
+    [0.7, 0],
+    [0.55, 1],
+    [0.4, 2],
+    [0.28, 3],
+    [0.4, 4],
+    [0.45, 5],
+  ];
+  for (const [factor, kind] of cells.length ? passes : []) {
+    const count = Math.round(total * factor * 0.85);
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const k = pickCell();
+      const x = ((k % f.gw) + rng.next()) * f.cx;
+      const y = (Math.floor(k / f.gw) + rng.next()) * f.cy;
+      const c = coverAt(x, y, k);
+      const l = clamp(f.lit[k] + rng.signed(0.12), 0, 1);
+      if (kind === 6) {
+        // broad underpainting in middle tones, so no blue shows through the body
+        if (c < 0.3) continue;
+        const col = l < 0.5 ? rampAt(S.shade, 0.3 + l) : rampAt(S.light, (l - 0.5) * 0.8);
+        cloudStroke(x, y, k, col, 1.9, rng.range(0.6, 0.85));
+      } else if (kind === 0) {
+        // shadowed and lit masses
+        if (c < 0.3) continue;
+        const col = l < 0.5 ? rampAt(S.shade, l / 0.5) : rampAt(S.light, ((l - 0.5) / 0.5) * 0.8);
+        cloudStroke(x, y, k, col, 1.4, rng.range(0.7, 0.92));
+      } else if (kind === 1) {
+        // sunlit planes
+        if (c < 0.35 || l < 0.52) continue;
+        const col = rng.chance(0.1) ? rng.pick(S.warm) : rampAt(S.light, (l - 0.4) / 0.6);
+        cloudStroke(x, y, k, col, 1.0, rng.range(0.75, 0.93));
+      } else if (kind === 2) {
+        // lavender shadows and blue reflected from the sky
+        if (c < 0.4 || l > 0.42) continue;
+        const r = rng.next();
+        const col =
+          r < 0.4
+            ? rng.pick(S.lav)
+            : r < 0.6
+              ? mix(rampAt(S.sky, clamp(y / hz, 0, 1)), rampAt(S.shade, 0.3), 0.5)
+              : rampAt(S.shade, (l / 0.42) * 0.8);
+        cloudStroke(x, y, k, col, 0.8, rng.range(0.65, 0.9));
+      } else if (kind === 3) {
+        // highlights on the sunlit tops
+        if (c < 0.5 || l < 0.74) continue;
+        cloudStroke(x, y, k, rampAt(S.light, rng.range(0.86, 1)), 0.62, rng.range(0.8, 0.97));
+      } else if (kind === 4) {
+        // broken edges, and flecks the wind tears off downwind
+        if (c < 0.06 || c > 0.5) continue;
+        const col = l < 0.4 ? rampAt(S.shade, 0.5 + l) : rampAt(S.light, 0.2 + l * 0.7);
+        cloudStroke(x, y, k, col, 0.7, rng.range(0.55, 0.85));
+        if (rng.chance(0.15)) {
+          const fx = x + bu * rng.range(1.5, 4) * sizeAt(y);
+          const fy = y + rng.signed(bu * 0.5);
+          cloudStroke(fx, fy, k, rampAt(S.light, rng.range(0.4, 0.9)), 0.4, rng.range(0.45, 0.7));
+        }
+      } else {
+        // the sky cut back into the cloud edges, as a painter breaks up the masses
+        if (c < 0.05 || c > 0.5) continue;
+        const col = rampAt(S.sky, clamp(y / hz + rng.signed(0.06), 0, 1));
+        cloudStroke(x, y, k, col, 0.65, rng.range(0.6, 0.85));
+      }
+    }
+  }
+
+  // 4. thin streaks of high cloud along the wind, in the clear upper sky
+  const nWisps = Math.round(T / (bu * 16));
+  for (let i = 0; i < nWisps; i++) {
+    const x0 = rng.next() * T;
+    const y0 = rng.range(0.04, 0.55) * hz;
+    if (coverAt(x0, y0, cellOf(x0, y0)) > 0.15) continue;
+    const ang = -0.1 + rng.signed(0.12);
+    const parts = 3 + rng.int(3);
+    for (let j = 0; j < parts; j++) {
+      const s = sizeAt(y0);
+      const x = x0 + Math.cos(ang) * j * bu * 2.2 * s + rng.signed(bu * 0.5);
+      const y = y0 + Math.sin(ang) * j * bu * 2.2 * s + rng.signed(bu * 0.3);
+      centredWrapped(
+        x,
+        y,
+        ang + rng.signed(0.08),
+        bu * rng.range(2, 3.6) * s,
+        bu * rng.range(0.25, 0.45) * s,
+        rampAt(S.light, rng.range(0.55, 0.95)),
+        rng.range(0.18, 0.38),
+      );
+    }
+    if ((i & 7) === 7) yield;
+  }
+
+  // 5. warm haze above the hills
+  const hazeTop = hz - L.F * 0.17;
+  const nHaze = Math.round((T * (H - hazeTop)) / (bu * bu * 1.2));
+  for (let i = 0; i < nHaze; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * T;
+    const y = rng.range(hazeTop, H);
+    const v = (y - hazeTop) / (H - hazeTop);
+    if (rng.next() > v + 0.15) continue;
+    const col = rng.chance(0.6) ? rng.pick(S.haze) : rampAt(S.sky, rng.range(0.85, 1));
+    centredWrapped(
+      x,
+      y,
+      rng.signed(0.12),
+      bu * rng.range(1.4, 2.8) * 0.5,
+      bu * rng.range(0.4, 0.7) * 0.5,
+      col,
+      rng.range(0.35, 0.7),
+    );
+  }
 }
 
-function* paintChild(b: Brush): Gen {
-  const { ctx, rng } = b;
-  fillPoly(ctx, CHILD_BODY, "#5584a8", 1);
-  yield* strokesIn(rng, CHILD_BODY, 80, (x, y, u, v) => {
-    const tone = 0.8 - 0.65 * u - 0.12 * v + rng.signed(0.16);
-    const col = rng.chance(0.1) ? rng.pick(LAVENDER) : rampAt(CHILD, tone);
-    const ang = Math.PI / 2 + 0.2 + rng.signed(0.4);
-    centred(b, x, y, ang, rng.range(30, 55), rng.range(11, 17), rng.signed(0.12), col, 0.9);
-  });
-  // arms hanging at the sides
-  band(b, 360, 1200, 346, 1300, 26, 2, () => rampAt(CHILD, rng.range(0.6, 0.95)), 0.9);
-  band(b, 506, 1200, 520, 1300, 26, 2, () => rampAt(CHILD, rng.range(0.1, 0.4)), 0.9);
-  // white collar and a dark bow
-  b.dab(418, 1178, 14, 0.3, hexLab("#e8ece4"), 0.85);
-  b.dab(448, 1178, 14, -0.3, hexLab("#dfe6e2"), 0.85);
-  b.dab(433, 1186, 10, 0, hexLab("#25466e"), 0.9);
-  // pink face
-  ctx.globalAlpha = 0.95;
-  ctx.fillStyle = hex(CHILD_FACE[0]);
-  ctx.beginPath();
-  ctx.ellipse(433, 1140, 30, 34, 0, 0, TAU);
-  ctx.fill();
-  for (let i = 0; i < 9; i++)
-    b.dab(
-      433 + rng.signed(16),
-      1142 + rng.signed(18),
-      rng.range(9, 14),
-      rng.signed(1),
-      rng.pick(CHILD_FACE),
-      0.85,
-    );
-  b.dab(422, 1136, 4, 0, hexLab("#4a3a40"), 0.8);
-  b.dab(445, 1136, 4, 0, hexLab("#4a3a40"), 0.8);
-  // straw hat: domed crown, red band, a brim turned down at the sides
-  ctx.fillStyle = hex(STRAW[0]);
-  ctx.beginPath();
-  ctx.ellipse(433, 1102, 66, 19, 0, 0, TAU);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(433, 1086, 40, 26, 0, Math.PI, TAU);
-  ctx.fill();
-  for (let i = 0; i < 10; i++) {
-    centred(
-      b,
-      372 + i * 13 + rng.signed(4),
-      1104 + rng.signed(5),
-      rng.signed(0.2),
-      rng.range(24, 38),
-      rng.range(9, 13),
-      rng.signed(0.15),
-      rng.pick(STRAW),
-      0.92,
-      0.5,
-    );
-  }
-  for (let i = 0; i < 6; i++) {
-    centred(
-      b,
-      408 + i * 10,
-      1076 + rng.signed(6),
-      -0.2 + rng.signed(0.4),
-      rng.range(18, 28),
-      rng.range(9, 13),
-      0,
-      rng.pick(STRAW),
-      0.92,
-      0.5,
-    );
-  }
-  for (let i = 0; i < 4; i++)
-    centred(b, 406 + i * 18, 1093 + rng.signed(2), rng.signed(0.1), 26, 9, 0, rng.pick(HAT_BAND), 0.92, 0);
-  centred(b, 433, 1116, 0, 110, 6, -0.06, hexLab("#9a8658"), 0.5, 0);
-  yield;
-}
+/* ------------------------------------------------------------------ land */
 
-function* paintGround(ctx: Ctx, L: Layout, seed: number): Gen {
-  const rng = new Rng(hashInt(seed, 202));
-  const brush = new Brush(ctx, rng);
-  const { w, h, bu, dpr } = L;
-  const setCss = () => {
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    brush.scale = dpr;
-  };
-  setCss();
-  ctx.lineCap = "round";
-  const patch = grassLight(L, seed);
-  const depthAt = (x: number, y: number) => {
-    const r = ridgeAt(L, x);
-    return clamp((y - r) / Math.max(1, h - r), 0, 1);
-  };
-
-  // underpainting: olive crest fading into deep green
-  const grad = ctx.createLinearGradient(0, L.ridgeMin, 0, h);
-  grad.addColorStop(0, "#7a7d44");
-  grad.addColorStop(0.18, "#5e6a2e");
-  grad.addColorStop(0.55, "#42572a");
-  grad.addColorStop(1, "#2e4426");
-  ctx.fillStyle = grad;
+function fillBelow(ctx: Ctx, L: Layout, line: Float32Array, bottom: number, style: string | CanvasGradient) {
   ctx.globalAlpha = 1;
+  ctx.fillStyle = style;
   ctx.beginPath();
-  ctx.moveTo(0, h);
-  for (let x = 0; x <= Math.ceil(w); x += 4) ctx.lineTo(x, ridgeAt(L, x) + bu * 0.8);
-  ctx.lineTo(w, h);
+  ctx.moveTo(0, bottom);
+  for (let x = 0; ; x += 3) {
+    const xx = Math.min(x, L.w);
+    ctx.lineTo(xx, colAt(line, xx));
+    if (xx >= L.w) break;
+  }
+  ctx.lineTo(L.w, bottom);
   ctx.closePath();
   ctx.fill();
+}
 
-  const grassArea = w * (h - (L.ridgeMin + L.ridgeMax) / 2);
-  // broad dark blocking-in
-  const nBlock = Math.round(grassArea / (bu * bu * 6));
-  for (let i = 0; i < nBlock; i++) {
+function vgrad(ctx: Ctx, y0: number, y1: number, colors: string[]): CanvasGradient {
+  const g = ctx.createLinearGradient(0, y0, 0, y1);
+  colors.forEach((c, i) => g.addColorStop(i / (colors.length - 1), c));
+  return g;
+}
+
+/** A range of hills in small strokes that follow its slopes; left-facing slopes catch the sun. */
+function* paintRange(
+  b: Brush,
+  L: Layout,
+  line: Float32Array,
+  bottom: number,
+  pal: Lab[],
+  lit: Lab[],
+  size: number,
+  haze: number,
+  front: Float32Array | null,
+): Gen {
+  const { rng } = b;
+  const { w } = L;
+  const s = Math.max(L.bu * size, 2);
+  // only what shows above the skyline in front needs painting
+  const hidden = (x: number) => (front ? Math.min(bottom, colAt(front, x) + s) : bottom);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, hidden(x) - colAt(line, x)) * 4;
+  const count = Math.round((area / (s * s)) * 0.85);
+  const slopeAt = (x: number) => (colAt(line, x + 4) - colAt(line, x - 4)) / 8;
+  const sFold = rng.int(1e9);
+  for (let i = 0; i < count; i++) {
+    if ((i & 31) === 31) yield;
     const x = rng.next() * w;
-    const y = rng.range(ridgeAt(L, x) + bu, h + bu);
-    const d = depthAt(x, y);
-    const p = patch(x, y) + rng.signed(0.3);
-    const col =
-      p < -0.45
+    const top = colAt(line, x);
+    const low = hidden(x);
+    if (low <= top) continue;
+    const y = rng.range(top + s * 0.15, low);
+    const v = (y - top) / (bottom - top);
+    const slope = slopeAt(x);
+    // sunlit slopes, shadowed folds and woods
+    const fold = fbm(x / (L.F * 0.08), v * 1.6, sFold, 0, 2);
+    const sun = -slope * 2.5 + (0.5 - v) * 0.6 + fold * 1.1 + rng.signed(0.3);
+    let col = sun > 0.35 ? rng.pick(lit) : rng.pick(pal);
+    // the air between: hazier towards the skyline
+    if (haze > 0) col = mix(col, rng.pick(HAZE), haze * (1 - v) * rng.next());
+    const ang = Math.atan(slope) * 0.8 + rng.signed(0.3);
+    centred(
+      b,
+      x,
+      y,
+      ang,
+      s * rng.range(1.5, 3),
+      s * rng.range(0.55, 0.95),
+      rng.signed(0.12),
+      col,
+      rng.range(0.55, 0.85),
+      0.5,
+    );
+  }
+  // strokes riding along the skyline soften it
+  const nEdge = Math.round(w / (s * 1.4));
+  for (let i = 0; i < nEdge; i++) {
+    const x = rng.next() * w;
+    if (hidden(x) <= colAt(line, x)) continue;
+    const slope = slopeAt(x);
+    centred(
+      b,
+      x,
+      colAt(line, x) + s * 0.3,
+      Math.atan(slope) + rng.signed(0.15),
+      s * rng.range(1.6, 3),
+      s * rng.range(0.45, 0.7),
+      rng.signed(0.08),
+      -slope * 2.5 + rng.signed(0.5) > 0.2 ? rng.pick(lit) : rng.pick(pal),
+      rng.range(0.6, 0.85),
+      0.4,
+    );
+  }
+}
+
+/** One rounded mass of distant trees standing on (x, y). */
+function clump(b: Brush, x: number, y: number, r: number, dark: Lab[], lit: Lab[]): void {
+  const { rng } = b;
+  // small, far-off clumps need fewer strokes
+  const small = r < 3;
+  for (let k = 0; k < (small ? 3 : 5); k++) {
+    centred(
+      b,
+      x + rng.signed(r * 0.6),
+      y - r * rng.range(0.3, 0.9),
+      -HALF_PI + rng.signed(0.6),
+      r * rng.range(0.9, 1.4),
+      r * rng.range(0.6, 0.9),
+      rng.signed(0.2),
+      rng.pick(dark),
+      rng.range(0.8, 0.95),
+      0.5,
+    );
+  }
+  for (let k = 0; k < (small ? 1 : 2); k++) {
+    centred(
+      b,
+      x - r * rng.range(0.1, 0.5),
+      y - r * rng.range(0.9, 1.3),
+      rng.signed(0.8),
+      r * rng.range(0.6, 1.0),
+      r * rng.range(0.4, 0.6),
+      rng.signed(0.2),
+      rng.pick(lit),
+      rng.range(0.7, 0.9),
+      0.4,
+    );
+  }
+}
+
+function grassColor(rng: Rng, light: number, d: number): Lab {
+  if (rng.chance(0.015 + 0.03 * d)) return rng.pick(rng.chance(0.5) ? GRASS.violet : GRASS.earth);
+  // the distance turns hazy and cool
+  if (rng.chance(0.35 * (1 - smoothstep(0, 0.1, d)))) {
+    return rng.chance(0.55) ? rng.pick(GRASS.haze) : rng.pick(GRASS.cool);
+  }
+  const sun = light * 1.2 + (0.3 - d) * 0.3 + rng.signed(0.35);
+  if (sun > 0.3) return rng.pick(GRASS.sun);
+  if (sun > -0.1) return rng.pick(GRASS.mid);
+  // under a cloud's shadow the greens turn deep and blue
+  if (sun > -0.45) return rng.chance(0.35) ? rng.pick(GRASS.cool) : rng.pick(GRASS.dark);
+  return rng.chance(0.3) ? rng.pick(GRASS.cool) : rng.pick(GRASS.deep);
+}
+
+function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const rng = new Rng(hashInt(seed, 202));
+  const b = new Brush(ctx, rng);
+  const { w, h, bu, F, hz, dpr } = L;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  b.scale = dpr;
+  ctx.lineCap = "round";
+
+  // far hills, then a nearer, greener range in front of them
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L.landTop, hz, ["#b2b8d2", "#94a4c8"]));
+  yield* paintRange(b, L, L.far, hz, HILL_FAR, HILL_FAR_LIT, 0.42, 0.55, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, hz - F * 0.03, hz, ["#8094b0", "#7a8ea8"]));
+  yield* paintRange(b, L, L.near, hz + F * 0.004, HILL_NEAR, HILL_NEAR_LIT, 0.45, 0.2, L.crest);
+  // woods along the nearer ridge give it a rounded, broken skyline
+  for (let x = -F * 0.02, i = 0; x < w + F * 0.02; i++) {
+    const r = Math.max(2.2, F * rng.range(0.01, 0.018));
+    if (rng.chance(0.7)) clump(b, x, colAt(L.near, x) + r * 0.9, r, HILL_NEAR, HILL_NEAR_LIT);
+    x += r * rng.range(1.0, 1.8);
+    if ((i & 7) === 7) yield;
+  }
+
+  // the far fields: a patchwork of hazy greens and a golden crop, flattened by the distance
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.09, ["#9cae86", "#98aa74"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  const sField = hashInt(seed, 62);
+  const sf = Math.max(bu * 0.4, 1.9);
+  let farArea = 0;
+  for (let x = 0; x < w; x += 4) farArea += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const nFar = Math.round((farArea / (sf * sf)) * 0.45);
+  for (let i = 0; i < nFar; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const c = colAt(L.crest, x) + bu * 0.5;
+    if (c <= hz) continue;
+    const y = rng.range(hz, c);
+    const v = clamp((y - hz) / (F * 0.08), 0, 1);
+    const fv = fbm(x / (F * 0.3), (y - hz) / (F * 0.014), sField, 0, 2);
+    let col =
+      fv > 0.32
+        ? rng.pick(FIELD_GOLD)
+        : fv < -0.3
+          ? rng.pick(FIELD_SHADE)
+          : rng.chance(0.25)
+            ? rng.pick(FIELD_SUN)
+            : rng.pick(FIELD_FAR);
+    if (rng.chance(0.012)) col = rng.pick(POPPY);
+    const sz = sf * (0.8 + 0.5 * v);
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.12),
+      sz * rng.range(1.6, 3.2),
+      sz * rng.range(0.45, 0.8),
+      rng.signed(0.1),
+      col,
+      rng.range(0.6, 0.9),
+      0.4,
+    );
+  }
+  // hedgerows between the fields
+  const nHedges = 2 + rng.int(2);
+  for (let k = 0; k < nHedges; k++) {
+    const y0 = hz + F * rng.range(0.008, 0.032);
+    const x0 = rng.next() * w;
+    const len = w * rng.range(0.15, 0.4);
+    const tilt = rng.signed(0.03);
+    for (let x = x0; x < x0 + len; x += sf * 1.3) {
+      const y = y0 + (x - x0) * tilt;
+      if (y > colAt(L.crest, x) - sf) continue;
+      centred(
+        b,
+        x,
+        y - sf * 0.4,
+        rng.signed(0.5),
+        sf * rng.range(1, 1.8),
+        sf * rng.range(0.7, 1.1),
+        0,
+        rng.pick(TREE_LINE),
+        0.85,
+        0.3,
+      );
+      if (rng.chance(0.4)) {
+        b.dab(x - sf * 0.3, y - sf * 0.9, sf * 0.4, 0, rng.pick(TREE_LINE_LIT), 0.8);
+      }
+    }
+  }
+  yield;
+
+  // the tree line along the foot of the hills
+  const sLine = hashInt(seed, 61);
+  let tx = -F * 0.02;
+  for (let i = 0; tx < w + F * 0.02; i++) {
+    const v = fbm(tx / (F * 0.22), 0.7, sLine, 0, 2);
+    const r = Math.max(2.2, F * rng.range(0.008, 0.016) * (0.7 + 0.6 * clamp(v + 0.4, 0, 1)));
+    if (v > -0.2) clump(b, tx, hz + F * 0.003, r, TREE_LINE, TREE_LINE_LIT);
+    tx += r * rng.range(0.8, 1.5);
+    if ((i & 7) === 7) yield;
+  }
+
+  // the meadow: underpainting, then broad blocking-in by light and shade
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#a2ad62", "#86993f", "#5f7e37", "#3d602f"]));
+  const yAt = (x: number, d: number) => {
+    const c = colAt(L.crest, x);
+    return c + d * (h - c);
+  };
+  const meadowArea = w * L.meadowH;
+  const nBlock = Math.round(meadowArea / (bu * bu * 9));
+  for (let i = 0; i < nBlock; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = rng.next();
+    const y = yAt(x, d) + (d > 0.96 ? bu : 0);
+    const sc = 1.5 * persp(d);
+    const l = M.light(x, y) + rng.signed(0.3);
+    let col =
+      l < -0.4
         ? rng.pick(GRASS.deep)
-        : p < -0.05
+        : l < 0
           ? rng.pick(GRASS.dark)
           : rng.chance(0.2)
             ? rng.pick(GRASS.earth)
             : rng.pick(GRASS.mid);
-    const ang = -Math.PI / 2 + rng.range(0.3, 0.9);
-    brush.stroke(
+    if (d < 0.15) col = mix(col, rng.pick(GRASS.haze), 0.5);
+    const ang = d < 0.3 ? rng.signed(0.3) : -HALF_PI + rng.range(0.3, 0.9);
+    centred(
+      b,
       x,
       y,
       ang,
-      bu * rng.range(2.5, 5) * (0.6 + d),
-      bu * rng.range(1.2, 2.2) * (0.6 + d),
+      bu * rng.range(2.4, 4.5) * sc,
+      bu * rng.range(1.1, 2) * sc,
       rng.signed(0.1),
       col,
       rng.range(0.45, 0.75),
       0.5,
     );
-    if ((i & 31) === 31) yield;
   }
 
-  // figures stand behind the crest grass, so they come next
-  const figure = (ox: number, oy: number) => {
-    ctx.setTransform(dpr * L.k, 0, 0, dpr * L.k, dpr * ox, dpr * oy);
-    brush.scale = dpr * L.k;
+  // the path: worn, pale earth that the grass is taking back
+  const P = L.path ?? { a: 0, b: 0, k: 0, ph: 0, half: 0 };
+  const pathPoint = (d: number, across: number): [number, number] => {
+    const p = persp(d);
+    const v = 1 / p;
+    const u = P.a + P.b * Math.sin(v * P.k + P.ph) + across * P.half;
+    const x = w / 2 + u * F * p;
+    return [x, yAt(x, d)];
   };
-  figure(L.cx, L.cy);
-  yield* paintChild(brush);
-  figure(L.tx, L.ty);
-  yield* paintWoman(brush);
-  setCss();
-
-  // the field: thousands of short strokes leaning with the wind, small at the crest, big in front
-  const nGrass = Math.round(grassArea / (bu * bu * 0.95));
-  for (let i = 0; i < nGrass; i++) {
-    const x = rng.next() * w;
-    const r = ridgeAt(L, x);
-    const y = rng.range(r - bu * 0.4, h + bu);
-    const d = depthAt(x, y);
-    const sc = 0.5 + 1.0 * d;
-    const p = patch(x, y);
-    const col = grassColor(rng, p, d);
-    const r2 = rng.next();
-    const lean = r2 < 0.12 ? -rng.range(0, 0.45) : r2 < 0.22 ? rng.range(0.9, 1.35) : rng.range(0.15, 0.85);
-    const ang = -Math.PI / 2 + lean + p * 0.12;
-    const len = bu * rng.range(1.3, 2.7) * sc;
-    const wid = bu * rng.range(0.4, 0.75) * sc;
-    brush.stroke(x, y, ang, len, wid, 0.04 + rng.signed(0.12), col, rng.range(0.7, 0.95), 0.7);
+  const nPath = Math.round((F * P.half * 2 * L.meadowH) / (bu * bu * 0.35));
+  for (let i = 0; i < nPath; i++) {
     if ((i & 31) === 31) yield;
+    const d = Math.sqrt(rng.next());
+    const [x, y] = pathPoint(d, rng.signed(1.1));
+    const core = M.path(x, y);
+    if (core < 0.15 || rng.next() > core + 0.2) continue;
+    const sc = 1.5 * persp(d);
+    const [x1, y1] = pathPoint(Math.max(0, d - 0.04), 0);
+    const [x2, y2] = pathPoint(Math.min(1, d + 0.04), 0);
+    const along = Math.atan2(y2 - y1, x2 - x1);
+    const ang = rng.chance(0.5) ? along + rng.signed(0.25) : rng.signed(0.25);
+    let col = M.light(x, y) > -0.05 ? rng.pick(PATH) : rng.pick(PATH_SHADE);
+    if (core < 0.6) col = mix(col, rng.pick(GRASS.sun), 0.5);
+    centred(
+      b,
+      x,
+      y,
+      ang,
+      bu * rng.range(1.2, 2.4) * sc,
+      bu * rng.range(0.4, 0.75) * sc,
+      rng.signed(0.12),
+      col,
+      rng.range(0.45, 0.75),
+      0.6,
+    );
   }
 
-  // flowers: yellow dabs clustered along the crest and around the figures
-  const flowerSeed = hashInt(seed, 43);
-  const nFlowers = Math.round(grassArea / (bu * bu * 3));
-  for (let i = 0; i < nFlowers; i++) {
-    if ((i & 31) === 31) yield;
-    const x = rng.next() * w;
-    const r = ridgeAt(L, x);
-    const y = r - bu * 0.8 + Math.pow(rng.next(), 2.6) * (h - r) * 0.65;
-    const d = depthAt(x, y);
-    const cluster = fbm(x / (bu * 5), y / (bu * 3), flowerSeed, 0, 2) + (d < 0.2 ? 0.2 : 0);
-    if (cluster < 0.06 || patch(x, y) < -0.4 || rng.chance(0.3)) continue;
-    const sz = bu * (0.3 + 0.45 * d) * rng.range(0.8, 1.3);
-    const col = rng.chance(0.1) ? hexLab("#f2f0dc") : rng.pick(GRASS.flower);
-    const nDab = 2 + rng.int(2);
-    for (let j = 0; j < nDab; j++) {
+  // the grass: depth bands, small and combed flat far away, large and upright in front
+  const bands = 24;
+  for (let band = 0; band < bands; band++) {
+    const dm = (band + 0.5) / bands;
+    const k = Math.max(1.5 * persp(dm), 0.6);
+    const count = Math.round(meadowArea / bands / (bu * bu * k * k * 1.5));
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const x = rng.next() * w;
+      const d = (band + rng.next()) / bands;
+      const y = yAt(x, d) + (d > 0.96 ? bu * 0.6 : 0);
+      if (M.path(x, y) > 0.55 && rng.chance(0.55)) continue;
+      const sc = Math.max(1.5 * persp(d), 1.4 / bu);
+      const l = M.light(x, y);
+      const col = grassColor(rng, l, d);
+      const r2 = rng.next();
+      const lean = r2 < 0.1 ? -rng.range(0, 0.4) : r2 < 0.2 ? rng.range(0.9, 1.3) : rng.range(0.15, 0.85);
+      const up = -HALF_PI + lean + l * 0.1;
+      const ang = lerp(-0.2 + rng.signed(0.35), up, smoothstep(0, 0.4, d));
       centred(
-        brush,
-        x + rng.signed(sz * 0.8),
-        y + rng.signed(sz * 0.5),
-        rng.signed(Math.PI),
-        sz * rng.range(0.9, 1.6),
-        sz * rng.range(0.6, 0.9),
-        rng.signed(0.2),
+        b,
+        x,
+        y,
+        ang,
+        bu * rng.range(1.3, 2.7) * sc,
+        bu * rng.range(0.4, 0.75) * sc,
+        0.04 + rng.signed(0.12),
         col,
-        rng.range(0.75, 0.95),
-        0.4,
+        rng.range(0.7, 0.95),
+        0.7,
       );
     }
   }
 
-  // light accents last: sunlit tips near the crest
-  const nTips = Math.round(nGrass * 0.18);
+  // flowers: drifts of buttercups and daisies, a few poppies, the odd cornflower
+  const nFlowers = Math.round(meadowArea / (bu * bu * 3.2));
+  for (let i = 0; i < nFlowers; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = rng.next();
+    const y = yAt(x, d);
+    const kind = M.flower(x, y, rng.next());
+    if (kind === FLOWER_NONE || M.path(x, y) > 0.6) continue;
+    const sc = Math.max(1.5 * persp(d), 1.1 / bu);
+    const far = d < 0.25;
+    if (kind === FLOWER_BUTTERCUP) {
+      const r = bu * 0.26 * sc * rng.range(0.8, 1.3);
+      const col = rng.pick(BUTTERCUP);
+      const n = far ? 1 : 2;
+      for (let j = 0; j < n; j++) {
+        centred(
+          b,
+          x + rng.signed(r),
+          y + rng.signed(r * 0.6),
+          far ? rng.signed(0.25) : rng.signed(Math.PI),
+          r * rng.range(1.6, 2.4),
+          r * rng.range(1.0, 1.4),
+          rng.signed(0.2),
+          col,
+          rng.range(0.8, 0.95),
+          0.3,
+        );
+      }
+    } else if (kind === FLOWER_DAISY) {
+      const r = bu * 0.3 * sc * rng.range(0.8, 1.2);
+      centred(b, x, y, rng.signed(0.4), r * 2.4, r * 1.3, 0, rng.pick(DAISY), rng.range(0.85, 0.97), 0.2);
+      if (!far) b.dab(x + r * 0.1, y, r * 0.4, 0, BUTTERCUP[2], 0.9);
+    } else if (kind === FLOWER_POPPY) {
+      const r = bu * 0.36 * sc * rng.range(0.8, 1.25);
+      const col = rng.pick(POPPY);
+      centred(b, x, y, rng.signed(0.5), r * 2.2, r * 1.6, rng.signed(0.2), col, 0.92, 0.4);
+      if (!far) {
+        b.dab(x - r * 0.3, y - r * 0.3, r * 0.6, rng.signed(1), lighten(col, 0.08), 0.75);
+        b.dab(x + r * 0.15, y + r * 0.15, r * 0.25, 0, hexLab("#3a1f22"), 0.8);
+      }
+    } else {
+      const r = bu * 0.22 * sc * rng.range(0.8, 1.2);
+      centred(b, x, y, rng.signed(1), r * 2, r * 1.2, 0, rng.pick(CORNFLOWER), 0.9, 0.2);
+    }
+  }
+
+  // light accents last: sunlit tips and pale seed heads
+  const nTips = Math.round(meadowArea / (bu * bu * 7));
   for (let i = 0; i < nTips; i++) {
     if ((i & 31) === 31) yield;
     const x = rng.next() * w;
-    const r = ridgeAt(L, x);
-    const y = r - bu * 0.6 + Math.pow(rng.next(), 2) * (h - r);
-    if (patch(x, y) < -0.3) continue;
-    const d = depthAt(x, y);
-    const sc = 0.5 + 1.0 * d;
+    const d = Math.pow(rng.next(), 0.8);
+    const y = yAt(x, d);
+    if (M.light(x, y) < -0.25) continue;
+    const sc = Math.max(1.5 * persp(d), 1.2 / bu);
     const col = rng.chance(0.25) ? rng.pick(GRASS.pale) : rng.pick(GRASS.sun);
-    brush.stroke(
+    const up = -HALF_PI + rng.range(0.3, 0.8);
+    centred(
+      b,
       x,
       y,
-      -Math.PI / 2 + rng.range(0.3, 0.8),
+      lerp(rng.signed(0.3), up, smoothstep(0, 0.4, d)),
       bu * rng.range(1.2, 2.4) * sc,
       bu * rng.range(0.25, 0.5) * sc,
       0.05,
@@ -1419,6 +1795,852 @@ function* paintGround(ctx: Ctx, L: Layout, seed: number): Gen {
       rng.range(0.7, 0.9),
       0.5,
     );
+  }
+
+  // the crest: tiny strokes along it make a soft edge against the far fields
+  const sc0 = Math.max(1.5 * persp(0), 1.1 / bu);
+  const nCrest = Math.round(w / (bu * sc0 * 0.8));
+  for (let i = 0; i < nCrest; i++) {
+    const x = rng.next() * w;
+    const y = colAt(L.crest, x) + rng.signed(bu * sc0 * 0.4);
+    const col = rng.chance(0.55)
+      ? rng.pick(GRASS.sun)
+      : rng.chance(0.5)
+        ? rng.pick(GRASS.pale)
+        : rng.pick(GRASS.mid);
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.6) - 0.2,
+      bu * rng.range(1.2, 2.2) * sc0,
+      bu * rng.range(0.35, 0.6) * sc0,
+      0,
+      col,
+      rng.range(0.7, 0.9),
+      0.3,
+    );
+  }
+}
+
+/** The snow biome's main range: sunlit faces left of each ridge line, blue-violet shade right of it. */
+function* paintPeaks(b: Brush, L: Layout, seed: number): Gen {
+  const { rng } = b;
+  const { w, bu, F, hz, near, peaks } = L;
+  const s = Math.max(bu * 0.62, 2.4);
+  const sRock = hashInt(seed, 17);
+  const sRidge = hashInt(seed, 18);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, hz - colAt(near, x)) * 4;
+  const faceAt = (x: number, y: number) => {
+    let best = 0;
+    let bd = Infinity;
+    for (let k = 0; k < peaks.length; k += 4) {
+      const d = Math.abs(x - peaks[k]) / peaks[k + 2];
+      if (d < bd) {
+        bd = d;
+        best = k;
+      }
+    }
+    const ridge =
+      peaks[best] +
+      (y - peaks[best + 1]) * peaks[best + 3] +
+      F * 0.04 * fbm(y / (F * 0.06), best, sRidge, 0, 2);
+    return x - ridge;
+  };
+  const count = Math.round((area / (s * s)) * 0.8);
+  for (let i = 0; i < count; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const top = colAt(near, x);
+    if (top >= hz) continue;
+    const y = rng.range(top + s * 0.2, hz + s);
+    const v = (y - top) / (hz - top);
+    const face = faceAt(x, y) + rng.signed(s * 1.5);
+    const rock = fbm(x / (F * 0.05), y / (F * 0.07), sRock, 0, 2) > 0.3 && v > 0.06;
+    let col: Lab;
+    if (rock) col = face < 0 ? mix(rng.pick(SNOW.rock), rng.pick(SNOW.lit), 0.25) : rng.pick(SNOW.rock);
+    else if (face < -s) col = rng.chance(0.75) ? rng.pick(SNOW.lit) : rng.pick(SNOW.half);
+    else if (face < s) col = rng.pick(SNOW.half);
+    else col = rng.chance(0.2) ? rng.pick(SNOW.deep) : rng.pick(SNOW.shade);
+    // mist gathers at the foot of the range
+    if (v > 0.7) col = mix(col, rng.pick(SNOW.half), (v - 0.7) * 1.6);
+    // strokes run down the fall lines of each face
+    const ang = rng.chance(0.3) ? rng.signed(0.2) : HALF_PI + (face < 0 ? 0.55 : -0.55) + rng.signed(0.3);
+    centred(
+      b,
+      x,
+      y,
+      ang,
+      s * rng.range(1.5, 3),
+      s * rng.range(0.5, 0.9),
+      rng.signed(0.12),
+      col,
+      rng.range(0.65, 0.92),
+      0.5,
+    );
+  }
+  // the skyline: the sunlit side of each ridge catches a warm edge
+  const nEdge = Math.round(w / (s * 1.2));
+  for (let i = 0; i < nEdge; i++) {
+    const x = rng.next() * w;
+    const top = colAt(near, x);
+    if (top >= hz - s) continue;
+    const slope = (colAt(near, x + 3) - colAt(near, x - 3)) / 6;
+    const lit = faceAt(x, top + s) < 0;
+    centred(
+      b,
+      x,
+      top + s * 0.35,
+      Math.atan(slope),
+      s * rng.range(1.4, 2.6),
+      s * rng.range(0.4, 0.7),
+      0,
+      lit ? rng.pick(SNOW.lit) : rng.pick(SNOW.shade),
+      0.85,
+      0.3,
+    );
+  }
+}
+
+/** Long shadows of the trees, falling to the right across the ground. */
+function castShadows(b: Brush, L: Layout, kind: TreeKind, colors: Lab[], reach: number): void {
+  const { rng } = b;
+  for (const t of L.trees) {
+    if (t.kind !== kind) continue;
+    const length = t.ht * reach * rng.range(0.9, 1.2);
+    for (let j = 0; j < 6; j++) {
+      const f = j / 6;
+      centred(
+        b,
+        t.x + length * (f + 0.08),
+        t.y + t.ht * 0.025 * f + rng.signed(t.wd * 0.04),
+        0.05 + rng.signed(0.04),
+        length * 0.28,
+        Math.max(0.8, t.wd * 0.34 * (1 - f * 0.6)),
+        0,
+        rng.pick(colors),
+        0.5,
+        0.3,
+      );
+    }
+  }
+}
+
+function* paintSnowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const rng = new Rng(hashInt(seed, 202));
+  const b = new Brush(ctx, rng);
+  const { w, h, bu, F, hz, dpr } = L;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  b.scale = dpr;
+  ctx.lineCap = "round";
+
+  // the distant range, pale in the cold air, then the main range in front of it
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, hz - F * 0.22, hz, ["#c8cae2", "#aab2d8"]));
+  yield* paintRange(b, L, L.far, hz, SNOW.far, SNOW.farLit, 0.5, 0.5, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L.landTop, hz, ["#e6e4ee", "#b4bcdc"]));
+  yield* paintPeaks(b, L, seed);
+
+  // the snowfield beyond the crest
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.1, ["#dcdeee", "#e8e6f0"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  const sf = Math.max(bu * 0.4, 1.9);
+  const sField = hashInt(seed, 62);
+  let farArea = 0;
+  for (let x = 0; x < w; x += 4) farArea += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const nFar = Math.round((farArea / (sf * sf)) * 0.55);
+  for (let i = 0; i < nFar; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const c = colAt(L.crest, x) + bu * 0.5;
+    if (c <= hz) continue;
+    const y = rng.range(hz, c);
+    const fv = fbm(x / (F * 0.3), (y - hz) / (F * 0.02), sField, 0, 2) + rng.signed(0.2);
+    const col = fv > 0.15 ? rng.pick(SNOW.lit) : fv > -0.2 ? rng.pick(SNOW.half) : rng.pick(SNOW.shade);
+    centred(b, x, y, rng.signed(0.1), sf * rng.range(1.6, 3.2), sf * rng.range(0.45, 0.8), 0, col, 0.75, 0.3);
+  }
+  // a dark band of forest along the foot of the range
+  const sLine = hashInt(seed, 61);
+  let tx = -2;
+  for (let i = 0; tx < w + 2; i++) {
+    const r = F * rng.range(0.012, 0.022);
+    if (fbm(tx / (F * 0.25), 0.7, sLine, 0, 2) > -0.25) {
+      centred(
+        b,
+        tx,
+        hz - r * 0.9 + F * 0.004,
+        -HALF_PI + rng.signed(0.06),
+        r * 2,
+        r * 0.7,
+        0,
+        rng.pick(SNOW.forest),
+        0.92,
+        0.3,
+      );
+      if (rng.chance(0.5))
+        centred(
+          b,
+          tx - r * 0.15,
+          hz - r * 1.2,
+          rng.signed(0.4),
+          r * 0.6,
+          r * 0.3,
+          0,
+          rng.pick(SNOW.half),
+          0.7,
+          0,
+        );
+    }
+    tx += r * rng.range(0.6, 1.2);
+    if ((i & 15) === 15) yield;
+  }
+
+  // the near snowfield: strokes follow the swell of the drifts, warm white in the sun, blue in shade
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#f2eee8", "#e4e2ee", "#d2d6ec"]));
+  const yAt = (x: number, d: number) => {
+    const c = colAt(L.crest, x);
+    return c + d * (h - c);
+  };
+  const meadowArea = w * L.meadowH;
+  const bands = 12;
+  for (let band = 0; band < bands; band++) {
+    const k = Math.max(1.5 * persp((band + 0.5) / bands), 0.6);
+    const count = Math.round(meadowArea / bands / (bu * bu * k * k * 1.3));
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const x = rng.next() * w;
+      const d = (band + rng.next()) / bands;
+      const y = yAt(x, d) + (d > 0.96 ? bu * 0.6 : 0);
+      const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+      const l = M.light(x, y) + rng.signed(0.25);
+      const col =
+        l > 0.22
+          ? rng.pick(SNOW.lit)
+          : l > -0.1
+            ? rng.pick(SNOW.half)
+            : rng.chance(0.25)
+              ? rng.pick(SNOW.deep)
+              : rng.pick(SNOW.shade);
+      centred(
+        b,
+        x,
+        y,
+        rng.signed(0.16) + 0.08 * Math.sin(x / (F * 0.3) + d * 5),
+        bu * rng.range(1.8, 3.6) * sc,
+        bu * rng.range(0.45, 0.8) * sc,
+        rng.signed(0.08),
+        col,
+        rng.range(0.6, 0.9),
+        0.5,
+      );
+    }
+  }
+  castShadows(b, L, "pine", SNOW.shade, 1.1);
+  yield;
+  // wind-carved ridges along the drifts, a blue line under a lit lip
+  const nRidges = 4 + rng.int(3);
+  for (let k = 0; k < nRidges; k++) {
+    const d = rng.range(0.15, 0.9);
+    const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+    const x0 = rng.next() * w;
+    const len = w * rng.range(0.2, 0.45);
+    const ph = rng.next() * TAU;
+    for (let x = x0; x < x0 + len; x += bu * sc * 1.4) {
+      const y = yAt(x, d) + Math.sin(x / (F * 0.22) + ph) * F * 0.012 * persp(d);
+      centred(
+        b,
+        x,
+        y,
+        rng.signed(0.1),
+        bu * sc * 2,
+        Math.max(0.7, bu * sc * 0.25),
+        0,
+        rng.pick(SNOW.shade),
+        0.75,
+        0,
+      );
+      centred(
+        b,
+        x,
+        y - bu * sc * 0.3,
+        rng.signed(0.1),
+        bu * sc * 1.6,
+        Math.max(0.7, bu * sc * 0.25),
+        0,
+        rng.pick(SNOW.lit),
+        0.8,
+        0,
+      );
+    }
+  }
+  // sparkle where the sun strikes, and dry grass poking through
+  const sStraw = hashInt(seed, 63);
+  const nDots = Math.round(meadowArea / (bu * bu * 7));
+  for (let i = 0; i < nDots; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = rng.next();
+    const y = yAt(x, d);
+    const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+    if (fbm(M.gx(x, d) * 2, (1 / persp(d)) * 2, sStraw, 0, 2) > 0.42 && rng.chance(0.5)) {
+      centred(
+        b,
+        x,
+        y - bu * sc * 0.6,
+        -HALF_PI + rng.range(0.1, 0.6),
+        bu * sc * rng.range(1, 2),
+        Math.max(0.6, bu * sc * 0.14),
+        0.05,
+        rng.pick(SNOW.straw),
+        0.85,
+        0,
+      );
+    } else if (M.light(x, y) > 0.15) {
+      b.dab(x, y, Math.max(0.5, bu * 0.12 * sc), 0, SNOW.lit[rng.chance(0.5) ? 1 : 4], 0.9);
+    }
+  }
+  // the crest
+  const sc0 = Math.max(1.5 * persp(0), 1.1 / bu);
+  const nCrest = Math.round(w / (bu * sc0 * 0.8));
+  for (let i = 0; i < nCrest; i++) {
+    const x = rng.next() * w;
+    centred(
+      b,
+      x,
+      colAt(L.crest, x) + rng.signed(bu * sc0 * 0.4),
+      rng.signed(0.3),
+      bu * rng.range(1.2, 2.2) * sc0,
+      bu * rng.range(0.35, 0.6) * sc0,
+      0,
+      rng.chance(0.6) ? rng.pick(SNOW.lit) : rng.pick(SNOW.half),
+      0.85,
+      0.3,
+    );
+  }
+}
+
+/** The desert's nearer buttes: warm front faces banded with strata, violet shade on the far side. */
+function* paintButtes(b: Brush, L: Layout, seed: number): Gen {
+  const { rng } = b;
+  const { w, bu, F, hz, near } = L;
+  const s = Math.max(bu * 0.5, 2);
+  const sStrata = hashInt(seed, 19);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, hz - colAt(near, x)) * 4;
+  const count = Math.round((area / (s * s)) * 1);
+  for (let i = 0; i < count; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const top = colAt(near, x);
+    if (top >= hz - 1) continue;
+    const y = rng.range(top + s * 0.2, hz + s);
+    const v = (y - top) / (hz - top);
+    const slope = (colAt(near, x + 5) - colAt(near, x - 5)) / 10;
+    const strata = Math.sin(y / (F * 0.014) + 2 * fbm(x / (F * 0.2), y / (F * 0.05), sStrata, 0, 2));
+    // across the butte: its left side turned to the sun, its right side turning away into shade
+    let across = 0;
+    let nearest = Infinity;
+    for (let k = 0; k < L.buttes.length; k += 3) {
+      const u = (x - L.buttes[k]) / L.buttes[k + 1];
+      if (Math.abs(u) < nearest) {
+        nearest = Math.abs(u);
+        across = u;
+      }
+    }
+    const gully = fbm(x / (F * 0.012), 0.3, sStrata + 1, 0, 2) < -0.25 ? -0.5 : 0;
+    const sun =
+      -slope * 3 - across * 0.9 + strata * 0.3 + gully - smoothstep(0.7, 1, v) * 0.8 + rng.signed(0.25);
+    const col =
+      sun > 0.45
+        ? rng.pick(DESERT.mesaLit)
+        : sun > -0.35
+          ? rng.pick(DESERT.mesa)
+          : rng.pick(DESERT.mesaShade);
+    const vertical = Math.abs(slope) > 0.6 || rng.chance(0.35);
+    centred(
+      b,
+      x,
+      y,
+      vertical ? HALF_PI + rng.signed(0.2) : rng.signed(0.12),
+      s * rng.range(1.5, 2.8),
+      s * rng.range(0.5, 0.9),
+      rng.signed(0.1),
+      col,
+      rng.range(0.7, 0.92),
+      0.5,
+    );
+  }
+}
+
+function* paintDesertLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const rng = new Rng(hashInt(seed, 202));
+  const b = new Brush(ctx, rng);
+  const { w, h, bu, F, hz, dpr } = L;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  b.scale = dpr;
+  ctx.lineCap = "round";
+
+  // distant mesas, violet in the haze, then the nearer buttes
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L.landTop, hz, ["#d6c0cc", "#c2aac6"]));
+  yield* paintRange(b, L, L.far, hz, DESERT.far, DESERT.farLit, 0.5, 0.5, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L.landTop, hz, ["#d29a76", "#b88070"]));
+  yield* paintButtes(b, L, seed);
+
+  // the plain beyond the dunes: pale sand dotted with scrub
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.1, ["#e2caa6", "#dcbc94"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  const sf = Math.max(bu * 0.4, 1.9);
+  let farArea = 0;
+  for (let x = 0; x < w; x += 4) farArea += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const nFar = Math.round((farArea / (sf * sf)) * 0.55);
+  for (let i = 0; i < nFar; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const c = colAt(L.crest, x) + bu * 0.5;
+    if (c <= hz) continue;
+    const y = rng.range(hz, c);
+    if (rng.chance(0.12)) {
+      b.dab(x, y, sf * rng.range(0.4, 0.7), 0, rng.pick(DESERT.sage), 0.85);
+      continue;
+    }
+    const col = rng.chance(0.2) ? rng.pick(DESERT.far) : rng.pick(DESERT.plain);
+    centred(b, x, y, rng.signed(0.1), sf * rng.range(1.6, 3.2), sf * rng.range(0.45, 0.8), 0, col, 0.75, 0.3);
+  }
+  yield;
+
+  // the dunes: a violet shadow under each crest where the ridge turns away from the sun
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#eebc86", "#e2a878", "#d89a72"]));
+  const lines = [L.crest, ...L.dunes];
+  /**
+   * Light on the dunes: the wind blows from the left, so each crest's steep slip face hangs to the
+   * right of its high point, a crescent of violet shadow with the sun low on the left.
+   */
+  const duneAt = (x: number, y: number) => {
+    let j = 0;
+    while (j + 1 < lines.length && y >= colAt(lines[j + 1], x)) j++;
+    const top = colAt(lines[j], x);
+    const bottom = j + 1 < lines.length ? colAt(lines[j + 1], x) : h + (h - top) * 0.5;
+    const v = (y - top) / Math.max(1, bottom - top);
+    const below = y - top;
+    const theta = (x - below * 0.9) * L.waves[j * 2] + L.waves[j * 2 + 1] + HALF_PI;
+    const turn = ((theta % TAU) + TAU) % TAU;
+    const lee = smoothstep(0, 0.25, turn) * smoothstep(2.1, 1.6, turn) * smoothstep(0.85, 0.35, v);
+    if (lee > 0.5) return -1 + v * 0.6;
+    // the windward slopes brighten towards the next crest
+    return 0.15 + v * 0.75 - lee;
+  };
+  const yAt = (x: number, d: number) => {
+    const c = colAt(L.crest, x);
+    return c + d * (h - c);
+  };
+  const meadowArea = w * L.meadowH;
+  const bands = 12;
+  for (let band = 0; band < bands; band++) {
+    const k = Math.max(1.5 * persp((band + 0.5) / bands), 0.6);
+    const count = Math.round(meadowArea / bands / (bu * bu * k * k * 1.3));
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const x = rng.next() * w;
+      const d = (band + rng.next()) / bands;
+      const y = yAt(x, d) + (d > 0.96 ? bu * 0.6 : 0);
+      const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+      const sun = duneAt(x, y) + rng.signed(0.12);
+      let line = L.crest;
+      for (const dl of L.dunes) if (y >= colAt(dl, x)) line = dl;
+      const curve = Math.atan((colAt(line, x + 4) - colAt(line, x - 4)) / 8);
+      const col =
+        sun < -0.6
+          ? rng.pick(DESERT.deep)
+          : sun < 0
+            ? rng.pick(DESERT.shadow)
+            : sun < 0.35
+              ? rng.pick(DESERT.sandMid)
+              : sun < 0.75
+                ? rng.pick(DESERT.sand)
+                : rng.pick(DESERT.sandLit);
+      centred(
+        b,
+        x,
+        y,
+        curve * 0.8 + rng.signed(0.12),
+        bu * rng.range(1.8, 3.4) * sc,
+        bu * rng.range(0.45, 0.8) * sc,
+        rng.signed(0.08),
+        col,
+        rng.range(0.65, 0.9),
+        0.5,
+      );
+    }
+  }
+  castShadows(b, L, "shrub", DESERT.shadow, 1.4);
+  yield;
+  // wind ripples on the sunlit slopes, then a bright lip along each crest
+  const nRipples = Math.round(meadowArea / (bu * bu * 6));
+  for (let i = 0; i < nRipples; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = rng.range(0.25, 1);
+    const y = yAt(x, d);
+    if (duneAt(x, y) < 0.2) continue;
+    const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.12),
+      bu * sc * rng.range(2, 3.4),
+      Math.max(0.6, bu * sc * 0.16),
+      rng.signed(0.2),
+      rng.pick(DESERT.sandMid),
+      0.7,
+      0,
+    );
+  }
+  // each crest a sharp line: a bright lip with the shadow tucked under it
+  for (const line of lines) {
+    for (let x = rng.range(0, bu); x < w; x += bu * rng.range(0.7, 1.2)) {
+      const y = colAt(line, x);
+      const d = M.depth(x, y);
+      const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+      const slope = (colAt(line, x + 3) - colAt(line, x - 3)) / 6;
+      const wid = Math.max(0.6, bu * sc * 0.26);
+      const shade = duneAt(x, y + wid * 2) < 0;
+      centred(
+        b,
+        x,
+        y - wid * 0.3,
+        Math.atan(slope),
+        bu * sc * rng.range(1.4, 2.4),
+        wid,
+        0,
+        rng.pick(DESERT.sandLit),
+        0.9,
+        0,
+      );
+      if (shade) {
+        centred(
+          b,
+          x,
+          y + wid * 0.8,
+          Math.atan(slope),
+          bu * sc * rng.range(1.4, 2.4),
+          wid,
+          0,
+          rng.pick(DESERT.deep),
+          0.8,
+          0,
+        );
+      }
+    }
+    yield;
+  }
+}
+
+function* paintLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  if (L.biome === "snow") yield* paintSnowLand(ctx, L, M, seed);
+  else if (L.biome === "desert") yield* paintDesertLand(ctx, L, M, seed);
+  else yield* paintMeadowLand(ctx, L, M, seed);
+}
+
+/* ------------------------------------------------------------------ trees */
+
+/** A tree's place in the sprite sheet (device px) and its anchor: the foot of the trunk. */
+interface Sprite {
+  sx: number;
+  sy: number;
+  sw: number;
+  sh: number;
+  ax: number;
+  ay: number;
+}
+
+interface Sheet {
+  width: number;
+  height: number;
+  /** One per tree, in the order of Layout.trees. */
+  trees: Sprite[];
+}
+
+function spriteSheet(L: Layout): Sheet {
+  const d = L.dpr;
+  const maxW = 1024;
+  let x = 0;
+  let y = 0;
+  let rowH = 0;
+  let width = 1;
+  const place = (wCss: number, hCss: number, axCss: number, ayCss: number): Sprite => {
+    const sw = Math.ceil(wCss * d);
+    const sh = Math.ceil(hCss * d);
+    if (x > 0 && x + sw > maxW) {
+      x = 0;
+      y += rowH + 2;
+      rowH = 0;
+    }
+    const s = { sx: x, sy: y, sw, sh, ax: Math.round(axCss * d), ay: Math.round(ayCss * d) };
+    x += sw + 2;
+    rowH = Math.max(rowH, sh);
+    width = Math.max(width, x);
+    return s;
+  };
+  // room around each tree for its crown (and, for a shrub, its shadow on the right)
+  const reach: Record<TreeKind, [number, number]> = {
+    poplar: [0.8, 1.4],
+    oak: [0.75, 1.3],
+    pine: [0.62, 0.66],
+    shrub: [0.6, 1.5],
+  };
+  const trees = L.trees.map((t) => {
+    const left = t.wd * reach[t.kind][0] + 3;
+    const right = t.wd * reach[t.kind][1] + 3;
+    const tall = t.ht * 1.08 + 6;
+    return place(left + right, tall, left, tall - 3);
+  });
+  return { width, height: y + rowH, trees };
+}
+
+function paintPoplar(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  const half = (s: number) => W * 0.5 * Math.pow(1 - s, 0.8) * smoothstep(0.02, 0.26, s) + W * 0.04;
+  // its shadow on the field, falling to the right
+  centred(b, W * 0.9, -W * 0.05, 0.03, W * 1.8, Math.max(0.8, W * 0.2), 0, rng.pick(POPLAR_DARK), 0.45, 0);
+  b.stroke(0, 0, -HALF_PI, H * 0.2, Math.max(0.7, W * 0.1), 0, TRUNK, 0.9, 0);
+  const n = Math.round(clamp((H * W) / 5, 24, 150));
+  // shadowed body first, then the sunlit left flank
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < (pass === 0 ? n : n * 0.5); i++) {
+      const s = rng.range(0.07, 0.97);
+      const u = pass === 0 ? rng.signed(1) : rng.range(-1, 0.25);
+      const lit = 0.5 - u * 0.6 + rng.signed(0.3) + (s - 0.5) * 0.15;
+      let col: Lab;
+      if (pass === 0) {
+        col =
+          lit > 0.45 ? rng.pick(POPLAR_MID) : rng.chance(0.2) ? rng.pick(POPLAR_COOL) : rng.pick(POPLAR_DARK);
+      } else if (lit > 0.6) col = rng.pick(POPLAR_LIT);
+      else continue;
+      centred(
+        b,
+        u * half(s),
+        -s * H,
+        -HALF_PI + rng.signed(0.3) + u * 0.25,
+        H * rng.range(0.07, 0.13),
+        Math.max(0.7, W * rng.range(0.2, 0.34)),
+        rng.signed(0.15),
+        col,
+        rng.range(0.82, 0.96),
+        0.6,
+      );
+    }
+  }
+  centred(
+    b,
+    0,
+    -H * 0.94,
+    -HALF_PI + rng.signed(0.1),
+    H * 0.1,
+    Math.max(0.6, W * 0.16),
+    0,
+    POPLAR_MID[0],
+    0.9,
+    0,
+  );
+}
+
+function paintOak(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  for (let k = 0; k < 3; k++) {
+    centred(
+      b,
+      W * rng.range(0.25, 0.6),
+      rng.signed(H * 0.02),
+      rng.signed(0.05),
+      W * rng.range(0.6, 0.9),
+      Math.max(0.8, H * 0.07),
+      0,
+      rng.pick(GRASS.deep),
+      0.5,
+      0,
+    );
+  }
+  b.stroke(0, 0, -HALF_PI + 0.05, H * 0.45, Math.max(0.9, W * 0.08), 0, TRUNK, 0.95, 0);
+  const cy = -H * 0.6;
+  const rx = W * 0.5;
+  const ry = H * 0.38;
+  const n = Math.round(clamp((W * H) / 4, 30, 180));
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < (pass === 0 ? n : n * 0.6); i++) {
+      const a = rng.next() * TAU;
+      const rr = Math.sqrt(rng.next());
+      const x = Math.cos(a) * rr * rx;
+      const y = cy + Math.sin(a) * rr * ry;
+      const lit = 0.5 - (x / rx) * 0.45 - ((y - cy) / ry) * 0.45 + rng.signed(0.25);
+      let col: Lab;
+      if (pass === 0) {
+        col =
+          lit < 0.35
+            ? rng.pick(POPLAR_DARK)
+            : rng.chance(0.15)
+              ? rng.pick(POPLAR_COOL)
+              : rng.pick(POPLAR_MID);
+      } else if (lit > 0.55) col = rng.pick(POPLAR_LIT);
+      else continue;
+      centred(
+        b,
+        x,
+        y,
+        rng.signed(Math.PI),
+        W * rng.range(0.12, 0.2),
+        Math.max(0.7, W * rng.range(0.1, 0.16)),
+        rng.signed(0.2),
+        col,
+        rng.range(0.82, 0.96),
+        0.5,
+      );
+    }
+  }
+}
+
+/** A dark spruce: drooping boughs in tiers, sunlit on the left, with snow along their upper sides. */
+function paintPine(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  b.stroke(0, 0, -HALF_PI, H * 0.14, Math.max(0.8, W * 0.08), 0, TRUNK, 0.95, 0);
+  // a dark body first, so the boughs read as one mass
+  const half = (s: number) => W * 0.5 * Math.pow(1 - s, 0.85) + W * 0.03;
+  for (let i = 0; i < 10; i++) {
+    const s = 0.08 + i * 0.09;
+    centred(
+      b,
+      rng.signed(W * 0.04),
+      -s * H,
+      -HALF_PI,
+      H * 0.12,
+      half(s) * 1.1,
+      0,
+      rng.pick(PINE_DARK),
+      0.9,
+      0.3,
+    );
+  }
+  // then boughs at irregular heights, drooping, longer low down
+  const n = Math.round(clamp(H / 2.2, 18, 60));
+  for (let i = 0; i < n; i++) {
+    const s = 0.08 + Math.pow(rng.next(), 0.8) * 0.86;
+    const side = rng.chance(0.5) ? -1 : 1;
+    const len = half(s) * rng.range(0.6, 1.1);
+    const thick = Math.max(0.9, H * rng.range(0.03, 0.05));
+    const ang = side < 0 ? Math.PI - rng.range(0.2, 0.55) : rng.range(0.2, 0.55);
+    const y0 = -s * H;
+    const bough = side < 0 ? rng.pick(rng.chance(0.45) ? PINE_LIT : PINE_MID) : rng.pick(PINE_DARK);
+    b.stroke(
+      side * len * 0.1,
+      y0,
+      ang,
+      len,
+      thick,
+      side * rng.range(0.02, 0.1),
+      bough,
+      rng.range(0.85, 0.97),
+      0.5,
+    );
+    // snow lies along the upper side of some boughs, warm where the sun reaches it
+    if (rng.chance(0.55)) {
+      const snow = side < 0 ? rng.pick(PINE_SNOW) : rng.pick(PINE_SNOW_SHADE);
+      b.stroke(
+        side * len * 0.2,
+        y0 - thick * 0.5,
+        ang,
+        len * rng.range(0.4, 0.75),
+        thick * 0.55,
+        0,
+        snow,
+        rng.range(0.8, 0.95),
+        0.3,
+      );
+    }
+  }
+  centred(b, 0, -H * 0.95, -HALF_PI, H * 0.12, Math.max(0.7, W * 0.07), 0, PINE_DARK[0], 0.95, 0);
+}
+
+/** A low desert shrub: grey-green twigs lit from the left, with its violet shadow on the sand. */
+function paintShrub(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  for (let k = 0; k < 3; k++) {
+    centred(
+      b,
+      W * rng.range(0.35, 0.7),
+      rng.signed(H * 0.04),
+      rng.signed(0.05),
+      W * rng.range(0.6, 0.9),
+      Math.max(0.8, H * 0.22),
+      0,
+      rng.pick(DESERT.shadow),
+      0.55,
+      0,
+    );
+  }
+  const n = Math.round(clamp((W * H) / 3, 14, 90));
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < (pass === 0 ? n : n * 0.5); i++) {
+      const a = rng.next() * TAU;
+      const rr = Math.sqrt(rng.next());
+      const x = Math.cos(a) * rr * W * 0.5;
+      const y = -H * 0.45 + Math.sin(a) * rr * H * 0.45;
+      const lit = 0.5 - (x / (W * 0.5)) * 0.45 - ((y + H * 0.45) / (H * 0.45)) * 0.45 + rng.signed(0.25);
+      let col: Lab;
+      if (pass === 0) col = lit < 0.35 ? rng.pick(SHRUB_SHADE) : rng.pick(SHRUB);
+      else if (lit > 0.55) col = rng.pick(SHRUB_LIT);
+      else continue;
+      centred(
+        b,
+        x,
+        y,
+        -HALF_PI + rng.signed(1),
+        H * rng.range(0.25, 0.45),
+        Math.max(0.6, H * rng.range(0.1, 0.16)),
+        rng.signed(0.2),
+        col,
+        rng.range(0.82, 0.96),
+        0.4,
+      );
+    }
+  }
+}
+
+const PAINT_TREE: Record<TreeKind, (b: Brush, t: Tree) => void> = {
+  poplar: paintPoplar,
+  oak: paintOak,
+  pine: paintPine,
+  shrub: paintShrub,
+};
+
+function* paintSheet(ctx: Ctx, L: Layout, sheet: Sheet, seed: number): Gen {
+  const rng = new Rng(hashInt(seed, 505));
+  const b = new Brush(ctx, rng);
+  b.scale = L.dpr;
+  ctx.lineCap = "round";
+  const at = (s: Sprite, paint: () => void) => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(s.sx, s.sy, s.sw, s.sh);
+    ctx.clip();
+    ctx.setTransform(L.dpr, 0, 0, L.dpr, s.sx + s.ax, s.sy + s.ay);
+    paint();
+    ctx.restore();
+  };
+  for (let i = 0; i < L.trees.length; i++) {
+    const t = L.trees[i];
+    at(sheet.trees[i], () => PAINT_TREE[t.kind](b, t));
+    yield;
   }
 }
 
@@ -1477,27 +2699,20 @@ function grainTile(dpr: number, seed: number): { tile: HTMLCanvasElement; cssSiz
   return { tile, cssSize: size / dpr };
 }
 
-/* ------------------------------------------------------------------ motion layer */
+/* ------------------------------------------------------------------ motion */
 
-interface Group {
-  color: string;
-  alpha: number;
-  start: number;
-  end: number;
-}
-
-interface Flutter {
-  x: number;
-  y: number;
-  ang: number;
-  len: number;
-  wid: number;
-  bend: number;
-  amp: number;
-  freq: number;
-  phase: number;
-  color: string;
-  alpha: number;
+/**
+ * Wind strength (about 0 in a lull, 1 in a gust) at ground position gx (across) and gz (away from
+ * the viewer) at time t (s). Gust fronts travel left → right, slanted by depth, each one stronger
+ * or weaker as a slower swell of wind passes.
+ */
+function gustAt(gx: number, gz: number, t: number): number {
+  let a = 0.5 + 0.5 * Math.sin(gx * 3.6 + gz * 1.1 - t * 0.85);
+  a *= a * a;
+  a *= a;
+  let b = 0.5 + 0.5 * Math.sin(gx * 1.3 - gz * 0.5 - t * 0.41 + 1.9);
+  b *= b;
+  return a * (0.5 + 0.7 * b) + 0.2 * b;
 }
 
 /** A canvas covering only the part of the scene that moves (CSS px). */
@@ -1508,338 +2723,620 @@ interface Pane {
   h: number;
 }
 
-interface Motion {
-  dpr: number;
-  k: number;
-  tx: number;
-  ty: number;
-  bx: Float32Array;
-  by: Float32Array;
+interface Group {
+  color: string;
+  alpha: number;
+  start: number;
+  end: number;
+}
+
+/** Depth slices of the meadow, drawn far to near so nearer grass covers what is behind it. */
+const SLICES = 3;
+const MAX_TUFTS = 420;
+const MAX_STEMS = 90;
+
+/** Plants that move: tufts of grass blades, or flower stems with their heads. */
+interface Plants {
+  n: number;
+  x: Float32Array;
+  y: Float32Array;
   len: Float32Array;
   hw: Float32Array;
   lean: Float32Array;
-  flex: Float32Array;
+  give: Float32Array;
   phase: Float32Array;
-  bloom: Float32Array;
+  wob: Float32Array;
+  gx: Float32Array;
+  gz: Float32Array;
+  leanC: Float32Array;
+  leanS: Float32Array;
+  /** Per frame: the wind on each, the angle of its tip and where the tip ended up. */
+  gust: Float32Array;
+  tipA: Float32Array;
+  tipC: Float32Array;
+  tipS: Float32Array;
   tipX: Float32Array;
   tipY: Float32Array;
-  order: Uint16Array;
-  groups: Group[];
-  flowerOrder: Uint16Array;
-  flowerGroups: Group[];
-  /** Skirt-edge strokes, drawn into the grass pane behind the blades. */
-  hem: Flutter[];
-  veil: Flutter[];
-  grassPane: Pane;
-  veilPane: Pane;
 }
 
+interface Motion {
+  /** Resolution of the meadow's pane (lower than the static layers': its strokes are soft). */
+  dpr: number;
+  pane: Pane;
+  /** The trees' pane, at the static layers' resolution. */
+  treeDpr: number;
+  treePane: Pane;
+  trees: Tree[];
+  treeGx: Float32Array;
+  treeGz: Float32Array;
+  blades: Plants;
+  /** Blade colour groups of each slice. */
+  bladeGroups: Group[][];
+  bladeEnd: number[];
+  stems: Plants;
+  stemEnd: number[];
+  head: Float32Array;
+  headColor: Int8Array;
+  eyeColor: Int8Array;
+  sheen: [string, number, number][];
+  drift: Drift | null;
+}
+
+/** Snow or sand that the gusts lift and carry along the ground. */
+interface Drift {
+  w: number;
+  F: number;
+  x0: Float32Array;
+  y0: Float32Array;
+  d: Float32Array;
+  speed: Float32Array;
+  len: Float32Array;
+  thick: Float32Array;
+  phase: Float32Array;
+  color: string;
+  alpha: number;
+  /** Share that drifts even in a lull, and how high a gust lifts it (× brush unit). */
+  floor: number;
+  lift: number;
+}
+
+/** Blade colours, darkest to lightest, then the cool and accent ones: [colour, alpha]. */
 const BLADE_COLORS: [string, number][] = [
-  ["#1c4228", 0.85],
-  ["#2a4c30", 0.85],
-  ["#2f5a38", 0.85],
-  ["#3f6420", 0.85],
-  ["#5a6a24", 0.85],
-  ["#66702a", 0.85],
-  ["#78783c", 0.85],
-  ["#8a3a30", 0.8],
-  ["#6c4a7e", 0.8],
-  ["#5f8690", 0.8],
-  ["#9a9878", 0.8],
-  ["#8c8a14", 0.88],
-  ["#a19a32", 0.88],
-  ["#aaa848", 0.85],
-  ["#b6b468", 0.8],
+  ["#1e482e", 0.85],
+  ["#2a5434", 0.85],
+  ["#386836", 0.85],
+  ["#4a7334", 0.85],
+  ["#5d8034", 0.85],
+  ["#6f8c32", 0.85],
+  ["#82983a", 0.85],
+  ["#99ac3e", 0.85],
+  ["#aebc4c", 0.85],
+  ["#c4c860", 0.82],
+  ["#45705a", 0.8],
+  ["#587a64", 0.8],
+  ["#8a4a3a", 0.8],
+  ["#6e5a8e", 0.75],
 ];
-const FLOWER_COLORS: [string, number][] = [
-  ["#ddc93e", 0.92],
-  ["#ecdc6a", 0.92],
-  ["#f3ecb4", 0.85],
+const STEM_COLOR = "#4c7a36";
+const HEAD_COLORS: [string, number][] = [
+  ["#ecd03a", 0.92],
+  ["#f6e46a", 0.92],
+  ["#f6f2e4", 0.92],
+  ["#dcdae4", 0.88],
+  ["#d8412a", 0.92],
+  ["#ea5c36", 0.92],
+  ["#6274c8", 0.88],
+];
+/** The hearts of daisies and poppies. */
+const EYE_COLORS: [string, number][] = [
+  ["#e6b828", 1],
+  ["#3a1c20", 0.85],
+];
+/** Head radius for each flower kind, in brush units at the bottom edge. */
+const HEAD_SIZE = [0, 0.32, 0.38, 0.5, 0.32];
+/** The pale side of the grass that a gust turns up as it presses it down: [colour, alpha, from]. */
+const SHEEN: [string, number, number][] = [
+  ["#d8e29a", 0.6, 0.3],
+  ["#eef0c4", 0.75, 0.52],
 ];
 
-function bladeColorIndex(rng: Rng, patch: number, depth: number): number {
-  if (rng.chance(0.015)) return 7 + rng.int(2);
-  if (depth < 0.15 && rng.chance(0.3)) return 9 + rng.int(2);
-  const sun = patch * 1.1 + (0.25 - depth) * 0.35 + rng.signed(0.35);
-  if (sun > 0.6) return 13 + rng.int(2);
-  if (sun > 0.27) return 11 + rng.int(2);
-  if (sun > -0.16) return 4 + rng.int(3);
-  if (sun > -0.49) return 2 + rng.int(2);
-  return rng.int(2);
+/** How each biome's plants look and how many there are. */
+interface PlantLook {
+  colors: [string, number][];
+  /** Share of the meadow's number of tufts, and whether they grow in patches rather than all over. */
+  amount: number;
+  patchy: boolean;
+  sheen: [string, number, number][];
 }
 
-/** Bounding box (CSS px) of everything a set of flutter strokes can reach. */
-function flutterBounds(L: Layout, set: Flutter[]): Pane {
+const PLANT_LOOKS: Record<MeadowBiome, PlantLook> = {
+  meadow: { colors: BLADE_COLORS, amount: 1, patchy: false, sheen: SHEEN },
+  snow: {
+    colors: [
+      ["#6e6044", 0.85],
+      ["#8a7854", 0.85],
+      ["#a8925e", 0.85],
+      ["#c4ae78", 0.85],
+      ["#5c5a52", 0.8],
+      ["#7a6a5e", 0.8],
+    ],
+    amount: 0.07,
+    patchy: true,
+    sheen: [["#efe6cc", 0.5, 0.45]],
+  },
+  desert: {
+    colors: [
+      ["#9c7e4c", 0.85],
+      ["#b8985a", 0.85],
+      ["#d0b070", 0.85],
+      ["#e2c88a", 0.85],
+      ["#8a8a64", 0.8],
+      ["#a0a07a", 0.8],
+    ],
+    amount: 0.3,
+    patchy: true,
+    sheen: [
+      ["#f0deb0", 0.5, 0.35],
+      ["#faf0d2", 0.6, 0.6],
+    ],
+  },
+};
+
+/** A dry grass colour (snow and desert), lighter where the sun falls. */
+function dryColor(rng: Rng, light: number): number {
+  const r = rng.next();
+  if (light > 0.2) return r < 0.6 ? 2 + rng.int(2) : 1 + rng.int(4) * (r < 0.8 ? 0 : 1);
+  if (light > -0.15) return r < 0.6 ? 1 + rng.int(2) : 4 + rng.int(2);
+  return r < 0.5 ? rng.int(2) : 4 + rng.int(2);
+}
+
+/** A blade colour that stands out against the painted grass around it. */
+function bladeColor(rng: Rng, light: number): number {
+  if (rng.chance(0.03)) return 12 + rng.int(2);
+  const r = rng.next();
+  // in sunlit grass: darker blades and bright ones; in a cloud's shadow: cool and deep ones
+  if (light > 0.25) return r < 0.35 ? 2 + rng.int(3) : r < 0.7 ? 7 + rng.int(3) : 5 + rng.int(2);
+  if (light > -0.12) return r < 0.4 ? 1 + rng.int(3) : r < 0.8 ? 5 + rng.int(3) : 8 + rng.int(2);
+  return r < 0.35 ? rng.int(2) : r < 0.7 ? 10 + rng.int(2) : 3 + rng.int(3);
+}
+
+/** Sorts rows by depth into plant columns; returns them with the slice ends (row: d, x, y, …). */
+function plants(rows: number[][], slice: (r: number[]) => number, key: (r: number[]) => number): Plants {
+  rows.sort((a, b) => slice(a) - slice(b) || key(a) - key(b) || a[0] - b[0]);
+  const n = rows.length;
+  const col = (c: number) => Float32Array.from(rows, (r) => r[c]);
+  return {
+    n,
+    x: col(1),
+    y: col(2),
+    len: col(3),
+    hw: col(4),
+    lean: col(5),
+    give: col(6),
+    phase: col(7),
+    wob: col(8),
+    gx: col(9),
+    gz: col(10),
+    leanC: Float32Array.from(rows, (r) => Math.cos(r[5])),
+    leanS: Float32Array.from(rows, (r) => Math.sin(r[5])),
+    gust: new Float32Array(n),
+    tipA: new Float32Array(n),
+    tipC: new Float32Array(n),
+    tipS: new Float32Array(n),
+    tipX: new Float32Array(n),
+    tipY: new Float32Array(n),
+  };
+}
+
+const sliceOf = (d: number) => Math.min(SLICES - 1, Math.floor(d * SLICES));
+
+function sliceEnds(rows: number[][]): number[] {
+  const ends: number[] = [];
+  let i = 0;
+  for (let k = 0; k < SLICES; k++) {
+    while (i < rows.length && sliceOf(rows[i][0]) <= k) i++;
+    ends.push(i);
+  }
+  return ends;
+}
+
+function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
+  const rng = new Rng(hashInt(seed, 303));
+  const { w, h, bu, F } = L;
+  let top = h;
+
+  // tufts all over the meadow, as many per px near as far, so the near ones (larger) dominate
+  const bladeRows: number[][] = [];
+  const look = PLANT_LOOKS[L.biome];
+  const sPatch = hashInt(seed, 304);
+  const cap = Math.min(MAX_TUFTS, Math.round(((w * L.meadowH) / (bu * bu * 3)) * look.amount));
+  for (let tries = 0; bladeRows.length < cap && tries < cap * 6; tries++) {
+    const x = rng.next() * w;
+    const d = rng.range(0.1, 1);
+    const p = persp(d);
+    const c = colAt(L.crest, x);
+    const y = c + d * (h - c) + bu * 0.3;
+    if (M.path(x, y) > 0.5 && rng.chance(0.85)) continue;
+    if (look.patchy && fbm(M.gx(x, d) * 1.8, (1 / p) * 1.6, sPatch, 0, 2) < 0.12) continue;
+    const sc = 1.5 * p;
+    const len = Math.max(3, bu * sc * rng.range(1.8, 4));
+    const hw = Math.max(0.5, bu * sc * rng.range(0.09, 0.16));
+    bladeRows.push([
+      d,
+      x,
+      y,
+      len,
+      hw,
+      rng.range(0.12, 0.5),
+      rng.range(0.26, 0.44),
+      rng.next() * TAU,
+      rng.range(1.6, 2.6),
+      M.gx(x, d),
+      1 / p,
+      (L.biome === "meadow" ? bladeColor(rng, M.light(x, y)) : dryColor(rng, M.light(x, y))) * 2 +
+        (rng.chance(0.35) ? 1 : 0),
+    ]);
+    top = Math.min(top, y - len - hw);
+  }
+  const blades = plants(
+    bladeRows,
+    (r) => sliceOf(r[0]),
+    (r) => r[11],
+  );
+  const bladeEnd = sliceEnds(bladeRows);
+  // two strengths of each colour: some blades are thin glazes over the painted grass
+  const palette = look.colors.flatMap(([c, a]): [string, number][] => [
+    [c, a],
+    [c, a * 0.55],
+  ]);
+  const bladeGroups: Group[][] = [];
+  let start = 0;
+  for (let k = 0; k < SLICES; k++) {
+    const groups: Group[] = [];
+    for (let i = start; i < bladeEnd[k]; i++) {
+      const key = bladeRows[i][11];
+      const last = groups[groups.length - 1];
+      if (last && bladeRows[last.start][11] === key) last.end = i + 1;
+      else groups.push({ color: palette[key][0], alpha: palette[key][1], start: i, end: i + 1 });
+    }
+    bladeGroups.push(groups);
+    start = bladeEnd[k];
+  }
+
+  // flowers on their own stems, nodding above the grass
+  const stemRows: number[][] = [];
+  for (let tries = 0; stemRows.length < MAX_STEMS && tries < MAX_STEMS * 40; tries++) {
+    const x = rng.next() * w;
+    const d = Math.sqrt(rng.next());
+    const p = persp(d);
+    if (bu * 1.5 * p < 3) continue;
+    const c = colAt(L.crest, x);
+    const y = c + d * (h - c) + bu * 0.3;
+    const kind = M.flower(x, y, rng.next());
+    if (kind === FLOWER_NONE || M.path(x, y) > 0.5) continue;
+    const sc = 1.5 * p;
+    const len = bu * sc * rng.range(2.6, 4.2);
+    const r = Math.max(1, bu * sc * HEAD_SIZE[kind] * rng.range(0.8, 1.2));
+    const head =
+      kind === FLOWER_BUTTERCUP
+        ? rng.int(2)
+        : kind === FLOWER_DAISY
+          ? 2 + rng.int(2)
+          : kind === FLOWER_POPPY
+            ? 4 + rng.int(2)
+            : 6;
+    const eye = r > 1.8 && kind === FLOWER_DAISY ? 0 : r > 1.8 && kind === FLOWER_POPPY ? 1 : -1;
+    stemRows.push([
+      d,
+      x,
+      y,
+      len,
+      Math.max(0.5, bu * sc * 0.07),
+      rng.range(0.1, 0.4),
+      rng.range(0.3, 0.5),
+      rng.next() * TAU,
+      rng.range(1.6, 2.6),
+      M.gx(x, d),
+      1 / p,
+      r,
+      head,
+      eye,
+    ]);
+    top = Math.min(top, y - len - r * 2);
+  }
+  const stems = plants(
+    stemRows,
+    (r) => sliceOf(r[0]),
+    () => 0,
+  );
+
+  // snow or sand lifted by the gusts, low over the ground (or off the dune crests)
+  let drift: Drift | null = null;
+  if (L.biome !== "meadow") {
+    const snow = L.biome === "snow";
+    const n = Math.round(clamp((w * L.meadowH) / (snow ? 160 : 200), 24, 140));
+    const rows: number[][] = [];
+    for (let i = 0; i < n; i++) {
+      const x = rng.next() * w;
+      const d = rng.range(0.03, 1);
+      const pd = persp(d);
+      let y = colAt(L.crest, x) + d * (h - colAt(L.crest, x));
+      if (!snow && L.dunes.length && rng.chance(0.6)) y = colAt(L.dunes[rng.int(L.dunes.length)], x);
+      y -= rng.next() * bu * pd * (snow ? 3 : 1);
+      rows.push([
+        x,
+        y,
+        d,
+        F * pd * rng.range(0.22, 0.4),
+        bu * pd * rng.range(snow ? 0.6 : 1.6, snow ? 1.8 : 4),
+        Math.max(0.6, bu * pd * (snow ? rng.range(0.18, 0.3) : rng.range(0.1, 0.16))),
+        rng.next() * TAU,
+      ]);
+      top = Math.min(top, y - bu * 3);
+    }
+    const c = (k: number) => Float32Array.from(rows, (r) => r[k]);
+    drift = {
+      w,
+      F,
+      x0: c(0),
+      y0: c(1),
+      d: c(2),
+      speed: c(3),
+      len: c(4),
+      thick: c(5),
+      phase: c(6),
+      color: snow ? "#f6f6fb" : "#f3dcb2",
+      alpha: snow ? 0.9 : 0.6,
+      floor: snow ? 0.12 : 0,
+      lift: snow ? 1.6 : 0.8,
+    };
+  }
+
+  // the trees' own pane covers them at their furthest lean
   let x0 = Infinity;
   let y0 = Infinity;
   let x1 = -Infinity;
   let y1 = -Infinity;
-  for (const f of set) {
-    const r = f.len * 1.1 + f.wid;
-    x0 = Math.min(x0, f.x - r);
-    y0 = Math.min(y0, f.y - r);
-    x1 = Math.max(x1, f.x + r);
-    y1 = Math.max(y1, f.y + r);
-  }
-  const x = Math.floor(L.tx + x0 * L.k) - 1;
-  const y = Math.floor(L.ty + y0 * L.k) - 1;
-  return { x, y, w: Math.ceil(L.tx + x1 * L.k) + 1 - x, h: Math.ceil(L.ty + y1 * L.k) + 1 - y };
-}
-
-function buildMotion(L: Layout, seed: number): Motion {
-  const rng = new Rng(hashInt(seed, 303));
-  const { w, h, bu } = L;
-  const patch = grassLight(L, seed);
-  type Blade = [number, number, number, number, number, number, number, number, number];
-  const blades: Blade[] = [];
-  const feetX = L.tx + REF_FEET_X * L.k;
-  const skirtL = L.tx + 600 * L.k;
-  const skirtR = L.tx + 1140 * L.k;
-  const childX = L.cx + REF_CHILD_X * L.k;
-
-  // tall blades along the crest, silhouetted against the sky and the dress
-  const nFringe = Math.round(w / 4.2);
-  for (let i = 0; i < nFringe; i++) {
-    const x = rng.next() * w;
-    const y = ridgeAt(L, x) + bu * rng.range(-0.1, 1.3);
-    // keep the hem and the child readable: shorter grass right in front of them
-    const inFront = (x > skirtL && x < skirtR) || Math.abs(x - childX) < 70 * L.k;
-    const len = bu * rng.range(1.3, 3.0) * (inFront ? 0.7 : 1);
-    const flower = rng.chance(x > skirtL - bu * 6 && x < feetX + bu * 4 ? 0.3 : 0.12)
-      ? bu * rng.range(0.22, 0.34)
-      : 0;
-    blades.push([
-      x,
-      y,
-      len,
-      bu * rng.range(0.22, 0.38),
-      rng.range(0.12, 0.5),
-      rng.range(0.16, 0.34),
-      rng.next() * TAU,
-      flower,
-      bladeColorIndex(rng, patch(x, y), 0),
-    ]);
-  }
-  // blades spread through the field
-  const area = w * (h - L.ridgeMin);
-  const nField = Math.min(240, Math.round(area / (bu * bu * 11)));
-  for (let i = 0; i < nField; i++) {
-    const x = rng.next() * w;
-    const r = ridgeAt(L, x);
-    const y = r + bu + rng.next() * (h - r);
-    const d = clamp((y - r) / Math.max(1, h - r), 0, 1);
-    const sc = 0.55 + 1.1 * d;
-    const flower = rng.chance(0.1 * (1 - d)) ? bu * rng.range(0.24, 0.36) * sc : 0;
-    blades.push([
-      x,
-      y,
-      bu * rng.range(1.5, 3.0) * sc,
-      bu * rng.range(0.2, 0.34) * sc,
-      rng.range(0.3, 0.7),
-      rng.range(0.1, 0.24),
-      rng.next() * TAU,
-      flower,
-      bladeColorIndex(rng, patch(x, y), d),
-    ]);
-  }
-
-  // veil strands and the leeward edge of the hem flutter a little (reference px)
-  const veil: Flutter[] = [];
-  for (let i = 0; i < 5; i++) {
-    veil.push({
-      x: 975 + rng.range(0, 26),
-      y: 296 + i * 14 + rng.signed(4),
-      ang: 0.05 + i * 0.12 + rng.signed(0.06),
-      len: rng.range(70, 120),
-      wid: rng.range(7, 12),
-      bend: rng.range(-0.12, 0.02),
-      amp: rng.range(0.07, 0.13),
-      freq: rng.range(2.2, 3.4),
-      phase: rng.next() * TAU,
-      color: "#f6f3ea",
-      alpha: rng.range(0.3, 0.48),
-    });
-  }
-  const hem: Flutter[] = [];
-  const hemPts = [1134, 1150, 1130, 1200, 1124, 1245, 1114, 1285];
-  for (let i = 0; i < hemPts.length; i += 2) {
-    hem.push({
-      x: hemPts[i] - 24,
-      y: hemPts[i + 1],
-      ang: 0.45 + i * 0.06 + rng.signed(0.15),
-      len: rng.range(34, 50),
-      wid: rng.range(11, 16),
-      bend: rng.signed(0.1),
-      amp: rng.range(0.05, 0.09),
-      freq: rng.range(1.6, 2.4),
-      phase: rng.next() * TAU,
-      color: rng.chance(0.4) ? "#958cc0" : rng.pick(["#8fa4bf", "#a9bccb", "#7d95b3"]),
-      alpha: rng.range(0.8, 0.92),
-    });
-  }
-
-  const n = blades.length;
-  let top = flutterBounds(L, hem).y;
-  const colorOf = new Uint8Array(n);
-  const flowerColor: number[] = [];
-  const m: Motion = {
-    dpr: L.dpr,
-    k: L.k,
-    tx: L.tx,
-    ty: L.ty,
-    bx: new Float32Array(n),
-    by: new Float32Array(n),
-    len: new Float32Array(n),
-    hw: new Float32Array(n),
-    lean: new Float32Array(n),
-    flex: new Float32Array(n),
-    phase: new Float32Array(n),
-    bloom: new Float32Array(n),
-    tipX: new Float32Array(n),
-    tipY: new Float32Array(n),
-    order: new Uint16Array(n),
-    groups: [],
-    flowerOrder: new Uint16Array(0),
-    flowerGroups: [],
-    hem,
-    veil,
-    grassPane: { x: 0, y: 0, w: 0, h: 0 },
-    veilPane: flutterBounds(L, veil),
-  };
-  blades.forEach((b, i) => {
-    m.bx[i] = b[0];
-    m.by[i] = b[1];
-    m.len[i] = b[2];
-    m.hw[i] = b[3];
-    m.lean[i] = b[4];
-    m.flex[i] = b[5];
-    m.phase[i] = b[6];
-    m.bloom[i] = b[7];
-    colorOf[i] = b[8];
-    flowerColor[i] = b[7] > 0 ? rng.int(FLOWER_COLORS.length) : -1;
-    top = Math.min(top, b[1] - b[2] - b[3] - b[7] * 1.5);
+  L.trees.forEach((t, i) => {
+    const s = sheet.trees[i];
+    const d = L.dpr;
+    x0 = Math.min(x0, t.x - s.ax / d);
+    x1 = Math.max(x1, t.x + (s.sw - s.ax) / d + (t.lean + t.give * 0.06) * (s.ay / d));
+    y0 = Math.min(y0, t.y - s.ay / d);
+    y1 = Math.max(y1, t.y + (s.sh - s.ay) / d);
   });
-  const fill = (order: Uint16Array, palette: [string, number][], key: (i: number) => number) => {
-    const groups: Group[] = [];
-    let p = 0;
-    for (let c = 0; c < palette.length; c++) {
-      const start = p;
-      for (let i = 0; i < n; i++) if (key(i) === c) order[p++] = i;
-      if (p > start) groups.push({ color: palette[c][0], alpha: palette[c][1], start, end: p });
-    }
-    return groups;
-  };
-  m.groups = fill(m.order, BLADE_COLORS, (i) => colorOf[i]);
-  m.flowerOrder = new Uint16Array(flowerColor.filter((c) => c >= 0).length);
-  m.flowerGroups = fill(m.flowerOrder, FLOWER_COLORS, (i) => flowerColor[i]);
+  // (only the part inside the scene)
+  x0 = Math.max(x0, -2);
+  x1 = Math.min(x1, w + 2);
+  y0 = Math.max(y0, -2);
+  y1 = Math.min(y1, h + 2);
+  const treePane =
+    L.trees.length && x1 > x0
+      ? { x: Math.floor(x0) - 1, y: Math.floor(y0) - 1, w: Math.ceil(x1 - x0) + 3, h: Math.ceil(y1 - y0) + 3 }
+      : { x: 0, y: 0, w: 1, h: 1 };
+  // trees standing in the foreground feel the gusts there; far ones, out on the horizon
+  const treeDepth = (t: Tree) => (t.y > colAt(L.crest, t.x) ? M.depth(t.x, t.y) : -0.04);
   const paneTop = Math.max(0, Math.floor(top - 2));
-  m.grassPane = { x: 0, y: paneTop, w, h: h - paneTop };
-  return m;
+  return {
+    dpr: Math.min(L.dpr, MOTION_DPR),
+    pane: { x: 0, y: paneTop, w, h: h - paneTop },
+    treeDpr: L.dpr,
+    treePane,
+    trees: L.trees,
+    treeGx: Float32Array.from(L.trees, (t) => (t.x - w / 2) / (F * persp(treeDepth(t)))),
+    treeGz: Float32Array.from(L.trees, (t) => 1 / persp(treeDepth(t))),
+    blades,
+    bladeGroups,
+    bladeEnd,
+    stems,
+    stemEnd: sliceEnds(stemRows),
+    head: Float32Array.from(stemRows, (r) => r[11]),
+    headColor: Int8Array.from(stemRows, (r) => r[12]),
+    eyeColor: Int8Array.from(stemRows, (r) => r[13]),
+    sheen: look.sheen,
+    drift,
+  };
 }
 
-function drawFlutter(ctx: Ctx, m: Motion, pane: Pane, list: Flutter[], t: number): void {
-  const d = m.dpr;
-  ctx.setTransform(d * m.k, 0, 0, d * m.k, d * (m.tx - pane.x), d * (m.ty - pane.y));
-  for (let i = 0; i < list.length; i++) {
-    const f = list[i];
-    const ang = f.ang + f.amp * Math.sin(t * f.freq + f.phase);
-    const bend = f.bend + f.amp * 0.9 * Math.sin(t * f.freq * 1.37 + f.phase + 1.1);
-    const dx = Math.cos(ang);
-    const dy = Math.sin(ang);
-    const x2 = f.x + dx * f.len;
-    const y2 = f.y + dy * f.len;
-    const cx = (f.x + x2) * 0.5 - dy * bend * f.len;
-    const cy = (f.y + y2) * 0.5 + dx * bend * f.len;
-    const hw = f.wid * 0.72;
-    ctx.globalAlpha = f.alpha;
-    ctx.fillStyle = f.color;
-    ctx.beginPath();
-    ctx.moveTo(f.x - dy * hw * 0.6, f.y + dx * hw * 0.6);
-    ctx.quadraticCurveTo(cx - dy * hw, cy + dx * hw, x2, y2);
-    ctx.quadraticCurveTo(cx + dy * hw, cy - dx * hw, f.x + dy * hw * 0.6, f.y - dx * hw * 0.6);
+/**
+ * Blades of a tuft, relative to its first: [foot offset (× half width), length, angle offset]. They
+ * run nearly parallel, like the bristles of one loaded brush parting at the end of a stroke.
+ */
+const TUFT_FORMS = [
+  [0, 1, 0],
+  [0, 1, 0, 1.9, 0.82, 0.05],
+  [0, 1, 0],
+  [0, 1, 0, -1.8, 0.7, -0.04],
+].map((form) => {
+  // stored as [foot offset, length, cos, sin] so a frame needs no trigonometry per blade
+  const out: number[] = [];
+  for (let j = 0; j < form.length; j += 3)
+    out.push(form[j], form[j + 1], Math.cos(form[j + 2]), Math.sin(form[j + 2]));
+  return out;
+});
+const SINGLE = [0, 1, 1, 0];
+
+/** Bends plants i0…i1 for time t: the gusts press them further downwind as they pass. */
+function bend(p: Plants, i0: number, i1: number, t: number, push: number): void {
+  for (let i = i0; i < i1; i++) {
+    const g = gustAt(p.gx[i], p.gz[i], t);
+    p.gust[i] = g;
+    const sway = Math.sin(t * p.wob[i] + p.phase[i]);
+    const a = p.lean[i] + p.give[i] * (0.3 + push * g + 0.25 * sway * (0.4 + g));
+    p.tipA[i] = a;
+    p.tipC[i] = Math.cos(a);
+    p.tipS[i] = Math.sin(a);
+  }
+}
+
+/**
+ * Adds plant i's blades to the current path: each bends from its foot, which keeps the lean of the
+ * root, to its tip, which follows the wind. With `sheen`, only the pale upper half of each blade.
+ */
+function plantPath(ctx: Ctx, p: Plants, i: number, form: number[], tipWidth: number, sheen: boolean): void {
+  const x = p.x[i];
+  const y = p.y[i];
+  const h = p.hw[i];
+  const l = p.len[i] * 0.5;
+  const ca = p.leanC[i];
+  const sa = p.leanS[i];
+  const cb = p.tipC[i];
+  const sb = p.tipS[i];
+  for (let j = 0; j < form.length; j += 4) {
+    const cd = form[j + 2];
+    const sd = form[j + 3];
+    const c0 = ca * cd - sa * sd;
+    const s0 = sa * cd + ca * sd;
+    const c1 = cb * cd - sb * sd;
+    const s1 = sb * cd + cb * sd;
+    const bx = x + form[j] * h;
+    const len = l * form[j + 1];
+    const ex = bx + (s0 + s1) * len;
+    const ey = y - (c0 + c1) * len;
+    const qx = bx + (s0 * 0.75 + s1 * 0.25) * len;
+    const qy = y - (c0 * 0.75 + c1 * 0.25) * len;
+    const nx = (c0 + c1) * 0.5 * h * 0.75;
+    const ny = (s0 + s1) * 0.5 * h * 0.75;
+    if (sheen) {
+      ctx.moveTo(qx - nx * 1.3, qy - ny * 1.3);
+      ctx.lineTo(ex, ey);
+      ctx.lineTo(qx + nx * 1.3, qy + ny * 1.3);
+    } else {
+      ctx.moveTo(bx - c0 * h, y - s0 * h);
+      ctx.lineTo(qx - nx, qy - ny);
+      ctx.lineTo(ex - c1 * h * tipWidth, ey - s1 * h * tipWidth);
+      ctx.lineTo(ex + c1 * h * tipWidth, ey + s1 * h * tipWidth);
+      ctx.lineTo(qx + nx, qy + ny);
+      ctx.lineTo(bx + c0 * h, y + s0 * h);
+    }
     ctx.closePath();
-    ctx.fill();
+    if (j === 0) {
+      p.tipX[i] = ex;
+      p.tipY[i] = ey;
+    }
   }
 }
 
-/** Repaints both motion panes for time t (seconds). Allocation-free. */
-function drawMotion(grass: Ctx, veil: Ctx, m: Motion, t: number): void {
+/** Redraws the trees, each a sprite sheared about the foot of its trunk as the wind leans on it. */
+function drawTrees(ctx: Ctx, sheet: Sheet, img: CanvasImageSource, m: Motion, t: number): void {
+  const d = m.treeDpr;
+  const pane = m.treePane;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  for (let i = 0; i < m.trees.length; i++) {
+    const tr = m.trees[i];
+    const s = sheet.trees[i];
+    const g = gustAt(m.treeGx[i], m.treeGz[i], t);
+    const k = tr.lean + tr.give * (0.012 + 0.03 * g + 0.006 * Math.sin(t * 1.7 + tr.phase));
+    ctx.setTransform(1, 0, -k, 1, (tr.x - pane.x) * d, (tr.y - pane.y) * d);
+    ctx.drawImage(img, s.sx, s.sy, s.sw, s.sh, -s.ax, -s.ay, s.sw, s.sh);
+  }
+}
+
+/**
+ * Repaints the meadow's pane for time t (seconds), far to near. The gusts bend the grass as they
+ * travel and turn up its pale side, so each one crosses the meadow as a band of light.
+ * Allocation-free.
+ */
+function drawMotion(ctx: Ctx, m: Motion, t: number): void {
   const d = m.dpr;
-  const pane = m.grassPane;
-  grass.setTransform(1, 0, 0, 1, 0, 0);
-  grass.clearRect(0, 0, grass.canvas.width, grass.canvas.height);
-  drawFlutter(grass, m, pane, m.hem, t);
+  const pane = m.pane;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.globalAlpha = 1;
 
-  // grass blades bend from the base; a gust envelope travels left → right across the field
-  grass.setTransform(d, 0, 0, d, -pane.x * d, -pane.y * d);
-  const { bx, by, len, hw, lean, flex, phase, tipX, tipY, order } = m;
-  for (let g = 0; g < m.groups.length; g++) {
-    const grp = m.groups[g];
-    grass.globalAlpha = grp.alpha;
-    grass.fillStyle = grp.color;
-    for (let j = grp.start; j < grp.end; j++) {
-      const i = order[j];
-      const x = bx[i];
-      const y = by[i];
-      const l = len[i] * 0.5;
-      const h = hw[i];
-      const tt = t - x * 0.008;
-      const gust = 0.6 + 0.26 * Math.sin(tt * 0.57) + 0.14 * Math.sin(tt * 1.37 + 0.8);
-      const sway = Math.sin(t * 2.05 - x * 0.034 + phase[i]);
-      const a1 = lean[i] + flex[i] * gust * (0.55 + 0.45 * sway);
-      const a0 = lean[i] * 0.8 + (a1 - lean[i]) * 0.3;
-      const s0 = Math.sin(a0);
-      const c0 = Math.cos(a0);
-      const s1 = Math.sin(a1);
-      const c1 = Math.cos(a1);
-      const ex = x + (s0 + s1) * l;
-      const ey = y - (c0 + c1) * l;
-      // the blade's bent centre line, as a two-segment polygon (cheap to rasterise)
-      const qx = x + (s0 * 0.75 + s1 * 0.25) * l;
-      const qy = y - (c0 * 0.75 + c1 * 0.25) * l;
-      const nx = (c0 + c1) * 0.5 * h * 0.75;
-      const ny = (s0 + s1) * 0.5 * h * 0.75;
-      // one small path per blade: a software rasteriser handles many small fills faster than one
+  ctx.setTransform(d, 0, 0, d, -pane.x * d, -pane.y * d);
+  const { blades, stems } = m;
+  let b0 = 0;
+  let s0 = 0;
+  for (let slice = 0; slice < SLICES; slice++) {
+    const b1 = m.bladeEnd[slice];
+    const s1 = m.stemEnd[slice];
+    bend(blades, b0, b1, t, 1.75);
+    const groups = m.bladeGroups[slice];
+    for (let g = 0; g < groups.length; g++) {
+      const grp = groups[g];
+      ctx.globalAlpha = grp.alpha;
+      ctx.fillStyle = grp.color;
+      // one small path per tuft: a software rasteriser handles many small fills faster than one
       // huge path spanning the whole pane
-      grass.beginPath();
-      grass.moveTo(x - c0 * h, y - s0 * h);
-      grass.lineTo(qx - nx, qy - ny);
-      grass.lineTo(ex - c1 * h * 0.3, ey - s1 * h * 0.3);
-      grass.lineTo(ex + c1 * h * 0.3, ey + s1 * h * 0.3);
-      grass.lineTo(qx + nx, qy + ny);
-      grass.lineTo(x + c0 * h, y + s0 * h);
-      grass.fill();
-      tipX[i] = ex;
-      tipY[i] = ey;
+      for (let i = grp.start; i < grp.end; i++) {
+        ctx.beginPath();
+        plantPath(ctx, blades, i, TUFT_FORMS[i & 3], 0.3, false);
+        ctx.fill();
+      }
     }
-  }
-  const bloom = m.bloom;
-  for (let g = 0; g < m.flowerGroups.length; g++) {
-    const grp = m.flowerGroups[g];
-    grass.globalAlpha = grp.alpha;
-    grass.fillStyle = grp.color;
-    for (let j = grp.start; j < grp.end; j++) {
-      const i = m.flowerOrder[j];
-      // a little four-sided dab riding on the blade tip
-      const rr = bloom[i];
-      const cx = Math.cos(phase[i]) * rr;
-      const cy = Math.sin(phase[i]) * rr;
-      const x = tipX[i];
-      const y = tipY[i];
-      grass.beginPath();
-      grass.moveTo(x + cx, y + cy);
-      grass.lineTo(x - cy * 0.6, y + cx * 0.6);
-      grass.lineTo(x - cx, y - cy);
-      grass.lineTo(x + cy * 0.6, y - cx * 0.6);
-      grass.fill();
+    // the pale side of the blades, turned up where a gust is passing
+    for (let k = 0; k < m.sheen.length; k++) {
+      const [color, alpha, from] = m.sheen[k];
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = color;
+      for (let i = b0; i < b1; i++) {
+        if (blades.gust[i] < from) continue;
+        ctx.beginPath();
+        plantPath(ctx, blades, i, TUFT_FORMS[i & 3], 0, true);
+        ctx.fill();
+      }
     }
-  }
-  grass.globalAlpha = 1;
+    b0 = b1;
+    if (s1 === s0) continue;
 
-  veil.setTransform(1, 0, 0, 1, 0, 0);
-  veil.clearRect(0, 0, veil.canvas.width, veil.canvas.height);
-  drawFlutter(veil, m, m.veilPane, m.veil, t);
-  veil.globalAlpha = 1;
+    // flower stems, then their heads nodding at the tips
+    bend(stems, s0, s1, t, 1.3);
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = STEM_COLOR;
+    for (let i = s0; i < s1; i++) {
+      ctx.beginPath();
+      plantPath(ctx, stems, i, SINGLE, 0.15, false);
+      ctx.fill();
+    }
+    for (let pass = 0; pass < 2; pass++) {
+      const colors = pass === 0 ? HEAD_COLORS : EYE_COLORS;
+      const which = pass === 0 ? m.headColor : m.eyeColor;
+      const size = pass === 0 ? 1 : 0.3;
+      for (let c = 0; c < colors.length; c++) {
+        ctx.globalAlpha = colors[c][1];
+        ctx.fillStyle = colors[c][0];
+        for (let i = s0; i < s1; i++) {
+          if (which[i] !== c) continue;
+          const r = m.head[i] * size;
+          const a = stems.tipA[i];
+          ctx.beginPath();
+          ctx.ellipse(
+            stems.tipX[i] + Math.sin(a) * m.head[i] * 0.3,
+            stems.tipY[i] - Math.cos(a) * m.head[i] * 0.3,
+            r,
+            r * 0.68,
+            a,
+            0,
+            TAU,
+          );
+          ctx.fill();
+        }
+      }
+    }
+    s0 = s1;
+  }
+  if (m.drift) drawDrift(ctx, m.drift, t);
+  ctx.globalAlpha = 1;
+}
+
+/** Streaks of snow or sand, carried downwind and showing mostly where a gust is passing. */
+function drawDrift(ctx: Ctx, p: Drift, t: number): void {
+  ctx.fillStyle = p.color;
+  const margin = p.w * 0.1;
+  const span = p.w + margin * 2;
+  for (let i = 0; i < p.x0.length; i++) {
+    const x = ((p.x0[i] + t * p.speed[i]) % span) - margin;
+    const pd = persp(p.d[i]);
+    const g = gustAt((x - p.w / 2) / (p.F * pd), 1 / pd, t);
+    const seen = Math.min(1, p.floor + smoothstep(0.3, 0.75, g));
+    if (seen < 0.03) continue;
+    const len = p.len[i] * (0.6 + g);
+    const y = p.y0[i] - g * p.lift * p.thick[i] * 4 + Math.sin(t * 1.7 + p.phase[i]) * p.thick[i];
+    ctx.globalAlpha = p.alpha * seen;
+    ctx.fillRect(x - len, y, len, p.thick[i]);
+  }
 }
 
 /* ------------------------------------------------------------------ engine */
@@ -1847,6 +3344,9 @@ function drawMotion(grass: Ctx, veil: Ctx, m: Motion, t: number): void {
 interface Buffers {
   sky: HTMLCanvasElement;
   ground: HTMLCanvasElement;
+  /** Sprite sheet of the trees. */
+  sheet: HTMLCanvasElement;
+  layout: Sheet;
   grain: { tile: HTMLCanvasElement; cssSize: number } | null;
   /** The context currently being painted; flushed after every step so raster cost stays in the slice. */
   active: Ctx | null;
@@ -1870,12 +3370,15 @@ const bufferContext = (c: HTMLCanvasElement) => c.getContext("2d", { willReadFre
 function* paintAll(L: Layout, seed: number, bufs: Buffers): Gen {
   const sky = bufferContext(bufs.sky);
   const ground = bufferContext(bufs.ground);
-  if (!sky || !ground) return;
+  const sheet = bufferContext(bufs.sheet);
+  if (!sky || !ground || !sheet) return;
   bufs.active = sky;
   yield* paintSky(sky, L, seed);
   yield "sky";
   bufs.active = ground;
-  yield* paintGround(ground, L, seed);
+  yield* paintLand(ground, L, meadowAt(L, seed), seed);
+  bufs.active = sheet;
+  yield* paintSheet(sheet, L, bufs.layout, seed);
   bufs.active = null;
   bufs.grain = grainTile(L.dpr, seed);
   yield "ground";
@@ -1955,10 +3458,11 @@ function show(el: HTMLCanvasElement, s: Shown, width: number, height: number): v
 
 export function createMeadowEngine(
   els: MeadowCanvases,
-  options: { seed: number; paused: boolean },
+  options: { seed: number; paused: boolean; biome?: MeadowBiome },
 ): MeadowEngine {
   const { root } = els;
   const seed = options.seed >>> 0;
+  const biome = options.biome ?? "meadow";
   let paused = options.paused;
   let visible = true;
   let destroyed = false;
@@ -1966,10 +3470,10 @@ export function createMeadowEngine(
     typeof window.matchMedia === "function" ? window.matchMedia("(prefers-reduced-motion: reduce)") : null;
   let reduced = mql ? mql.matches : false;
   // contexts are taken on first use: nothing touches a canvas until the element has a size
-  let grassCtx: Ctx | null = null;
-  let veilCtx: Ctx | null = null;
+  let motionCtx: Ctx | null = null;
+  let treesCtx: Ctx | null = null;
 
-  let current: { L: Layout; motion: Motion } | null = null;
+  let current: { L: Layout; motion: Motion; layout: Sheet; sheet: Shown } | null = null;
   let job: { cancel(): void } | null = null;
   let raf = 0;
   let frameTimer: ReturnType<typeof setTimeout> | undefined;
@@ -1989,11 +3493,16 @@ export function createMeadowEngine(
     els.sky.style.transform = `translate3d(${(offset - L.tile).toFixed(2)}px,0,0)`;
   };
 
-  const render = () => {
-    if (!current || !grassCtx || !veilCtx) return;
-    drawMotion(grassCtx, veilCtx, current.motion, reduced ? STILL_TIME : time);
-    // the clouds move a fraction of a pixel per frame: restyling them at ~10 Hz is enough
-    if (frameCount++ % 3 === 0) placeSky(current.L);
+  const render = (all = false) => {
+    if (!current || !motionCtx || !treesCtx) return;
+    const t = reduced ? STILL_TIME : time;
+    // the clouds and the trees move a fraction of a pixel per frame: ~10 Hz is enough for them
+    if (all || frameCount % 3 === 0) {
+      if (current.sheet) drawTrees(treesCtx, current.layout, current.sheet, current.motion, t);
+      placeSky(current.L);
+    }
+    frameCount++;
+    drawMotion(motionCtx, current.motion, t);
   };
 
   // ~30 fps: sleep until a frame is nearly due, then align with the display through rAF. Asking for
@@ -2053,19 +3562,20 @@ export function createMeadowEngine(
     el.dataset.ready = "";
   };
 
-  const commitRest = (L: Layout, ground: Shown, grain: Buffers["grain"]) => {
+  const commitRest = (L: Layout, ground: Shown, grain: Buffers["grain"], layout: Sheet, sheet: Shown) => {
     show(els.ground, ground, Math.round(L.w * L.dpr), Math.round(L.h * L.dpr));
     els.ground.dataset.ready = "";
     if (grain) applyGrain(grain.tile, grain.cssSize);
-    const motion = buildMotion(L, seed);
-    placePane(els.motion, motion.grassPane, L.dpr);
-    placePane(els.veil, motion.veilPane, L.dpr);
+    const motion = buildMotion(L, meadowAt(L, seed), seed, layout);
+    placePane(els.motion, motion.pane, motion.dpr);
+    placePane(els.trees, motion.treePane, motion.treeDpr);
     els.motion.dataset.ready = "";
-    els.veil.dataset.ready = "";
-    grassCtx ??= els.motion.getContext("2d");
-    veilCtx ??= els.veil.getContext("2d");
-    current = { L, motion };
-    render();
+    els.trees.dataset.ready = "";
+    motionCtx ??= els.motion.getContext("2d");
+    treesCtx ??= els.trees.getContext("2d");
+    if (current) discard(current.sheet);
+    current = { L, motion, layout, sheet };
+    render(true);
     root.dataset.state = "ready";
     update();
   };
@@ -2073,11 +3583,14 @@ export function createMeadowEngine(
   const generate = (w: number, h: number) => {
     job?.cancel();
     const dpr = pickDpr(w, h);
-    const L = computeLayout(w, h, dpr, seed);
+    const L = computeLayout(w, h, dpr, seed, biome);
     const progressive = current === null;
+    const layout = spriteSheet(L);
     const bufs: Buffers = {
       sky: makeCanvas(L.tilePx, Math.round(L.skyH * dpr)),
       ground: makeCanvas(Math.round(w * dpr), Math.round(h * dpr)),
+      sheet: makeCanvas(layout.width, layout.height),
+      layout,
       grain: null,
       active: null,
     };
@@ -2092,6 +3605,7 @@ export function createMeadowEngine(
       channel.port1.close();
       release(bufs.sky);
       release(bufs.ground);
+      release(bufs.sheet);
       if (job === thisJob) job = null;
     };
     const thisJob = {
@@ -2120,15 +3634,16 @@ export function createMeadowEngine(
         if (r.done) {
           const grain = bufs.grain;
           const skyDone = sky ?? Promise.resolve<Shown>(null);
-          void Promise.all([skyDone, snapshot(bufs.ground)]).then(([s, g]) => {
+          void Promise.all([skyDone, snapshot(bufs.ground), snapshot(bufs.sheet)]).then(([s, g, sh]) => {
             if (!live()) {
               if (!progressive) discard(s);
               discard(g);
+              discard(sh);
               if (grain) release(grain.tile);
               return;
             }
             if (!progressive) commitSky(L, s);
-            commitRest(L, g, grain);
+            commitRest(L, g, grain, layout, sh);
             finish();
           });
           return;
@@ -2170,8 +3685,7 @@ export function createMeadowEngine(
 
   const onMotionPreference = () => {
     reduced = mql ? mql.matches : false;
-    render();
-    if (current) placeSky(current.L);
+    render(true);
     update();
   };
   mql?.addEventListener("change", onMotionPreference);
@@ -2191,8 +3705,9 @@ export function createMeadowEngine(
       mql?.removeEventListener("change", onMotionPreference);
       document.removeEventListener("visibilitychange", update);
       stop();
+      if (current) discard(current.sheet);
       current = null;
-      for (const el of [els.sky, els.ground, els.motion, els.veil]) {
+      for (const el of [els.sky, els.ground, els.trees, els.motion]) {
         delete el.dataset.ready;
         release(el);
       }

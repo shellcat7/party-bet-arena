@@ -1,3 +1,4 @@
+import type { Biome } from "../lib/pass";
 import type { BetError } from "../lib/betting";
 import type { FirebaseIssueKind } from "../lib/firebase";
 import type { BetType, RaceStatus } from "../lib/types";
@@ -80,4 +81,14 @@ export function firebaseIssueMessage(t: Translate, kind: FirebaseIssueKind) {
     default:
       return t("同期に失敗しました。もう一度お試しください。", "Sync failed. Please try again.");
   }
+}
+
+/** What the painting on a ticket shows, for assistive technology. */
+export function landscapeLabel(t: Translate, biome: Biome) {
+  const labels: Record<Biome, string> = {
+    meadow: t("風の吹く草原を描いた油絵風の風景", "A painted, windswept meadow"),
+    snow: t("雪山を描いた油絵風の風景", "A painted snowy mountain range"),
+    desert: t("砂丘と岩山の砂漠を描いた油絵風の風景", "A painted desert of dunes and mesas"),
+  };
+  return labels[biome];
 }

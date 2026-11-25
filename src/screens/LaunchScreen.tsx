@@ -3,6 +3,7 @@ import { useConfirm } from "../components/feedback";
 import { Meadow } from "../components/scenes/Meadow";
 import { BrandMark } from "../components/ui";
 import { raceStatusCopy } from "../i18n/copy";
+import { landscapeLabel } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
 import { LANGUAGES } from "../i18n/languages";
 import type { RoomSummary, ThemePreference } from "../lib/storage";
@@ -91,7 +92,7 @@ export function LaunchScreen() {
         ) : (
           <div className="launch__intro">
             <div className="launch__scene">
-              <Meadow label={t("油絵風の風景", "An oil-painting-style landscape")} biome="meadow" paused />
+              <Meadow label={landscapeLabel(t, "meadow")} biome="meadow" paused />
             </div>
             <BrandMark size={72} />
             <h1>{t("ランクパーティ", "Rank Party")}</h1>

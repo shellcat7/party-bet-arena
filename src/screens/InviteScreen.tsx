@@ -4,6 +4,7 @@ import { useNotify } from "../components/feedback";
 import { Pass } from "../components/BetPass";
 import { Tile } from "../components/Tile";
 import { PageHeader, Points } from "../components/ui";
+import { landscapeLabel } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
 import { buildInviteUrl, groupCode } from "../lib/ids";
 import { biomeForRace } from "../lib/pass";
@@ -77,7 +78,8 @@ export default function InviteScreen(props: { isNew: boolean }) {
             }
             art={{
               biome: biomeForRace(room.id.charCodeAt(0)),
-              label: t("油絵風の風景", "An oil-painting-style landscape"),
+              label: landscapeLabel(t, biomeForRace(room.id.charCodeAt(0))),
+              seed: room.id.charCodeAt(1),
             }}
             fields={[
               { label: t("幹事", "Host"), value: room.hostName || "—" },

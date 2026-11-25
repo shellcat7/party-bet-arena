@@ -403,7 +403,6 @@ const messages: Record<string, string> = {
   "Invitation to “{room}”": "Einladung zu „{room}“",
   Capacity: "Plätze",
   Invitation: "Einladung",
-  "An oil-painting-style landscape": "Landschaft im Stil eines Ölgemäldes",
   "Send it in a chat": "Per Nachricht senden",
   "For joining by hand": "Zum manuellen Beitreten",
   "Send it with the room ID": "Zusammen mit der Raum-ID senden",
@@ -420,6 +419,9 @@ const messages: Record<string, string> = {
   "View result": "Ergebnis ansehen",
   "You didn't bet on this race. The result will appear here.":
     "Du hast bei diesem Rennen nicht getippt. Das Ergebnis erscheint hier.",
+  "A painted, windswept meadow": "Gemälde einer windigen Wiese",
+  "A painted snowy mountain range": "Gemälde einer verschneiten Bergkette",
+  "A painted desert of dunes and mesas": "Gemälde einer Wüste mit Dünen und Tafelbergen",
 };
 
 export default messages;

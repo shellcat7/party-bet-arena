@@ -3,7 +3,7 @@ import { Pass, PassPicks, PassStub } from "../../components/BetPass";
 import type { PassPick, PassStatus } from "../../components/BetPass";
 import { useConfirm } from "../../components/feedback";
 import { Points } from "../../components/ui";
-import { betTypeCopy, raceName } from "../../i18n/copy";
+import { betTypeCopy, landscapeLabel, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
 import { frameColor } from "../../lib/constants";
@@ -270,7 +270,8 @@ function TicketPass(props: {
       primary={<PassPicks picks={picks} />}
       art={{
         biome: biomeForRace(props.raceNumber),
-        label: t("油絵風の風景", "An oil-painting-style landscape"),
+        label: landscapeLabel(t, biomeForRace(props.raceNumber)),
+        seed: 1875 + props.raceNumber,
         animate: status === "closed",
       }}
       fields={[
