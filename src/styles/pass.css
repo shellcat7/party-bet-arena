@@ -7,7 +7,7 @@
  */
 
 .pass {
-  --pass-bg: color-mix(in oklab, var(--pass-accent) 52%, #07080a);
+  --pass-bg: color-mix(in oklab, var(--pass-accent) 84%, #07080a);
   --pass-label: rgba(255, 255, 255, 0.68);
   --pass-rule: rgba(255, 255, 255, 0.22);
   --notch: var(--bg);
@@ -157,7 +157,6 @@
 .pass__art > * {
   width: 100%;
   height: 100%;
-  filter: saturate(0.82);
 }
 
 /* ------------------------------------------------------------------------------ fields */
@@ -300,11 +299,11 @@
 }
 
 .pass-stub--placed .pass-stub__state > i {
-  background: #8fd3ab;
+  background: #74e0a6;
 }
 
 .pass-stub--closed .pass-stub__state > i {
-  background: #e9b98a;
+  background: #ffbd6e;
   animation: phase-pulse 1.6s ease-in-out infinite;
 }
 
@@ -439,7 +438,8 @@ button.tile:active {
 
 /* Light accents (amber, and the brand yellow of the invitation) print with dark type. */
 .pass--light {
-  --pass-bg: color-mix(in oklab, var(--pass-accent) 86%, #fff);
+  --pass-bg: var(--pass-accent);
+  border: 1px solid rgba(21, 23, 27, 0.08);
   --pass-label: rgba(21, 23, 27, 0.62);
   --pass-rule: rgba(21, 23, 27, 0.26);
   color: #15171b;
@@ -462,6 +462,16 @@ button.tile:active {
 .pass--light .pass-stub--hit .pass-stub__state strong {
   background: #15171b;
   color: #fff;
+}
+
+.pass--light .pass-stub--placed .pass-stub__state > i {
+  background: #1f9d55;
+  box-shadow: 0 0 0 3px rgba(31, 157, 85, 0.18);
+}
+
+.pass--light .pass-stub--closed .pass-stub__state > i {
+  background: #e07b1f;
+  box-shadow: 0 0 0 3px rgba(224, 123, 31, 0.18);
 }
 
 .pass--light .pass-picks__lane {

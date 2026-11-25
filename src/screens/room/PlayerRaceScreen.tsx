@@ -6,6 +6,7 @@ import { Points } from "../../components/ui";
 import { betTypeCopy, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
+import { frameColor } from "../../lib/constants";
 import { getBetPickIds } from "../../lib/odds";
 import { biomeForRace, ticketCode } from "../../lib/pass";
 import { isGameOver } from "../../lib/settlement";
@@ -186,7 +187,7 @@ function GameOverScreen(props: { room: Room }) {
 function TicketPass(props: {
   room: Room;
   raceNumber: number;
-  contestants: Array<{ id: string; name: string; icon: string; accent: string }>;
+  contestants: Array<{ id: string; name: string; icon: string }>;
   ticket: {
     id: string;
     playerId: string;
@@ -212,7 +213,7 @@ function TicketPass(props: {
       lane: lane + 1,
       name: contestant?.name ?? "?",
       icon: contestant?.icon ?? "",
-      accent: contestant?.accent ?? "#6b7280",
+      accent: frameColor(lane + 1),
       position: ticket.contestantIds.length > 1 ? positions[index] : undefined,
     };
   });
@@ -259,7 +260,7 @@ function TicketPass(props: {
 
   return (
     <Pass
-      accent={picks[0]?.accent ?? "#6b7280"}
+      accent={picks[0]?.accent ?? frameColor(1)}
       brand={t("ランクパーティ", "Rank Party")}
       label={t("{race}のチケット", "Ticket for {race}", { race: raceName(t, props.raceNumber) })}
       headerFields={[

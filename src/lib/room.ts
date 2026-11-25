@@ -122,55 +122,55 @@ const demoCopy = {
     room: "週末ゲーム大会（デモ）",
     host: "はると",
     players: ["ゆうた", "たくみ", "あやか", "けんと"],
-    racers: ["レッド", "ブルー", "イエロー", "グリーン"],
+    racers: ["ハヤテ", "コメット", "ライデン", "ソヨカゼ"],
   },
   en: {
     room: "Weekend Game Night (demo)",
     host: "Jordan",
     players: ["Alex", "Sam", "Mia", "Ken"],
-    racers: ["Red", "Blue", "Yellow", "Green"],
+    racers: ["Blaze", "Comet", "Thunder", "Breeze"],
   },
   zh: {
     room: "周末游戏大会（演示）",
     host: "老王",
     players: ["小明", "小红", "阿强", "小美"],
-    racers: ["红色", "蓝色", "黄色", "绿色"],
+    racers: ["疾风", "彗星", "雷霆", "微风"],
   },
   ko: {
     room: "주말 게임 대회 (데모)",
     host: "도윤",
     players: ["민준", "서연", "지훈", "하은"],
-    racers: ["레드", "블루", "옐로", "그린"],
+    racers: ["질풍", "혜성", "번개", "산들바람"],
   },
   es: {
     room: "Noche de juegos (demo)",
     host: "Pablo",
     players: ["Lucía", "Mateo", "Sofía", "Diego"],
-    racers: ["Rojo", "Azul", "Amarillo", "Verde"],
+    racers: ["Ráfaga", "Cometa", "Trueno", "Brisa"],
   },
   fr: {
     room: "Soirée jeux (démo)",
     host: "Nina",
     players: ["Léa", "Hugo", "Chloé", "Louis"],
-    racers: ["Rouge", "Bleu", "Jaune", "Vert"],
+    racers: ["Rafale", "Comète", "Tonnerre", "Brise"],
   },
   de: {
     room: "Spieleabend (Demo)",
     host: "Paul",
     players: ["Lena", "Jonas", "Mia", "Felix"],
-    racers: ["Rot", "Blau", "Gelb", "Grün"],
+    racers: ["Sturm", "Komet", "Donner", "Brise"],
   },
   it: {
     room: "Serata giochi (demo)",
     host: "Elena",
     players: ["Giulia", "Marco", "Sofia", "Luca"],
-    racers: ["Rosso", "Blu", "Giallo", "Verde"],
+    racers: ["Raffica", "Cometa", "Tuono", "Brezza"],
   },
   uk: {
     room: "Ігровий вечір (демо)",
     host: "Ірина",
     players: ["Олена", "Андрій", "Марія", "Тарас"],
-    racers: ["Червоний", "Синій", "Жовтий", "Зелений"],
+    racers: ["Вихор", "Комета", "Грім", "Бриз"],
   },
 } satisfies Record<LanguageName, { room: string; host: string; players: string[]; racers: string[] }>;
 
@@ -201,7 +201,7 @@ export function createDemoRoom(language: LanguageName = "ja", now = Date.now()):
       order: index,
     })),
   );
-  const [red, blue, yellow, green] = contestants.map((contestant) => contestant.id);
+  const [hayate, comet, raiden, breeze] = contestants.map((contestant) => contestant.id);
   const minutesAgo = (minutes: number) => now - minutes * 60_000;
 
   let room: Room = {
@@ -237,22 +237,22 @@ export function createDemoRoom(language: LanguageName = "ja", now = Date.now()):
   }> = [
     {
       tickets: [
-        [0, "win", [blue], 200],
-        [1, "place", [green], 150],
-        [2, "exacta", [blue, red], 100],
-        [3, "win", [yellow], 300],
+        [0, "win", [comet], 200],
+        [1, "place", [breeze], 150],
+        [2, "exacta", [comet, hayate], 100],
+        [3, "win", [raiden], 300],
       ],
-      result: [blue, red, yellow, green],
+      result: [comet, hayate, raiden, breeze],
       at: 30,
     },
     {
       tickets: [
-        [0, "trifecta", [red, blue, yellow], 100],
-        [1, "win", [green], 200],
-        [2, "place", [red], 250],
-        [3, "win", [blue], 400],
+        [0, "trifecta", [hayate, comet, raiden], 100],
+        [1, "win", [breeze], 200],
+        [2, "place", [hayate], 250],
+        [3, "win", [comet], 400],
       ],
-      result: [green, red, blue, yellow],
+      result: [breeze, hayate, comet, raiden],
       at: 15,
     },
   ];
@@ -281,8 +281,8 @@ export function createDemoRoom(language: LanguageName = "ja", now = Date.now()):
   });
 
   const openTickets: Array<[number, Bet["type"], string[], number]> = [
-    [0, "win", [red], 200],
-    [3, "exacta", [blue, green], 100],
+    [0, "win", [hayate], 200],
+    [3, "exacta", [comet, breeze], 100],
   ];
   openTickets.forEach(([playerIndex, type, picks, amount], index) => {
     const bet = createBet(

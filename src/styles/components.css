@@ -890,6 +890,15 @@ select.input {
   font-weight: 700;
 }
 
+/* Gate 1 is white and gate 2 black: a hairline keeps them visible on a matching background. */
+.lane[data-gate="1"] {
+  box-shadow: inset 0 0 0 1px rgba(21, 23, 27, 0.2);
+}
+
+:root[data-theme="dark"] .lane[data-gate="2"] {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+}
+
 .lane--sm {
   width: 22px;
   height: 22px;
@@ -1037,7 +1046,10 @@ select.input {
 
 /* -------------------------------------------------------------------------------- phase tags */
 
+/* Neutral tags; the phase colour is only on the dot, as a status indicator. */
 .phase-tag {
+  color: var(--text-2);
+  background: var(--surface-2);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1056,23 +1068,20 @@ select.input {
   background: currentColor;
 }
 
-.phase-tag--open {
-  color: var(--phase-open);
-  background: var(--phase-open-tint);
+.phase-tag--open i {
+  background: var(--phase-open);
 }
 
-.phase-tag--live {
-  color: var(--phase-live);
-  background: var(--phase-live-tint);
+.phase-tag--live i {
+  background: var(--phase-live);
 }
 
 .phase-tag--live i {
   animation: phase-pulse 1.6s ease-in-out infinite;
 }
 
-.phase-tag--result {
-  color: var(--phase-result);
-  background: var(--phase-result-tint);
+.phase-tag--result i {
+  background: var(--phase-result);
 }
 
 @keyframes phase-pulse {

@@ -57,14 +57,7 @@ export function HistoryScreen() {
                       <span className="lane-row">
                         {entry.resultIds.slice(0, 3).map((id) => {
                           const index = entry.contestants.findIndex((contestant) => contestant.id === id);
-                          return index >= 0 ? (
-                            <Lane
-                              key={id}
-                              number={index + 1}
-                              accent={entry.contestants[index].accent}
-                              small
-                            />
-                          ) : null;
+                          return index >= 0 ? <Lane key={id} number={index + 1} small /> : null;
                         })}
                         <small>{formatTime(entry.settledAt)}</small>
                       </span>

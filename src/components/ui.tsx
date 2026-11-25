@@ -2,7 +2,7 @@ import { useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
-import { EMOJI_CHOICES, accentInk, displayAccent } from "../lib/constants";
+import { EMOJI_CHOICES, accentInk, displayAccent, frameColor } from "../lib/constants";
 
 export const accentStyle = (accent: string) => {
   const colour = displayAccent(accent);
@@ -29,11 +29,14 @@ export function Avatar(props: {
 }
 
 /** Coloured gate number used for racers, like a horse-racing post position. */
-export function Lane(props: { number: number; accent: string; small?: boolean }) {
+/** A lane number in its gate colour. */
+export function Lane(props: { number: number; small?: boolean }) {
+  const colour = frameColor(props.number);
   return (
     <span
       className={props.small ? "lane lane--sm" : "lane"}
-      style={accentStyle(props.accent)}
+      style={{ "--accent": colour, "--accent-ink": accentInk(colour) } as CSSProperties}
+      data-gate={((props.number - 1) % 8) + 1}
       aria-hidden="true"
     >
       {props.number}

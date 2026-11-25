@@ -406,27 +406,14 @@
   font-weight: 600;
 }
 
-/* The current step takes the phase colour, so the card reads at a glance. */
 .phase-steps li.is-current {
-  --tone: var(--phase-open);
-  --tone-tint: var(--phase-open-tint);
-  background: var(--tone-tint);
-  color: var(--tone);
+  background: var(--surface-2);
+  color: var(--text);
   font-weight: 700;
 }
 
-.stage-card--live .phase-steps li.is-current {
-  --tone: var(--phase-live);
-  --tone-tint: var(--phase-live-tint);
-}
-
-.stage-card--result .phase-steps li.is-current {
-  --tone: var(--phase-result);
-  --tone-tint: var(--phase-result-tint);
-}
-
 .phase-steps li.is-current > span {
-  background: var(--tone);
+  background: var(--text);
   color: var(--surface);
 }
 

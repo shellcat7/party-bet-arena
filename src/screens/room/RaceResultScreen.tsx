@@ -78,7 +78,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
             return (
               <li key={id} className={index < 3 ? "is-podium" : undefined}>
                 <RankBadge rank={index + 1} />
-                <Lane number={lane} accent={contestant?.accent ?? "#999"} small />
+                <Lane number={lane} small />
                 <span className="finish-order__icon" aria-hidden="true">
                   {contestant?.icon}
                 </span>
@@ -232,9 +232,7 @@ function TicketResults(props: { room: Room; entry: RaceHistoryEntry }) {
               <span className="lane-row">
                 {bet.contestantIds.map((id) => {
                   const index = props.entry.contestants.findIndex((contestant) => contestant.id === id);
-                  return index >= 0 ? (
-                    <Lane key={id} number={index + 1} accent={props.entry.contestants[index].accent} small />
-                  ) : null;
+                  return index >= 0 ? <Lane key={id} number={index + 1} small /> : null;
                 })}
               </span>
               <span className={bet.hit ? "badge badge--success" : "badge"}>

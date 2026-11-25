@@ -242,7 +242,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
                   disabled={full}
                   onClick={() => toggle(contestant.id)}
                 >
-                  <Lane number={index + 1} accent={contestant.accent} />
+                  <Lane number={index + 1} />
                   <span className="racer__icon" aria-hidden="true">
                     {contestant.icon}
                   </span>
@@ -416,9 +416,7 @@ function TicketList(props: { room: Room }) {
                 <span className="lane-row">
                   {getBetPickIds(bet).map((id) => {
                     const index = room.contestants.findIndex((contestant) => contestant.id === id);
-                    return index >= 0 ? (
-                      <Lane key={id} number={index + 1} accent={room.contestants[index].accent} small />
-                    ) : null;
+                    return index >= 0 ? <Lane key={id} number={index + 1} small /> : null;
                   })}
                 </span>
               </span>

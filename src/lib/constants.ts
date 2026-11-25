@@ -41,7 +41,28 @@ export function nextPlayerColor(used: string[]) {
 
 /** Racer "gate" colours, like the coloured post positions at a race track. */
 /**
- * Lane and avatar colours: one muted family (similar lightness and chroma in OKLCH) so that several
+ * Gate colours (枠色) as used in horse racing: 1 white, 2 black, 3 red, 4 blue, 5 yellow, 6 green,
+ * 7 orange, 8 pink. A racer's colour follows its lane number, so the colours carry meaning rather
+ * than being a decorative rainbow; past eight they repeat.
+ */
+export const FRAME_COLORS = [
+  "#f6f5f0",
+  "#1c1d21",
+  "#d8352a",
+  "#1d5fc0",
+  "#f6c500",
+  "#14894a",
+  "#ee8017",
+  "#f096b4",
+];
+
+export function frameColor(lane: number) {
+  const index = Math.max(1, Math.floor(lane) || 1) - 1;
+  return FRAME_COLORS[index % FRAME_COLORS.length];
+}
+
+/**
+ * Avatar colours: one muted family (similar lightness and chroma in OKLCH) so that several
  * on screen at once stay calm. White text reads on all of them except amber, which takes dark ink.
  */
 export const ACCENTS = [

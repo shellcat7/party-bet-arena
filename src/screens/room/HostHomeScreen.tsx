@@ -279,7 +279,7 @@ export function HostHomeScreen() {
         <ul className="odds-board">
           {room.contestants.map((contestant, index) => (
             <li key={contestant.id}>
-              <Lane number={index + 1} accent={contestant.accent} small />
+              <Lane number={index + 1} small />
               <span className="odds-board__icon" aria-hidden="true">
                 {contestant.icon}
               </span>

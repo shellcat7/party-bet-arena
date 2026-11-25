@@ -93,7 +93,7 @@ export function ResultsEntryScreen() {
                   }
                 >
                   <span className="finish-pick__position">{position >= 0 ? position + 1 : "–"}</span>
-                  <Lane number={index + 1} accent={contestant.accent} small />
+                  <Lane number={index + 1} small />
                   <span className="finish-pick__icon" aria-hidden="true">
                     {contestant.icon}
                   </span>
