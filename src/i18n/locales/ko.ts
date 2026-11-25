@@ -140,7 +140,6 @@ const messages: Record<string, string> = {
   "No bettors yet": "아직 참가자가 없어요",
   "No bettors yet. Invite friends or add them yourself.":
     "아직 참가자가 없어요. 친구를 초대하거나 직접 추가해 보세요.",
-  "No change": "변동 없음",
   "No invitation QR found. Enter the ID and code instead.":
     "초대 QR을 찾지 못했어요. ID와 코드를 직접 입력해 주세요.",
   "No settled races yet": "아직 정산된 경주가 없어요",
@@ -343,7 +342,6 @@ const messages: Record<string, string> = {
   "1st": "1위",
   "2nd": "2위",
   "3rd": "3위",
-  "({delta} from start)": "(시작 대비 {delta})",
   Racing: "경주 중",
   "When the race is over, enter the finishing order on the Run tab.":
     "경주가 끝나면 ‘진행’ 탭에서 순위를 입력하세요.",

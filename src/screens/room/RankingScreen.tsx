@@ -6,12 +6,8 @@ import { useOpenRoom } from "../../state/AppContext";
 
 function Movement(props: { value?: number }) {
   const { t } = useI18n();
-  if (!props.value)
-    return (
-      <span className="movement movement--flat" aria-label={t("順位変動なし", "No change")}>
-        —
-      </span>
-    );
+  // No change shows nothing: the column only draws the eye when someone moved.
+  if (!props.value) return <span className="movement" aria-hidden="true" />;
   const up = props.value > 0;
   return (
     <span

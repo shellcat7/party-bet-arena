@@ -141,7 +141,6 @@ const messages: Record<string, string> = {
   "No bettors yet": "Гравців поки немає",
   "No bettors yet. Invite friends or add them yourself.":
     "Гравців поки немає. Запроси друзів або додай їх вручну.",
-  "No change": "Без змін",
   "No invitation QR found. Enter the ID and code instead.":
     "QR-код запрошення не знайдено. Введи ID і код вручну.",
   "No settled races yet": "Ще немає розрахованих заїздів",
@@ -351,7 +350,6 @@ const messages: Record<string, string> = {
   "1st": "1-ше",
   "2nd": "2-ге",
   "3rd": "3-тє",
-  "({delta} from start)": "({delta} від початку)",
   Racing: "Заїзд триває",
   "When the race is over, enter the finishing order on the Run tab.":
     "Коли заїзд завершиться, введи результати на вкладці «Гра».",

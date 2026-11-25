@@ -1025,10 +1025,6 @@ select.input {
   color: var(--negative);
 }
 
-.movement--flat {
-  color: var(--text-3);
-}
-
 .status-dot {
   display: inline-block;
   width: 6px;

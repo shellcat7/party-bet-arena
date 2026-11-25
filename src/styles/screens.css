@@ -1134,20 +1134,6 @@
   font-size: var(--text-title3);
 }
 
-.champion p {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px;
-  color: var(--text-2);
-  font-size: var(--text-footnote);
-}
-
-.champion p > .points {
-  color: var(--text);
-  font-size: var(--text-headline);
-}
-
 /* ----------------------------------------------------------------------------------- manage */
 
 .edit-list {

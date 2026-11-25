@@ -136,7 +136,6 @@ const messages: Record<string, string> = {
   "No bets in this race.": "本场暂无投注。",
   "No bettors yet": "暂无投注者",
   "No bettors yet. Invite friends or add them yourself.": "暂无投注者。可邀请好友，或自行添加。",
-  "No change": "排名不变",
   "No invitation QR found. Enter the ID and code instead.": "未找到邀请QR码。请手动输入房间ID和加入码。",
   "No settled races yet": "暂无已结算的比赛",
   "Nobody yet.": "还没有人加入。",
@@ -335,7 +334,6 @@ const messages: Record<string, string> = {
   "1st": "第1名",
   "2nd": "第2名",
   "3rd": "第3名",
-  "({delta} from start)": "（较初始积分 {delta}）",
   Racing: "比赛中",
   "When the race is over, enter the finishing order on the Run tab.":
     "比赛结束后，请在“赛况”标签页输入名次。",

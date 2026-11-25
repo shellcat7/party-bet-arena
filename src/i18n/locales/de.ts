@@ -143,7 +143,6 @@ const messages: Record<string, string> = {
   "No bettors yet": "Noch keine Tipper",
   "No bettors yet. Invite friends or add them yourself.":
     "Noch keine Tipper. Lade Freunde ein oder füge sie selbst hinzu.",
-  "No change": "Keine Veränderung",
   "No invitation QR found. Enter the ID and code instead.":
     "Kein Einladungs-QR gefunden. Gib stattdessen ID und Code ein.",
   "No settled races yet": "Noch keine abgerechneten Rennen",
@@ -355,7 +354,6 @@ const messages: Record<string, string> = {
   "1st": "1.",
   "2nd": "2.",
   "3rd": "3.",
-  "({delta} from start)": "({delta} seit Beginn)",
   Racing: "Rennen läuft",
   "When the race is over, enter the finishing order on the Run tab.":
     "Wenn das Rennen vorbei ist, trag die Platzierung im Tab „Ablauf“ ein.",
