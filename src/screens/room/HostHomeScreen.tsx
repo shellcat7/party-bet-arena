@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Check, ChevronRight, Flag, QrCode, SlidersHorizontal, Trophy, Users } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { PainterlyMeadow } from "../../components/scenes/PainterlyMeadow";
+import { Meadow } from "../../components/scenes/Meadow";
 import { PixelCarriers } from "../../components/scenes/PixelCarriers";
 import { Avatar, Points, Lane } from "../../components/ui";
 import type { PhaseTone } from "../../components/ui";
@@ -57,7 +57,7 @@ export function HostHomeScreen() {
       <section className={`card stage-card stage-card--${tones[race.status]}`} aria-labelledby="stage-title">
         <div className="stage-card__scene">
           {race.status === "closed" || gameOver ? (
-            <PainterlyMeadow
+            <Meadow
               label={t(
                 "風の吹く丘で日傘をさす人を描いた油絵風の風景",
                 "An oil-painting-style scene of a person with a parasol on a windy hill",

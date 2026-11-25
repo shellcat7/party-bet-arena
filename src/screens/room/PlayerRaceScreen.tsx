@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Check } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { PainterlyMeadow } from "../../components/scenes/PainterlyMeadow";
+import { Meadow } from "../../components/scenes/Meadow";
 import { PixelCarriers } from "../../components/scenes/PixelCarriers";
 import { Avatar, Lane, PhaseTag, Points } from "../../components/ui";
 import type { PhaseTone } from "../../components/ui";
@@ -105,7 +105,7 @@ function RaceLiveStage(props: { room: Room; ticket?: Bet }) {
         "Betting is closed. The result appears here as soon as the host enters the finishing order.",
       )}
       scene={
-        <PainterlyMeadow
+        <Meadow
           label={t(
             "風の吹く丘で日傘をさす人を描いた油絵風の風景",
             "An oil-painting-style scene of a person with a parasol on a windy hill",
@@ -187,7 +187,7 @@ function GameOverStage(props: { room: Room }) {
       title={t("大会が終わりました", "The tournament is over")}
       message={t("最終順位と記録を確認できます。", "See the final standings and records.")}
       scene={
-        <PainterlyMeadow
+        <Meadow
           label={t(
             "風の吹く丘で日傘をさす人を描いた油絵風の風景",
             "An oil-painting-style scene of a person with a parasol on a windy hill",
