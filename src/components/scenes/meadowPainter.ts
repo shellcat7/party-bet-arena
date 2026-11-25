@@ -1,9 +1,21 @@
 /**
  * Procedural, stroke-by-stroke landscape painting in an Impressionist manner: broken brushwork,
- * a luminous sky with drifting cumulus and the wind moving through the land. Three biomes:
- *  - meadow: blue hills, a stand of poplars and a lone tree, a flowering meadow with a faint path
- *  - snow:   a mountain range with blue-violet shadows, a snowfield and dark spruces close by
- *  - desert: violet mesas, a sunlit butte, dunes with long violet shadows and a few shrubs
+ * a luminous sky with drifting cumulus and the wind moving through the land. Nine biomes:
+ *  - meadow:   blue hills, a stand of poplars and a lone tree, a flowering meadow with a faint path
+ *  - snow:     a mountain range with blue-violet shadows, a snowfield and dark spruces close by
+ *  - desert:   violet mesas, a sunlit butte, dunes with long violet shadows and a few shrubs
+ *  - coast:    a headland of warm cliffs and a sea stack in the surf, a sail far out, thrift and
+ *              gorse on the cliff top in front
+ *  - lavender: rows of lavender running to a vanishing point, a farmhouse with its cypresses
+ *  - autumn:   the edge of a wood in gold, orange and rust, white birches, a red maple, tawny grass
+ *              and falling leaves
+ *  - lake:     forested mountains with snow and rock above an alpine lake that mirrors them, firs on
+ *              the near bank
+ *  - sakura:   cherry trees in flower along a river, their blossom mirrored in it, petals on the wind
+ *  - wheat:    ripe wheat with poppies and a track, rolling patchwork country and a lone oak
+ * Each at one of three hours: full daylight, golden hour (a low warm sun, long shadows, amber and
+ * rose light) or dusk (a violet-blue sky over a warm band on the horizon, the first stars and a
+ * pale moon). The sky has its own palette for each hour; the land is recoloured by a grade.
  * Composed for ticket artwork (16:10 to 3:1). Pure canvas code, no React.
  *
  * Layers (bottom to top), each a <canvas> owned by the component:
@@ -12,8 +24,8 @@
  *  - ground: the land, painted once
  *  - trees:  the trees, painted once into a small sprite sheet and redrawn leaning with the wind
  *            at ~10 fps; the canvas only covers the trees
- *  - motion: wind-blown grass, nodding flowers and blowing snow or sand, repainted at ~30 fps at a
- *            reduced resolution; the canvas only covers the foreground
+ *  - motion: wind-blown grass, nodding flowers, blowing snow or sand and falling leaves or petals,
+ *            repainted at ~30 fps at a reduced resolution; the canvas only covers the foreground
  * A canvas-weave tile (generated once) and a vignette are laid on top with CSS (scenes.css).
  *
  * Generation is time-sliced (a few ms per task) so it never blocks the main thread for long.
@@ -150,9 +162,14 @@ const toGamma = (c: number) => (c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(c,
 
 function hexLab(hex: string): Lab {
   const n = parseInt(hex.slice(1), 16);
-  const r = toLinear(((n >> 16) & 255) / 255);
-  const g = toLinear(((n >> 8) & 255) / 255);
-  const b = toLinear((n & 255) / 255);
+  return rgbLab((n >> 16) & 255, (n >> 8) & 255, n & 255);
+}
+
+/** OKLab of an sRGB colour given as 0…255 channels. */
+function rgbLab(R: number, G: number, B: number): Lab {
+  const r = toLinear(R / 255);
+  const g = toLinear(G / 255);
+  const b = toLinear(B / 255);
   const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
   const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
   const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
@@ -305,7 +322,132 @@ const SHRUB = labs(["#7e8a6c", "#8a9474", "#6e7a62", "#949a7a"]);
 const SHRUB_LIT = labs(["#b4b48a", "#c0bc92", "#a8ac84"]);
 const SHRUB_SHADE = labs(["#5e5e72", "#585a6e", "#666478"]);
 
-/** The sky of each biome: its gradient, its clouds and how many there are. */
+/* Coast: a bright sea wind; cobalt water, turquoise over the shallows, warm chalky cliffs. */
+const COAST = {
+  far: labs(["#9aa4cc", "#a4aad0", "#94a0c8"]),
+  farLit: labs(["#d2cad8", "#dcd0d6", "#cdc8d8"]),
+  sea: ramp([
+    [0, "#b2bfd8"],
+    [0.06, "#93abd2"],
+    [0.25, "#5a8cc4"],
+    [0.6, "#3c74ae"],
+    [1, "#30689e"],
+  ]),
+  deep: labs(["#2a5a94", "#2e548e", "#345e9a"]),
+  turq: labs(["#3c9eaa", "#48acb0", "#58b4b8", "#3a96a6"]),
+  glint: labs(["#f4f0dc", "#fbf6e6", "#e8eef0", "#dfe8f0"]),
+  foam: labs(["#f6f6f2", "#fcfbf6", "#e6ecf0", "#dde6ee"]),
+  cliffLit: labs(["#eedab2", "#f4e2be", "#e8cea0", "#f6e6c6"]),
+  cliff: labs(["#d4b28a", "#caa67e", "#dabb96", "#c2a284"]),
+  cliffShade: labs(["#8a86b2", "#7e7eaa", "#9690b6", "#8a80a6"]),
+  rock: labs(["#56587a", "#4a526e", "#625c74"]),
+  cap: labs(["#6f9246", "#7a9a4c", "#668a44"]),
+  capLit: labs(["#a6b85a", "#b2c066", "#9ab058"]),
+  thrift: labs(["#e886a6", "#f09cba", "#dc789a", "#f4b2c6"]),
+  gorse: labs(["#f0c830", "#f4d444", "#e8bc2c"]),
+};
+
+/* Lavender: a deep blue Provençal sky, violet rows in the sun, ochre earth, black-green cypresses. */
+const LAVENDER = {
+  far: labs(["#8c98c8", "#96a0cc", "#8894c4"]),
+  farLit: labs(["#c6c2da", "#cec6da", "#bebcd6"]),
+  hill: labs(["#7a8886", "#84907e", "#748480"]),
+  hillLit: labs(["#b4b088", "#bcb48e", "#aaaa86"]),
+  olive: labs(["#5a6a56", "#64725e", "#52624f"]),
+  oliveLit: labs(["#96a078", "#a2a680"]),
+  haze: labs(["#a898d0", "#b2a2d6", "#9e92ca", "#bcaed8"]),
+  lit: labs(["#b89ce2", "#c6aae8", "#cea4de", "#d8b4e4"]),
+  mid: labs(["#8e72ca", "#987ace", "#806cc0", "#9c80d2"]),
+  shade: labs(["#5c4c9c", "#544692", "#6250a0", "#4c428a"]),
+  leaf: labs(["#8a9a7c", "#7e9072", "#98a486"]),
+  earth: labs(["#cca67a", "#d6b082", "#c09a72", "#dcbc8e"]),
+  earthShade: labs(["#9c8078", "#907682"]),
+  wall: labs(["#f2dcb6", "#f6e4c2"]),
+  wallShade: labs(["#b49aa4", "#a89098"]),
+  roof: labs(["#cc6c48", "#d47a52", "#c06046"]),
+};
+const CYPRESS_DARK = labs(["#203628", "#243c2c", "#1c302c"]);
+const CYPRESS_MID = labs(["#34503a", "#3a5640", "#30483c"]);
+const CYPRESS_LIT = labs(["#5c7446", "#687c4a", "#546e44"]);
+
+/* Autumn: crowns of gold, orange and rust at the edge of a wood, tawny grass, white birches. */
+const AUTUMN = {
+  far: labs(["#8a92c2", "#9298c6", "#8890be"]),
+  farLit: labs(["#c4b8cc", "#ccbccc"]),
+  gold: labs(["#e8b23c", "#f0c04a", "#e4a838", "#f2c858"]),
+  orange: labs(["#e08a38", "#d87a30", "#e89444"]),
+  rust: labs(["#b8542c", "#a84a2a", "#c25e32", "#9c4428"]),
+  red: labs(["#c4422e", "#b03a30", "#cc5236"]),
+  olive: labs(["#8c8a3c", "#7c7e38", "#989444"]),
+  green: labs(["#4e6438", "#56683c", "#46603a"]),
+  shade: labs(["#5c3c38", "#503a44", "#643e34", "#483a4c"]),
+  violet: labs(["#6c5678", "#605270"]),
+  grassSun: labs(["#d6b462", "#dfc070", "#cca858", "#e4c878"]),
+  grassMid: labs(["#b08c4a", "#a68446", "#9c8a4a", "#b89650"]),
+  grassDark: labs(["#6e6236", "#7a6a3a", "#5e5a34", "#6a5a3a"]),
+  grassCool: labs(["#7a7a72", "#86827a", "#6e7070"]),
+  grassGreen: labs(["#7e8a46", "#6e7e40", "#88904c"]),
+  leaf: labs(["#e08a38", "#c85a2e", "#e8b23c", "#b8482c", "#d06c30"]),
+};
+const BIRCH_BARK = labs(["#eee8de", "#f6f2ea", "#e6e2dc"]);
+const BIRCH_SHADE = labs(["#aaa6bc", "#a09eb6", "#b4aec0"]);
+const BIRCH_MARK = hexLab("#2c2a32");
+
+/* Lake: an alpine lake under forested slopes, rock and the last snow; the water mirrors it all. */
+const LAKE = {
+  far: labs(["#96a4cc", "#a0aad0", "#8e9ec8"]),
+  farLit: labs(["#d6daec", "#e0e0ee"]),
+  rockLit: labs(["#b6aeb8", "#c0b6b8", "#aea8b4"]),
+  rock: labs(["#7c7a92", "#727088", "#86829a"]),
+  rockShade: labs(["#565a7e", "#4e5276", "#5e5e82"]),
+  forest: labs(["#2c4840", "#324e3e", "#284046", "#385242"]),
+  forestLit: labs(["#566e4a", "#62764e", "#4e684c"]),
+  pasture: labs(["#86a05a", "#92a862", "#7c9856"]),
+  water: labs(["#5a86a8", "#5080a2", "#6690ac"]),
+  ripple: labs(["#c8dae6", "#d6e2ea", "#bcd0de"]),
+  stone: labs(["#aaa290", "#9e9888", "#b6ac96", "#8e8a82"]),
+  stoneShade: labs(["#6c6a7e", "#625f74"]),
+  reed: labs(["#8a9a52", "#a0a85a", "#6e8048", "#b4aa62"]),
+};
+const FIR_DARK = labs(["#1e3434", "#223a36", "#1a2e30"]);
+const FIR_MID = labs(["#2e4a40", "#34503f", "#2a4448"]);
+const FIR_LIT = labs(["#4c6a4c", "#58744e", "#466652"]);
+
+/* Sakura: cherry trees in flower along a river, soft spring light, petals on the wind. */
+const SAKURA = {
+  far: labs(["#90a4c6", "#9aaac8", "#8ca0c2"]),
+  farLit: labs(["#c8d2d8", "#d0d6d6"]),
+  hill: labs(["#7a9a8c", "#86a08e", "#74948a"]),
+  hillLit: labs(["#b2c296", "#bccaa0"]),
+  lit: labs(["#fde6ec", "#fff0f2", "#fbdce6", "#fef4f0"]),
+  mid: labs(["#f2b8cc", "#f4c2d2", "#eeaec6", "#f6cad8"]),
+  shade: labs(["#c890b6", "#bc84ae", "#d09cbe", "#b48ab0"]),
+  deep: labs(["#8e6a98", "#9a709a"]),
+  bark: labs(["#3e3242", "#4a3a46", "#362c3c"]),
+  water: labs(["#a0bed6", "#aac6da", "#96b6ce"]),
+  waterShade: labs(["#6c8eb2", "#7292b4", "#6688ac"]),
+  waterPink: labs(["#e6bed2", "#deb6ce", "#ecc8d8"]),
+  bank: labs(["#6e8a56", "#7a925a", "#66804e"]),
+  petal: labs(["#fbd2de", "#f6c2d2", "#fde6ec"]),
+};
+
+/* Wheat: ripe wheat in rolling country, poppies along the track. */
+const WHEAT = {
+  lit: labs(["#f6dc84", "#fae49a", "#f2d478", "#f8e0a0"]),
+  gold: labs(["#eac45a", "#f0cc62", "#e2b850", "#f4d06c"]),
+  mid: labs(["#d2a64a", "#c89a44", "#daae52"]),
+  dark: labs(["#a27a38", "#96723a", "#8c6a34"]),
+  shade: labs(["#8e7e72", "#82766e", "#988470", "#7c6e74"]),
+  green: labs(["#9ca64c", "#8e9c46", "#a8ac56"]),
+  fields: labs(["#e2c272", "#dab868", "#c8b46e", "#d6c27e"]),
+  fieldsGreen: labs(["#8ea258", "#98a860", "#7e9852"]),
+  ploughed: labs(["#b89068", "#a8866a", "#c49c74"]),
+};
+
+/**
+ * The sky: its gradient, its clouds and how many there are, and where the light comes from (the
+ * sun high on the left by day, low on the left at golden hour, below the horizon at dusk).
+ */
 interface SkyStyle {
   sky: Ramp;
   deep: Lab[];
@@ -318,22 +460,42 @@ interface SkyStyle {
   /** How much of the sky the cumulus cover and how much thin veil there is (1 = the meadow's). */
   cover: number;
   veil: number;
+  /**
+   * Light on the clouds: its direction (x, y, z: from the upper left by day), how much a heap's
+   * top (> 0) or its base (< 0) catches it, and how dark the flat bases are.
+   */
+  sun: [number, number, number, number, number];
+  /** Early stars (per 1000 px² of upper sky) and whether a pale moon is up. */
+  stars: number;
+  moon: boolean;
+  /** Long thin streaks of cloud: how many (1 = the day's), and the band of sky they lie in (× horizon). */
+  streaks: [number, number, number];
 }
 
+const DAY_SUN: SkyStyle["sun"] = [-0.6, -0.6, 0.53, 0.6, 0.55];
+
+const DAY_SKY: SkyStyle = {
+  sky: SKY,
+  deep: SKY_DEEP,
+  turq: SKY_TURQ,
+  shade: CLOUD_SHADE,
+  light: CLOUD_LIGHT,
+  warm: CLOUD_WARM,
+  lav: CLOUD_LAV,
+  haze: HAZE,
+  cover: 1,
+  veil: 1,
+  sun: DAY_SUN,
+  stars: 0,
+  moon: false,
+  streaks: [1, 0.04, 0.55],
+};
+
 const SKIES: Record<MeadowBiome, SkyStyle> = {
-  meadow: {
-    sky: SKY,
-    deep: SKY_DEEP,
-    turq: SKY_TURQ,
-    shade: CLOUD_SHADE,
-    light: CLOUD_LIGHT,
-    warm: CLOUD_WARM,
-    lav: CLOUD_LAV,
-    haze: HAZE,
-    cover: 1,
-    veil: 1,
-  },
+  meadow: DAY_SKY,
+  wheat: { ...DAY_SKY, cover: 0.9 },
   snow: {
+    ...DAY_SKY,
     sky: ramp([
       [0, "#2866b4"],
       [0.3, "#3a80c4"],
@@ -362,6 +524,7 @@ const SKIES: Record<MeadowBiome, SkyStyle> = {
     veil: 1.3,
   },
   desert: {
+    ...DAY_SKY,
     sky: ramp([
       [0, "#2f76bc"],
       [0.3, "#4890c8"],
@@ -389,13 +552,199 @@ const SKIES: Record<MeadowBiome, SkyStyle> = {
     cover: 0.55,
     veil: 0.8,
   },
+  coast: {
+    ...DAY_SKY,
+    sky: ramp([
+      [0, "#2c78c0"],
+      [0.3, "#4590cc"],
+      [0.6, "#72b0d8"],
+      [0.85, "#acd0e0"],
+      [1, "#d2e2e4"],
+    ]),
+    turq: labs(["#70c0dc", "#82cade", "#5eb6dc"]),
+    haze: labs(["#d8e4ea", "#e0e6ea", "#d0dee8", "#e6e4e4"]),
+    cover: 0.8,
+    veil: 1.1,
+  },
+  lavender: {
+    ...DAY_SKY,
+    sky: ramp([
+      [0, "#2462b4"],
+      [0.3, "#3478c2"],
+      [0.6, "#5c9ad0"],
+      [0.85, "#9cc0dc"],
+      [1, "#d2d8e0"],
+    ]),
+    deep: labs(["#205cac", "#2866b6", "#2e6cb8"]),
+    lav: labs(["#a69cd0", "#b4a8d4", "#9c96c8"]),
+    haze: labs(["#dcd6e4", "#e2dae2", "#d6d4e6", "#e6dcdc"]),
+    cover: 0.5,
+    veil: 0.8,
+  },
+  autumn: {
+    ...DAY_SKY,
+    sky: ramp([
+      [0, "#2c6cb6"],
+      [0.3, "#3e82c4"],
+      [0.6, "#6ca4d0"],
+      [0.85, "#a8c6d8"],
+      [1, "#d6dcd6"],
+    ]),
+    warm: labs(["#f2d8b4", "#f4dcc0", "#eed0bc"]),
+    haze: labs(["#e0dcd0", "#d8dcd6", "#e6dccc", "#d6d8dc"]),
+    cover: 0.85,
+    veil: 1,
+  },
+  lake: {
+    ...DAY_SKY,
+    sky: ramp([
+      [0, "#2a68b6"],
+      [0.3, "#3c82c6"],
+      [0.6, "#6aa8d6"],
+      [0.85, "#a4cce2"],
+      [1, "#d6e4ea"],
+    ]),
+    haze: labs(["#dce6ee", "#e4e8ee", "#d2deea", "#e8e6ec"]),
+    cover: 0.7,
+    veil: 1.1,
+  },
+  sakura: {
+    ...DAY_SKY,
+    sky: ramp([
+      [0, "#4c88c8"],
+      [0.3, "#5c96cc"],
+      [0.6, "#86b2d6"],
+      [0.85, "#bcd2e0"],
+      [1, "#e2e2e6"],
+    ]),
+    deep: labs(["#3e7ec2", "#4884c4", "#4a80c0"]),
+    warm: labs(["#f4dcd6", "#f6e0d8", "#f2d6d2"]),
+    lav: labs(["#b0a8d0", "#bcb2d4", "#a8a2cc"]),
+    haze: labs(["#e8e2e8", "#ece4e6", "#e0dee8", "#f0e6e6"]),
+    cover: 0.75,
+    veil: 1.3,
+  },
 };
+
+/** Golden hour: the sun low on the left, warm light on everything it reaches, the sky gone to gold. */
+const GOLDEN_SKY: SkyStyle = {
+  sky: ramp([
+    [0, "#4778b4"],
+    [0.25, "#5e8cc0"],
+    [0.5, "#8faac4"],
+    [0.72, "#d2bfa6"],
+    [0.88, "#f0c890"],
+    [1, "#f6d49a"],
+  ]),
+  deep: labs(["#3e6ea8", "#4674ae", "#3c6aa6"]),
+  turq: labs(["#86aec8", "#94b6c6", "#7ea6c4"]),
+  shade: ramp([
+    [0, "#7c7aa4"],
+    [0.35, "#9890b0"],
+    [0.65, "#b8a2ac"],
+    [1, "#d4b4a6"],
+  ]),
+  light: ramp([
+    [0, "#e2b896"],
+    [0.4, "#f2cc9e"],
+    [0.75, "#f8dcae"],
+    [1, "#fff0d2"],
+  ]),
+  warm: labs(["#f8c48c", "#f6b48a", "#fad09c", "#f2a888"]),
+  lav: labs(["#9a8cb8", "#a896bc", "#9488b2"]),
+  haze: labs(["#f0d2a6", "#ecc6a4", "#f2dab6", "#e6c4aa"]),
+  cover: 0.85,
+  veil: 1.2,
+  sun: [-0.9, -0.12, 0.42, 0.35, 0.35],
+  stars: 0,
+  moon: false,
+  streaks: [1.6, 0.1, 0.8],
+};
+
+/** Dusk: the sun just down, a violet-blue sky over a warm band on the horizon, the first stars. */
+const DUSK_SKY: SkyStyle = {
+  sky: ramp([
+    [0, "#27346a"],
+    [0.25, "#36457e"],
+    [0.5, "#5a5f98"],
+    [0.68, "#8a76a4"],
+    [0.82, "#c48c9c"],
+    [0.93, "#eca484"],
+    [1, "#f4bc86"],
+  ]),
+  deep: labs(["#232f62", "#2a3670", "#222c5c"]),
+  turq: labs(["#4a5a90", "#525e94", "#465690"]),
+  shade: ramp([
+    [0, "#3c3e6a"],
+    [0.4, "#4e4a78"],
+    [0.7, "#6a5a86"],
+    [1, "#8a6c8c"],
+  ]),
+  light: ramp([
+    [0, "#6c5a86"],
+    [0.4, "#966a8e"],
+    [0.75, "#c4808e"],
+    [1, "#e49c8a"],
+  ]),
+  warm: labs(["#dc9282", "#e6a08a", "#d48a82"]),
+  lav: labs(["#5a5688", "#625c90", "#545084"]),
+  haze: labs(["#d89a92", "#e4a68c", "#c8909a", "#eab090"]),
+  cover: 0.22,
+  veil: 0.7,
+  sun: [-0.45, 0.8, 0.4, -0.7, -0.25],
+  stars: 1,
+  moon: true,
+  streaks: [3.2, 0.3, 0.9],
+};
+
+function skyStyle(biome: MeadowBiome, light: MeadowLight): SkyStyle {
+  const day = SKIES[biome];
+  if (light === "day") return day;
+  const base = light === "golden" ? GOLDEN_SKY : DUSK_SKY;
+  return { ...base, cover: base.cover * (0.5 + 0.5 * day.cover), veil: base.veil * day.veil };
+}
+
+/* ------------------------------------------------------------------ light of the hour */
+
+/** Recolours a colour for the time of day. */
+type Grade = (c: Lab) => Lab;
+
+/**
+ * Golden hour: what the low sun reaches turns amber and rose, the shade cools towards violet and
+ * deepens, so the land reads as warm light and long blue shadows.
+ */
+const goldenGrade: Grade = (c) => {
+  const t = smoothstep(0.42, 0.9, c.L);
+  const s = 1 - t;
+  return {
+    L: c.L * (0.93 + 0.07 * t) - 0.03 * s,
+    a: c.a * 0.86 + 0.014 + 0.028 * t,
+    b: c.b * 0.86 + 0.012 + 0.05 * t - 0.03 * s,
+  };
+};
+
+/**
+ * Dusk: no direct sun; the land darkens and cools to blue-violet in the afterglow, the palest
+ * things (snow, sand, blossom, water) keeping a little rose from the sky.
+ */
+const duskGrade: Grade = (c) => {
+  const t = smoothstep(0.55, 0.95, c.L);
+  return {
+    L: 0.06 + c.L * 0.68,
+    a: c.a * 0.6 + 0.014 + 0.026 * t,
+    b: c.b * 0.56 - 0.045 + 0.024 * t,
+  };
+};
+
+const GRADES: Record<MeadowLight, Grade | null> = { day: null, golden: goldenGrade, dusk: duskGrade };
 
 /* ------------------------------------------------------------------ brush */
 
 class Brush {
   /** Device pixels per user unit of the current transform (decides bristle detail). */
   scale = 1;
+  /** The light of the hour, applied to every colour laid down (null in plain daylight). */
+  grade: Grade | null = null;
   constructor(
     readonly ctx: Ctx,
     readonly rng: Rng,
@@ -417,6 +766,7 @@ class Brush {
     texture = 1,
   ): void {
     const { ctx, rng } = this;
+    if (this.grade) col = this.grade(col);
     const dx = Math.cos(ang);
     const dy = Math.sin(ang);
     const nx = -dy;
@@ -482,6 +832,7 @@ class Brush {
   /** A short, fat dab (flowers, foliage). */
   dab(x: number, y: number, r: number, ang: number, col: Lab, alpha: number): void {
     const { ctx, rng } = this;
+    if (this.grade) col = this.grade(col);
     ctx.globalAlpha = alpha;
     ctx.fillStyle = vary(col, rng, 0.03, 0.08, 0.06);
     ctx.beginPath();
@@ -518,9 +869,27 @@ function centred(
 
 /* ------------------------------------------------------------------ layout */
 
-export type MeadowBiome = "meadow" | "snow" | "desert";
+export type MeadowBiome =
+  "meadow" | "snow" | "desert" | "coast" | "lavender" | "autumn" | "lake" | "sakura" | "wheat";
 
-type TreeKind = "poplar" | "oak" | "pine" | "shrub";
+/** The hour the landscape is painted at. */
+export type MeadowLight = "day" | "golden" | "dusk";
+
+const BIOMES: readonly MeadowBiome[] = [
+  "meadow",
+  "snow",
+  "desert",
+  "coast",
+  "lavender",
+  "autumn",
+  "lake",
+  "sakura",
+  "wheat",
+];
+const LIGHTS: readonly MeadowLight[] = ["day", "golden", "dusk"];
+
+type TreeKind =
+  "poplar" | "oak" | "pine" | "fir" | "shrub" | "gorse" | "cypress" | "birch" | "maple" | "cherry";
 
 interface Tree {
   kind: TreeKind;
@@ -538,6 +907,12 @@ interface Tree {
 
 interface Layout {
   biome: MeadowBiome;
+  light: MeadowLight;
+  /** The colour grade of the hour (null by day). */
+  grade: Grade | null;
+  /** Length of cast shadows (× the daytime length) and how strongly sun and shade alternate on the ground. */
+  shadow: number;
+  sun: number;
   w: number;
   h: number;
   dpr: number;
@@ -559,8 +934,11 @@ interface Layout {
   /** Mean height of the foreground (CSS px), from its crest to the bottom edge. */
   meadowH: number;
   trees: Tree[];
-  /** Meadow: the path's centre line in ground units, gx = a + b * sin(gz * k + ph), and half its width. */
-  path: { a: number; b: number; k: number; ph: number; half: number } | null;
+  /**
+   * Meadow and wheat: the path's centre line in ground units, gx = a + c * gz + b * sin(gz * k + ph),
+   * half its width and how ragged its edges are. Sakura: the river.
+   */
+  path: { a: number; b: number; c: number; k: number; ph: number; half: number; rough: number } | null;
   /** Snow: the peaks of the main range, as [x, y, half base, ridge slant] for each. */
   peaks: number[];
   /** Desert: the crest lines of the dunes in front, far to near (y for each CSS px column). */
@@ -568,6 +946,13 @@ interface Layout {
   /** Desert: each dune crest's wave (frequency, phase), the first crest included; buttes as [x, half width, height]. */
   waves: number[];
   buttes: number[];
+  /** Coast: where the headland's cliffs meet the sea (y for each CSS px column; below the scene elsewhere). */
+  foot: Float32Array | null;
+  /**
+   * Biome details: coast, the cliff end's x and the sails as [x, y, size]; lavender, the rows'
+   * vanishing point x and the farmhouse as [x, y, size].
+   */
+  marks: number[];
   /** Sky tile period in CSS px (tilePx device px). */
   tile: number;
   tilePx: number;
@@ -643,7 +1028,15 @@ const meadowScenery: Scenery = (L, rng, seed, side) => {
     phase: rng.next() * TAU,
   });
   const dir = side(1) > 0.5 ? 1 : -1;
-  L.path = { a: dir * 0.03, b: dir * 0.3, k: 1.4, ph: -2.97 + rng.signed(0.3), half: 0.05 };
+  L.path = {
+    a: dir * 0.03,
+    b: dir * 0.3,
+    k: 1.4,
+    ph: -2.97 + rng.signed(0.3),
+    half: 0.05,
+    rough: 0.35,
+    c: 0,
+  };
 };
 
 const snowScenery: Scenery = (L, rng, seed, side) => {
@@ -808,16 +1201,384 @@ const desertScenery: Scenery = (L, rng, seed, side) => {
   }
 };
 
+/** y of the foreground at depth d (0 at its crest, 1 at the bottom edge) in column x. */
+const groundY = (L: Layout, x: number, d: number) => {
+  const c = colAt(L.crest, x);
+  return c + d * (L.h - c);
+};
+
+const coastScenery: Scenery = (L, rng, seed, side) => {
+  const { w, h, F, hz, far, near, crest } = L;
+  const foot = new Float32Array(far.length);
+  const sTop = hashInt(seed, 20);
+  const sFar = hashInt(seed, 16);
+  const sCrest = hashInt(seed, 14);
+  // a headland from the edge of the picture out to its cliff end, rising gently inland
+  const end = rng.range(0.28, 0.38);
+  const tall = F * rng.range(0.12, 0.155);
+  const slope = rng.range(0.15, 0.35);
+  for (let x = 0; x < far.length; x++) {
+    const u = side(x / w);
+    // the coast running on beyond it, low on the horizon, fading out to sea
+    const tail = smoothstep(end + 0.42, end - 0.05, u);
+    far[x] = hz - F * (0.002 + tail * (0.024 + 0.01 * fbm(x / (F * 0.25), 0.6, sFar, 0, 2)));
+    if (u < end) {
+      const k = u / end;
+      near[x] =
+        hz -
+        tall * (1 - slope * k * k) * (1 - 0.3 * smoothstep(end - 0.03, end, u)) +
+        F * 0.006 * fbm(x / (F * 0.07), 1.3, sTop, 0, 2);
+      foot[x] = hz + F * (0.05 + 0.11 * (1 - k));
+    } else {
+      near[x] = h + 20;
+      foot[x] = h + 20;
+    }
+    // the cliff top we stand on, higher on the headland's side
+    crest[x] = hz + F * (0.19 + 0.12 * smoothstep(0, 0.9, u) + 0.012 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  L.foot = foot;
+  L.marks.push(side(end) * w);
+  // a sail or two far out
+  const nSails = 1 + rng.int(2);
+  let su = rng.range(end + 0.2, 0.9);
+  for (let i = 0; i < nSails; i++) {
+    L.marks.push(side(su) * w, hz + F * rng.range(0.012, 0.035), F * rng.range(0.032, 0.045) * (i ? 0.7 : 1));
+    su = clamp(su + rng.range(0.1, 0.2) * (su > 0.7 ? -1 : 1), end + 0.15, 0.95);
+  }
+  // gorse in flower on the cliff top
+  const nGorse = 2 + rng.int(3);
+  for (let i = 0; i < nGorse; i++) {
+    const x = side(rng.range(0.02, 0.55)) * w;
+    const d = rng.range(0.15, 0.75);
+    const ht = F * persp(d) * rng.range(0.07, 0.11);
+    L.trees.push({
+      kind: "gorse",
+      x,
+      y: groundY(L, x, d),
+      ht,
+      wd: ht * rng.range(1.5, 2.1),
+      lean: 0.01,
+      give: rng.range(0.5, 0.9),
+      phase: rng.next() * TAU,
+    });
+  }
+};
+
+const lavenderScenery: Scenery = (L, rng, seed, side) => {
+  const { w, F, hz, far, near, crest } = L;
+  const sFar = hashInt(seed, 12);
+  const sNear = hashInt(seed, 13);
+  const sCrest = hashInt(seed, 14);
+  // a long blue mountain behind low hills
+  const peak = rng.range(0.2, 0.8);
+  for (let x = 0; x < far.length; x++) {
+    const u = side(x / w);
+    const ridge = Math.exp(-((((u - peak) * w) / (F * 1.3)) ** 2));
+    far[x] =
+      hz -
+      F *
+        (0.035 +
+          0.09 * ridge +
+          0.018 * fbm(x / (F * 0.35), 0.3, sFar, 0, 3) +
+          0.004 * fbm(x / (F * 0.08), 1.7, sFar + 1, 0, 2));
+    near[x] = hz - F * (0.012 + 0.018 * (0.5 + 0.5 * fbm(x / (F * 0.25), 2.1, sNear, 0, 3)));
+    crest[x] = hz + F * (0.006 + 0.004 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  // the rows' vanishing point, and their spacing (px across per px below the horizon)
+  const vu = rng.range(0.3, 0.46);
+  L.marks.push(side(vu) * w, rng.range(0.4, 0.5));
+  // a farmhouse out on the far side, with its cypresses
+  const hu = rng.range(0.66, 0.84);
+  const hx = side(hu) * w;
+  const hs = F * rng.range(0.05, 0.065);
+  const hy = hz + F * 0.004;
+  L.marks.push(hx, hy, hs);
+  const away = side(1) > 0.5 ? 1 : -1;
+  const nCyp = 2 + rng.int(2);
+  for (let i = 0; i < nCyp; i++) {
+    const ht = F * rng.range(0.12, 0.17) * (i === 0 ? 1 : 0.85);
+    L.trees.push({
+      kind: "cypress",
+      x: hx + away * (hs * 0.9 + i * F * rng.range(0.02, 0.028)),
+      y: hy + F * 0.002,
+      ht,
+      wd: ht * rng.range(0.2, 0.24),
+      lean: 0.01,
+      give: rng.range(0.3, 0.5),
+      phase: rng.next() * TAU,
+    });
+  }
+  // and a taller pair at the near edge of the field
+  const nx = side(rng.range(0.04, 0.14)) * w;
+  for (let i = 0; i < 2; i++) {
+    const ht = F * rng.range(0.24, 0.32) * (i === 0 ? 1 : 0.8);
+    const x = nx - away * i * F * 0.045;
+    L.trees.push({
+      kind: "cypress",
+      x,
+      y: groundY(L, x, 0.07 + i * 0.03),
+      ht,
+      wd: ht * rng.range(0.19, 0.23),
+      lean: 0.01,
+      give: rng.range(0.3, 0.5),
+      phase: rng.next() * TAU,
+    });
+  }
+};
+
+/** Autumn: the crowns of the wood along its edge, as [x, y, radius, colour family] each. */
+const autumnScenery: Scenery = (L, rng, seed, side) => {
+  const { w, h, F, hz, far, near, crest } = L;
+  const sFar = hashInt(seed, 12);
+  const sCrest = hashInt(seed, 14);
+  const sWood = hashInt(seed, 15);
+  // the wood stands taller on one side, lower and broken on the other
+  const tallAt = (u: number) => F * (0.08 + 0.11 * smoothstep(0.95, 0.12, u));
+  const crowns = L.marks;
+  for (let x = -F * 0.06; x < w + F * 0.06;) {
+    const u = side(clamp(x / w, 0, 1));
+    const t = tallAt(u) * (0.85 + 0.3 * (0.5 + 0.5 * fbm(x / (F * 0.2), 0.5, sWood, 0, 2)));
+    const r = F * rng.range(0.03, 0.055) * (0.7 + 0.5 * (t / (F * 0.19)));
+    crowns.push(x, hz - t + r, r, rng.int(6));
+    x += r * rng.range(0.9, 1.5);
+  }
+  // a second, lower tier in front, so the wood has depth
+  const back = crowns.length;
+  for (let x = -F * 0.04; x < w + F * 0.04;) {
+    const r = F * rng.range(0.025, 0.04);
+    const u = side(clamp(x / w, 0, 1));
+    if (rng.chance(0.75)) crowns.push(x, hz - tallAt(u) * rng.range(0.35, 0.6) + r, r, rng.int(6));
+    x += r * rng.range(1.1, 2);
+  }
+  for (let x = 0; x < far.length; x++) {
+    far[x] =
+      hz -
+      F * (0.11 + 0.05 * fbm(x / (F * 0.5), 0.3, sFar, 0, 3) + 0.004 * fbm(x / (F * 0.1), 1.7, sFar, 0, 2));
+    let top = hz;
+    for (let k = 0; k < back; k += 4) {
+      const dx = x - crowns[k];
+      const r = crowns[k + 2];
+      if (Math.abs(dx) < r) top = Math.min(top, crowns[k + 1] - Math.sqrt(r * r - dx * dx));
+    }
+    near[x] = top;
+    crest[x] =
+      hz +
+      F * (0.03 + 0.05 * smoothstep(0.15, 0.95, side(x / w)) + 0.01 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  // birches close by on the side where the wood is tall
+  const nBirch = 3 + rng.int(2);
+  let bu0 = rng.range(0.02, 0.07);
+  for (let i = 0; i < nBirch; i++) {
+    const ht = h * rng.range(0.8, 1.02) * (i === 0 ? 1 : rng.range(0.8, 0.95));
+    L.trees.push({
+      kind: "birch",
+      x: side(bu0) * w,
+      y: h * rng.range(0.97, 1.03),
+      ht,
+      wd: ht * rng.range(0.3, 0.38),
+      lean: rng.range(0.005, 0.02),
+      give: rng.range(0.4, 0.6),
+      phase: rng.next() * TAU,
+    });
+    bu0 += rng.range(0.045, 0.09);
+  }
+  // and a maple turning red, out in the meadow on the other side
+  const mx = side(rng.range(0.62, 0.84)) * w;
+  const md = rng.range(0.12, 0.3);
+  const mh = F * persp(md) * rng.range(0.34, 0.42);
+  L.trees.push({
+    kind: "maple",
+    x: mx,
+    y: groundY(L, mx, md),
+    ht: mh,
+    wd: mh * rng.range(1.0, 1.2),
+    lean: 0.012,
+    give: 0.45,
+    phase: rng.next() * TAU,
+  });
+};
+
+const lakeScenery: Scenery = (L, rng, seed, side) => {
+  const { w, h, F, hz, far, near, crest } = L;
+  // a range above the far shore, one peak standing out
+  const count = 2 + Math.round(w / (F * 1.0)) + rng.int(2);
+  const hero = Math.min(count - 1, Math.floor(side(rng.range(0.35, 0.7)) * count));
+  const peaks: number[] = [];
+  for (let k = 0; k < count; k++) {
+    const x = ((k + 0.5 + rng.signed(0.35)) / count) * w;
+    const tall = k === hero ? F * rng.range(0.26, 0.32) : F * rng.range(0.1, 0.2);
+    peaks.push(
+      x,
+      hz - F * 0.02 - tall,
+      F * (k === hero ? rng.range(0.5, 0.65) : rng.range(0.3, 0.5)),
+      rng.signed(0.4),
+    );
+  }
+  L.peaks = peaks;
+  const sRock = hashInt(seed, 15);
+  const sFar = hashInt(seed, 16);
+  const sCrest = hashInt(seed, 14);
+  for (let x = 0; x < far.length; x++) {
+    let top = 0;
+    for (let k = 0; k < peaks.length; k += 4) {
+      const d = Math.abs(x - peaks[k]) / peaks[k + 2];
+      if (d < 1) top = Math.max(top, (hz - F * 0.02 - peaks[k + 1]) * Math.pow(1 - d, 1.25));
+    }
+    const high = smoothstep(0, F * 0.25, top);
+    const jag =
+      F *
+      (0.01 + 0.01 * high) *
+      (fbm(x / (F * 0.06), 0.5, sRock, 0, 3) + 0.4 * fbm(x / (F * 0.015), 2.5, sRock + 1, 0, 2));
+    near[x] = hz - F * 0.02 - top + jag;
+    far[x] = hz - F * (0.1 + 0.08 * (0.5 + 0.5 * fbm(x / (F * 0.35), 7.7, sFar, 0, 3)));
+    // the near shore: a grassy bank rising on one side, low by the water on the other
+    const u = side(x / w);
+    crest[x] =
+      hz + F * (0.27 - 0.13 * smoothstep(0.5, 0.02, u) + 0.012 * fbm(x / (F * 0.3), 4.2, sCrest, 0, 2));
+  }
+  // dark firs on the bank
+  const nBig = 2 + rng.int(2);
+  for (let i = 0; i < nBig; i++) {
+    const ht = h * rng.range(0.5, 0.68) * (i === 0 ? 1 : 0.8);
+    L.trees.push({
+      kind: "fir",
+      x: side(rng.range(0.03, 0.08) + i * rng.range(0.05, 0.08)) * w,
+      y: h * rng.range(0.96, 1.03),
+      ht,
+      wd: ht * rng.range(0.3, 0.36),
+      lean: rng.range(0.005, 0.02),
+      give: rng.range(0.35, 0.55),
+      phase: rng.next() * TAU,
+    });
+  }
+};
+
+const sakuraScenery: Scenery = (L, rng, seed, side) => {
+  const { w, F, hz, far, near, crest } = L;
+  const sFar = hashInt(seed, 12);
+  const sNear = hashInt(seed, 13);
+  const sCrest = hashInt(seed, 14);
+  const foot = new Float32Array(far.length);
+  const swell = rng.range(0.2, 0.8);
+  // the river crosses the view, coming nearer (and wider) on one side
+  const nearer = (u: number) => smoothstep(-0.1, 1.1, u);
+  for (let x = 0; x < far.length; x++) {
+    const u = side(x / w);
+    const hill = Math.exp(-((((u - swell) * w) / (F * 0.9)) ** 2));
+    far[x] = hz - F * (0.03 + 0.06 * hill + 0.02 * fbm(x / (F * 0.4), 0.3, sFar, 0, 3));
+    near[x] = hz - F * (0.012 + 0.014 * (0.5 + 0.5 * fbm(x / (F * 0.2), 2.1, sNear, 0, 3)));
+    const k = nearer(u);
+    const wob = F * 0.008 * fbm(x / (F * 0.5), 4.2, sCrest, 0, 2);
+    // the far bank's waterline, then the near bank where the foreground begins
+    foot[x] = hz + F * (0.03 + 0.04 * k) + wob;
+    crest[x] = hz + F * (0.12 + 0.1 * k) + wob * 1.5;
+  }
+  L.foot = foot;
+  // cherry trees in a row along the far bank, larger where it comes nearer
+  for (let x = -F * 0.04; x < w + F * 0.06;) {
+    const k = nearer(side(clamp(x / w, 0, 1)));
+    const ht = F * (0.16 + 0.2 * k) * rng.range(0.85, 1.12);
+    L.trees.push({
+      kind: "cherry",
+      x,
+      y: colAt(foot, x) - F * rng.range(0.004, 0.022),
+      ht,
+      wd: ht * rng.range(1.25, 1.5),
+      lean: 0.01,
+      give: rng.range(0.3, 0.45),
+      phase: rng.next() * TAU,
+    });
+    x += ht * rng.range(0.8, 1.15);
+  }
+};
+
+const wheatScenery: Scenery = (L, rng, seed, side) => {
+  const { w, F, hz, far, near, crest } = L;
+  const sFar = hashInt(seed, 12);
+  const sNear = hashInt(seed, 13);
+  const sCrest = hashInt(seed, 14);
+  const dip = rng.range(0.55, 0.8);
+  for (let x = 0; x < far.length; x++) {
+    const u = side(x / w);
+    far[x] =
+      hz -
+      F * (0.05 + 0.03 * fbm(x / (F * 0.5), 0.3, sFar, 0, 3) + 0.005 * fbm(x / (F * 0.1), 1.7, sFar, 0, 2));
+    // rolling country: long swells, one behind another
+    const roll = 0.5 + 0.5 * fbm(x / (F * 0.42), 2.1, sNear, 0, 2);
+    near[x] = hz - F * (0.02 + 0.075 * roll * roll);
+    crest[x] =
+      hz +
+      F * (0.05 + 0.11 * smoothstep(0.08, dip + 0.08, u) + 0.014 * fbm(x / (F * 0.4), 4.2, sCrest, 0, 2));
+  }
+  // a lone oak on a rise, and a couple more along a hedge
+  const ox = side(rng.range(0.55, 0.8)) * w;
+  const oh = F * rng.range(0.09, 0.115);
+  L.trees.push({
+    kind: "oak",
+    x: ox,
+    y: colAt(near, ox) + F * 0.006,
+    ht: oh,
+    wd: oh * rng.range(1.1, 1.3),
+    lean: 0.012,
+    give: 0.45,
+    phase: rng.next() * TAU,
+  });
+  const dir = side(1) > 0.5 ? 1 : -1;
+  // a farm track through the wheat
+  L.path = {
+    a: dir * 0.05,
+    b: dir * 0.22,
+    c: 0,
+    k: 1.3,
+    ph: -2.9 + rng.signed(0.3),
+    half: 0.04,
+    rough: 0.25,
+  };
+};
+
 const SCENERY: Record<MeadowBiome, Scenery> = {
   meadow: meadowScenery,
   snow: snowScenery,
   desert: desertScenery,
+  coast: coastScenery,
+  lavender: lavenderScenery,
+  autumn: autumnScenery,
+  lake: lakeScenery,
+  sakura: sakuraScenery,
+  wheat: wheatScenery,
 };
 
-function computeLayout(w: number, h: number, dpr: number, seed: number, biome: MeadowBiome): Layout {
+/** Height of the horizon (× the scene's height) for a 16:10 card and for a 3:1 strip. */
+const HORIZON: Record<MeadowBiome, [number, number]> = {
+  meadow: [0.6, 0.64],
+  snow: [0.64, 0.68],
+  desert: [0.6, 0.64],
+  coast: [0.46, 0.5],
+  lavender: [0.56, 0.6],
+  autumn: [0.6, 0.64],
+  lake: [0.5, 0.54],
+  sakura: [0.56, 0.6],
+  wheat: [0.58, 0.62],
+};
+
+/** Cast shadows (length) and the play of sun and shade on the ground, for each hour. */
+const SHADOWS: Record<MeadowLight, [number, number]> = {
+  day: [1, 1],
+  golden: [2.3, 1.15],
+  dusk: [0.35, 0.35],
+};
+
+function computeLayout(
+  w: number,
+  h: number,
+  dpr: number,
+  seed: number,
+  biome: MeadowBiome,
+  light: MeadowLight,
+): Layout {
   // 0 for a 16:10 card, 1 for a 3:1 strip (or wider)
   const t = clamp(Math.log(w / h / 1.6) / Math.log(3 / 1.6), 0, 1);
-  const hz = h * (biome === "snow" ? lerp(0.64, 0.68, t) : lerp(0.6, 0.64, t));
+  const hz = h * lerp(HORIZON[biome][0], HORIZON[biome][1], t);
   const F = Math.min(h, w * 0.9);
   const bu = clamp(Math.sqrt(w * h) / 52, 2.8, 7.5);
   const rng = new Rng(hashInt(seed, 11));
@@ -827,6 +1588,10 @@ function computeLayout(w: number, h: number, dpr: number, seed: number, biome: M
   const tilePx = Math.ceil(w * dpr);
   const L: Layout = {
     biome,
+    light,
+    grade: GRADES[light],
+    shadow: SHADOWS[light][0],
+    sun: SHADOWS[light][1],
     w,
     h,
     dpr,
@@ -845,6 +1610,8 @@ function computeLayout(w: number, h: number, dpr: number, seed: number, biome: M
     dunes: [],
     waves: [],
     buttes: [],
+    foot: null,
+    marks: [],
     tile: tilePx / dpr,
     tilePx,
     skyH: Math.min(h, hz + bu * 2),
@@ -884,10 +1651,14 @@ const FLOWER_BUTTERCUP = 1;
 const FLOWER_DAISY = 2;
 const FLOWER_POPPY = 3;
 const FLOWER_CORNFLOWER = 4;
+const FLOWER_THRIFT = 5;
+
+/** Biomes whose grass has flowers in it. */
+const FLOWERY: ReadonlySet<MeadowBiome> = new Set(["meadow", "coast", "wheat", "sakura", "lake"]);
 
 function meadowAt(L: Layout, seed: number): Meadow {
-  const { w, h, F, crest, path: P } = L;
-  const flowers = L.biome === "meadow";
+  const { w, h, F, crest, path: P, sun, biome } = L;
+  const flowers = FLOWERY.has(biome);
   const sLight = hashInt(seed, 41);
   const sLight2 = hashInt(seed, 42);
   const sButter = hashInt(seed, 43);
@@ -906,15 +1677,17 @@ function meadowAt(L: Layout, seed: number): Meadow {
       const d = depth(x, y);
       const u = gx(x, d);
       const v = 1 / persp(d);
-      return 1.0 * fbm(u * 0.8, v * 0.9, sLight, 0, 3) + 0.4 * fbm(u * 2.2, v * 2.6, sLight2, 0, 2) + 0.12;
+      const l = 1.0 * fbm(u * 0.8, v * 0.9, sLight, 0, 3) + 0.4 * fbm(u * 2.2, v * 2.6, sLight2, 0, 2) + 0.12;
+      // after sunset the ground lies in one soft shade
+      return l * sun - 0.15 * (1 - Math.min(1, sun));
     },
     path(x, y) {
       if (!P) return 0;
       const d = depth(x, y);
       const u = gx(x, d);
       const v = 1 / persp(d);
-      const centre = P.a + P.b * Math.sin(v * P.k + P.ph);
-      const off = Math.abs(u - centre) / P.half + 0.35 * noise2(u * 9, v * 6, sPath, 0);
+      const centre = P.a + P.c * v + P.b * Math.sin(v * P.k + P.ph);
+      const off = Math.abs(u - centre) / P.half + P.rough * noise2(u * 9, v * 6, sPath, 0);
       return (1 - smoothstep(0.55, 1.05, off)) * smoothstep(0, 0.07, d);
     },
     flower(x, y, r) {
@@ -922,6 +1695,27 @@ function meadowAt(L: Layout, seed: number): Meadow {
       const d = depth(x, y);
       const u = gx(x, d);
       const v = 1 / persp(d);
+      if (biome === "coast") {
+        // cushions of thrift along the cliff top, the odd yellow trefoil
+        const th = fbm(u * 1.6 + 5, v * 1.8, sPoppy, 0, 2);
+        if (th > 0.05 && r < (th - 0.05) * 2) return FLOWER_THRIFT;
+        return r > 0.986 ? FLOWER_BUTTERCUP : FLOWER_NONE;
+      }
+      if (biome === "wheat") {
+        // poppies in drifts through the wheat, a few cornflowers
+        const pp = fbm(u * 2.2 + 3, v * 0.9, sPoppy, 0, 2);
+        if (pp > 0.15 && r < (pp - 0.15) * 0.9) return FLOWER_POPPY;
+        return r > 0.994 ? FLOWER_CORNFLOWER : r > 0.975 ? FLOWER_POPPY : FLOWER_NONE;
+      }
+      if (biome === "sakura" || biome === "lake") {
+        // daisies and dandelions in the spring grass (only a few up by the lake)
+        const few = biome === "lake" ? 0.45 : 1;
+        const dz = fbm(u * 2.1 + 9, v * 2.4, sDaisy, 0, 2);
+        if (dz > 0.22 && r < (dz - 0.22) * 1.8 * few) return FLOWER_DAISY;
+        const bc = fbm(u * 1.5, v * 1.9, sButter, 0, 2);
+        if (bc > 0.22 && r < (bc - 0.22) * 1.6 * few) return FLOWER_BUTTERCUP;
+        return FLOWER_NONE;
+      }
       const pp = fbm(u * 1.2 + 3, v * 1.6, sPoppy, 0, 2);
       if (pp > 0.28 && r < (pp - 0.28) * 1.6) return FLOWER_POPPY;
       const bc = fbm(u * 1.5, v * 1.9, sButter, 0, 2);
@@ -955,9 +1749,10 @@ interface CloudField {
  * Cumulus as heaps of billows (spheres flattened at the base), lit from the upper left, laid out
  * in rows that grow smaller and flatter towards the horizon. Periodic across the tile.
  */
-function* cloudField(L: Layout, rng: Rng, cover: number): Gen<CloudField> {
+function* cloudField(L: Layout, rng: Rng, S: SkyStyle): Gen<CloudField> {
   const T = L.tile;
   const hz = L.hz;
+  const cover = S.cover;
   const cy = Math.max(1.5, L.bu * 0.45);
   const gw = Math.max(8, Math.round(T / cy));
   const cx = T / gw;
@@ -967,10 +1762,8 @@ function* cloudField(L: Layout, rng: Rng, cover: number): Gen<CloudField> {
   const body = new Float32Array(n);
   const lit = new Float32Array(n);
   const flow = new Float32Array(n);
-  // the sun is high on the left
-  const lx = -0.6;
-  const ly = -0.6;
-  const lz = 0.53;
+  // where the sun is (high on the left by day), and whether it lights the tops or the bases
+  const [lx, ly, lz, topLit, baseDark] = S.sun;
 
   /**
    * Adds one billow of a heap (centred on hx, W wide, hc tall, standing on `base`). Its light mixes
@@ -1001,9 +1794,9 @@ function* cloudField(L: Layout, rng: Rng, cover: number): Gen<CloudField> {
         body[k] = Math.min(1.6, z / (hc * 0.3));
         const nx = dx / r;
         const ny = dy / r;
-        const form = 0.6 * high - 0.4 * clamp((bx + dx - hx) / (W * 0.5), -1, 1);
+        const form = topLit * high - 0.4 * clamp((bx + dx - hx) / (W * 0.5), -1, 1);
         const shade = 0.7 * (nx * lx + ny * ly + nz * lz) + 0.3 * form;
-        lit[k] = clamp(0.42 + 0.65 * shade - 0.55 * under * under, 0, 1);
+        lit[k] = clamp(0.42 + 0.65 * shade - baseDark * under * under, 0, 1);
         flow[k] = Math.atan2(ny, nx) + HALF_PI;
       }
     }
@@ -1091,7 +1884,7 @@ function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
   const H = L.skyH;
   const hz = L.hz;
   const bu = L.bu;
-  const S = SKIES[L.biome];
+  const S = skyStyle(L.biome, L.light);
   ctx.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
   ctx.lineCap = "round";
 
@@ -1102,7 +1895,7 @@ function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
   ctx.fillRect(0, 0, T, H);
   yield;
 
-  const f = yield* cloudField(L, rng, S.cover);
+  const f = yield* cloudField(L, rng, S);
   const sDet = hashInt(seed, 8);
   const pDet = Math.max(4, Math.round(T / clamp(hz * 0.1, 12, 48)));
   const fDet = pDet / T;
@@ -1323,11 +2116,11 @@ function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
     }
   }
 
-  // 4. thin streaks of high cloud along the wind, in the clear upper sky
-  const nWisps = Math.round(T / (bu * 16));
+  // 4. thin streaks of cloud along the wind, in the clear sky (low and glowing after sunset)
+  const nWisps = Math.round((T / (bu * 16)) * S.streaks[0]);
   for (let i = 0; i < nWisps; i++) {
     const x0 = rng.next() * T;
-    const y0 = rng.range(0.04, 0.55) * hz;
+    const y0 = rng.range(S.streaks[1], S.streaks[2]) * hz;
     if (coverAt(x0, y0, cellOf(x0, y0)) > 0.15) continue;
     const ang = -0.1 + rng.signed(0.12);
     const parts = 3 + rng.int(3);
@@ -1348,7 +2141,49 @@ function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
     if ((i & 7) === 7) yield;
   }
 
-  // 5. warm haze above the hills
+  // 5. at dusk, the first stars in the clear upper sky and a pale crescent moon
+  if (S.stars > 0) {
+    const nStars = Math.round(((T * hz * 0.55) / 1000) * S.stars * 1.6);
+    for (let i = 0; i < nStars; i++) {
+      const x = rng.next() * T;
+      const y = hz * Math.pow(rng.next(), 1.4) * 0.55;
+      if (coverAt(x, y, cellOf(x, y)) > 0.08) continue;
+      const bright = rng.chance(0.15);
+      const r = Math.max(0.42, bu * (bright ? 0.14 : rng.range(0.06, 0.1)));
+      const col = rng.chance(0.3) ? hexLab("#f4e2c0") : hexLab("#eef0fa");
+      const a = rng.range(0.55, 0.9) * (1 - 0.6 * (y / (hz * 0.55)));
+      wrapped(x, r * 2, (px) => brush.dab(px, y, r, 0, col, bright ? 0.95 : a));
+    }
+  }
+  if (S.moon) {
+    // a clear patch of sky for it, away from the tile's seam
+    let mx = T * 0.5;
+    let my = hz * 0.22;
+    for (let tries = 0; tries < 12; tries++) {
+      mx = rng.range(0.15, 0.85) * T;
+      my = hz * rng.range(0.14, 0.3);
+      if (coverAt(mx, my, cellOf(mx, my)) < 0.05) break;
+    }
+    const r = Math.max(2.6, L.F * 0.026);
+    const sky = rampAt(S.sky, my / hz);
+    // a faint halo, the lit crescent turned to the sun below the horizon, and a hint of the rest
+    brush.dab(mx, my, r * 2.6, 0, mix(sky, hexLab("#c8c4dc"), 0.3), 0.35);
+    brush.dab(mx, my, r, 0, mix(sky, hexLab("#8e8eb8"), 0.5), 0.55);
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "#f6eed8";
+    ctx.beginPath();
+    ctx.arc(mx, my, r, HALF_PI, HALF_PI * 3, false);
+    ctx.ellipse(mx, my, r * 0.42, r, 0, -HALF_PI, HALF_PI, true);
+    ctx.fill();
+    ctx.globalAlpha = 0.6;
+    ctx.fillStyle = "#fffbea";
+    ctx.beginPath();
+    ctx.arc(mx - r * 0.08, my, r * 0.86, HALF_PI * 1.3, HALF_PI * 2.7, false);
+    ctx.ellipse(mx - r * 0.08, my, r * 0.5, r * 0.86, 0, -HALF_PI * 0.7, HALF_PI * 0.7, true);
+    ctx.fill();
+  }
+
+  // 6. warm haze above the hills
   const hazeTop = hz - L.F * 0.17;
   const nHaze = Math.round((T * (H - hazeTop)) / (bu * bu * 1.2));
   for (let i = 0; i < nHaze; i++) {
@@ -1372,6 +2207,20 @@ function* paintSky(ctx: Ctx, L: Layout, seed: number): Gen {
 
 /* ------------------------------------------------------------------ land */
 
+/**
+ * Lavender: where (x, y) falls across the rows, which run out from a vanishing point on the
+ * horizon; in [0, 1), the bushes from about 0.12 to 0.88 and the bare furrow between.
+ */
+function lavenderRow(L: Layout, x: number, y: number): number {
+  const r = (x - L.marks[0]) / (L.marks[1] * Math.max(0.5, y - L.hz));
+  return r - Math.floor(r);
+}
+
+const onLavenderRow = (L: Layout, x: number, y: number) => {
+  const f = lavenderRow(L, x, y);
+  return f > 0.14 && f < 0.86;
+};
+
 function fillBelow(ctx: Ctx, L: Layout, line: Float32Array, bottom: number, style: string | CanvasGradient) {
   ctx.globalAlpha = 1;
   ctx.fillStyle = style;
@@ -1387,9 +2236,12 @@ function fillBelow(ctx: Ctx, L: Layout, line: Float32Array, bottom: number, styl
   ctx.fill();
 }
 
-function vgrad(ctx: Ctx, y0: number, y1: number, colors: string[]): CanvasGradient {
+/** A colour in the light of the hour. */
+const graded = (L: { grade: Grade | null }, c: string) => (L.grade ? hex(L.grade(hexLab(c))) : c);
+
+function vgrad(ctx: Ctx, L: Layout, y0: number, y1: number, colors: string[]): CanvasGradient {
   const g = ctx.createLinearGradient(0, y0, 0, y1);
-  colors.forEach((c, i) => g.addColorStop(i / (colors.length - 1), c));
+  colors.forEach((c, i) => g.addColorStop(i / (colors.length - 1), graded(L, c)));
   return g;
 }
 
@@ -1520,12 +2372,13 @@ function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   const { w, h, bu, F, hz, dpr } = L;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   b.scale = dpr;
+  b.grade = L.grade;
   ctx.lineCap = "round";
 
   // far hills, then a nearer, greener range in front of them
-  fillBelow(ctx, L, L.far, h, vgrad(ctx, L.landTop, hz, ["#b2b8d2", "#94a4c8"]));
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, L.landTop, hz, ["#b2b8d2", "#94a4c8"]));
   yield* paintRange(b, L, L.far, hz, HILL_FAR, HILL_FAR_LIT, 0.42, 0.55, L.near);
-  fillBelow(ctx, L, L.near, h, vgrad(ctx, hz - F * 0.03, hz, ["#8094b0", "#7a8ea8"]));
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, hz - F * 0.03, hz, ["#8094b0", "#7a8ea8"]));
   yield* paintRange(b, L, L.near, hz + F * 0.004, HILL_NEAR, HILL_NEAR_LIT, 0.45, 0.2, L.crest);
   // woods along the nearer ridge give it a rounded, broken skyline
   for (let x = -F * 0.02, i = 0; x < w + F * 0.02; i++) {
@@ -1537,7 +2390,7 @@ function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
 
   // the far fields: a patchwork of hazy greens and a golden crop, flattened by the distance
   ctx.globalAlpha = 1;
-  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.09, ["#9cae86", "#98aa74"]);
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.09, ["#9cae86", "#98aa74"]);
   ctx.fillRect(0, hz, w, h - hz);
   const sField = hashInt(seed, 62);
   const sf = Math.max(bu * 0.4, 1.9);
@@ -1616,7 +2469,7 @@ function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   }
 
   // the meadow: underpainting, then broad blocking-in by light and shade
-  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#a2ad62", "#86993f", "#5f7e37", "#3d602f"]));
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#a2ad62", "#86993f", "#5f7e37", "#3d602f"]));
   const yAt = (x: number, d: number) => {
     const c = colAt(L.crest, x);
     return c + d * (h - c);
@@ -1655,11 +2508,11 @@ function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   }
 
   // the path: worn, pale earth that the grass is taking back
-  const P = L.path ?? { a: 0, b: 0, k: 0, ph: 0, half: 0 };
+  const P = L.path ?? { a: 0, b: 0, c: 0, k: 0, ph: 0, half: 0, rough: 0 };
   const pathPoint = (d: number, across: number): [number, number] => {
     const p = persp(d);
     const v = 1 / p;
-    const u = P.a + P.b * Math.sin(v * P.k + P.ph) + across * P.half;
+    const u = P.a + P.c * v + P.b * Math.sin(v * P.k + P.ph) + across * P.half;
     const x = w / 2 + u * F * p;
     return [x, yAt(x, d)];
   };
@@ -1726,51 +2579,7 @@ function* paintMeadowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   }
 
   // flowers: drifts of buttercups and daisies, a few poppies, the odd cornflower
-  const nFlowers = Math.round(meadowArea / (bu * bu * 3.2));
-  for (let i = 0; i < nFlowers; i++) {
-    if ((i & 31) === 31) yield;
-    const x = rng.next() * w;
-    const d = rng.next();
-    const y = yAt(x, d);
-    const kind = M.flower(x, y, rng.next());
-    if (kind === FLOWER_NONE || M.path(x, y) > 0.6) continue;
-    const sc = Math.max(1.5 * persp(d), 1.1 / bu);
-    const far = d < 0.25;
-    if (kind === FLOWER_BUTTERCUP) {
-      const r = bu * 0.26 * sc * rng.range(0.8, 1.3);
-      const col = rng.pick(BUTTERCUP);
-      const n = far ? 1 : 2;
-      for (let j = 0; j < n; j++) {
-        centred(
-          b,
-          x + rng.signed(r),
-          y + rng.signed(r * 0.6),
-          far ? rng.signed(0.25) : rng.signed(Math.PI),
-          r * rng.range(1.6, 2.4),
-          r * rng.range(1.0, 1.4),
-          rng.signed(0.2),
-          col,
-          rng.range(0.8, 0.95),
-          0.3,
-        );
-      }
-    } else if (kind === FLOWER_DAISY) {
-      const r = bu * 0.3 * sc * rng.range(0.8, 1.2);
-      centred(b, x, y, rng.signed(0.4), r * 2.4, r * 1.3, 0, rng.pick(DAISY), rng.range(0.85, 0.97), 0.2);
-      if (!far) b.dab(x + r * 0.1, y, r * 0.4, 0, BUTTERCUP[2], 0.9);
-    } else if (kind === FLOWER_POPPY) {
-      const r = bu * 0.36 * sc * rng.range(0.8, 1.25);
-      const col = rng.pick(POPPY);
-      centred(b, x, y, rng.signed(0.5), r * 2.2, r * 1.6, rng.signed(0.2), col, 0.92, 0.4);
-      if (!far) {
-        b.dab(x - r * 0.3, y - r * 0.3, r * 0.6, rng.signed(1), lighten(col, 0.08), 0.75);
-        b.dab(x + r * 0.15, y + r * 0.15, r * 0.25, 0, hexLab("#3a1f22"), 0.8);
-      }
-    } else {
-      const r = bu * 0.22 * sc * rng.range(0.8, 1.2);
-      centred(b, x, y, rng.signed(1), r * 2, r * 1.2, 0, rng.pick(CORNFLOWER), 0.9, 0.2);
-    }
-  }
+  yield* paintFlowers(b, L, M, 3.2);
 
   // light accents last: sunlit tips and pale seed heads
   const nTips = Math.round(meadowArea / (bu * bu * 7));
@@ -1906,21 +2715,24 @@ function* paintPeaks(b: Brush, L: Layout, seed: number): Gen {
 /** Long shadows of the trees, falling to the right across the ground. */
 function castShadows(b: Brush, L: Layout, kind: TreeKind, colors: Lab[], reach: number): void {
   const { rng } = b;
+  // long at golden hour, hardly there after sunset
+  const alpha = 0.5 * Math.min(1, 0.3 + 0.7 * L.shadow);
   for (const t of L.trees) {
     if (t.kind !== kind) continue;
-    const length = t.ht * reach * rng.range(0.9, 1.2);
-    for (let j = 0; j < 6; j++) {
-      const f = j / 6;
+    const length = t.ht * reach * L.shadow * rng.range(0.9, 1.2);
+    const n = L.shadow > 1.5 ? 9 : 6;
+    for (let j = 0; j < n; j++) {
+      const f = j / n;
       centred(
         b,
         t.x + length * (f + 0.08),
         t.y + t.ht * 0.025 * f + rng.signed(t.wd * 0.04),
         0.05 + rng.signed(0.04),
-        length * 0.28,
+        length * 0.28 * (6 / n),
         Math.max(0.8, t.wd * 0.34 * (1 - f * 0.6)),
         0,
         rng.pick(colors),
-        0.5,
+        alpha,
         0.3,
       );
     }
@@ -1933,17 +2745,18 @@ function* paintSnowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   const { w, h, bu, F, hz, dpr } = L;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   b.scale = dpr;
+  b.grade = L.grade;
   ctx.lineCap = "round";
 
   // the distant range, pale in the cold air, then the main range in front of it
-  fillBelow(ctx, L, L.far, h, vgrad(ctx, hz - F * 0.22, hz, ["#c8cae2", "#aab2d8"]));
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, hz - F * 0.22, hz, ["#c8cae2", "#aab2d8"]));
   yield* paintRange(b, L, L.far, hz, SNOW.far, SNOW.farLit, 0.5, 0.5, L.near);
-  fillBelow(ctx, L, L.near, h, vgrad(ctx, L.landTop, hz, ["#e6e4ee", "#b4bcdc"]));
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, L.landTop, hz, ["#e6e4ee", "#b4bcdc"]));
   yield* paintPeaks(b, L, seed);
 
   // the snowfield beyond the crest
   ctx.globalAlpha = 1;
-  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.1, ["#dcdeee", "#e8e6f0"]);
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.1, ["#dcdeee", "#e8e6f0"]);
   ctx.fillRect(0, hz, w, h - hz);
   const sf = Math.max(bu * 0.4, 1.9);
   const sField = hashInt(seed, 62);
@@ -1997,7 +2810,7 @@ function* paintSnowLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   }
 
   // the near snowfield: strokes follow the swell of the drifts, warm white in the sun, blue in shade
-  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#f2eee8", "#e4e2ee", "#d2d6ec"]));
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#f2eee8", "#e4e2ee", "#d2d6ec"]));
   const yAt = (x: number, d: number) => {
     const c = colAt(L.crest, x);
     return c + d * (h - c);
@@ -2179,17 +2992,18 @@ function* paintDesertLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   const { w, h, bu, F, hz, dpr } = L;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   b.scale = dpr;
+  b.grade = L.grade;
   ctx.lineCap = "round";
 
   // distant mesas, violet in the haze, then the nearer buttes
-  fillBelow(ctx, L, L.far, h, vgrad(ctx, L.landTop, hz, ["#d6c0cc", "#c2aac6"]));
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, L.landTop, hz, ["#d6c0cc", "#c2aac6"]));
   yield* paintRange(b, L, L.far, hz, DESERT.far, DESERT.farLit, 0.5, 0.5, L.near);
-  fillBelow(ctx, L, L.near, h, vgrad(ctx, L.landTop, hz, ["#d29a76", "#b88070"]));
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, L.landTop, hz, ["#d29a76", "#b88070"]));
   yield* paintButtes(b, L, seed);
 
   // the plain beyond the dunes: pale sand dotted with scrub
   ctx.globalAlpha = 1;
-  ctx.fillStyle = vgrad(ctx, hz, hz + F * 0.1, ["#e2caa6", "#dcbc94"]);
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.1, ["#e2caa6", "#dcbc94"]);
   ctx.fillRect(0, hz, w, h - hz);
   const sf = Math.max(bu * 0.4, 1.9);
   let farArea = 0;
@@ -2211,7 +3025,7 @@ function* paintDesertLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   yield;
 
   // the dunes: a violet shadow under each crest where the ridge turns away from the sun
-  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L.crestMin, h, ["#eebc86", "#e2a878", "#d89a72"]));
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#eebc86", "#e2a878", "#d89a72"]));
   const lines = [L.crest, ...L.dunes];
   /**
    * Light on the dunes: the wind blows from the left, so each crest's steep slip face hangs to the
@@ -2338,10 +3152,1320 @@ function* paintDesertLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
   }
 }
 
+/* ------------------------------------------------------------------ land: shared */
+
+/** A brush for the ground layer: device-pixel transform and the light of the hour. */
+function landBrush(ctx: Ctx, L: Layout, seed: number): Brush {
+  const b = new Brush(ctx, new Rng(hashInt(seed, 202)));
+  ctx.setTransform(L.dpr, 0, 0, L.dpr, 0, 0);
+  b.scale = L.dpr;
+  b.grade = L.grade;
+  ctx.lineCap = "round";
+  return b;
+}
+
+/** Grass leaning with the wind: combed flat far away, upright and leaning downwind in front. */
+function grassAngle(rng: Rng, d: number, l: number): number {
+  const r = rng.next();
+  const lean = r < 0.1 ? -rng.range(0, 0.4) : r < 0.2 ? rng.range(0.9, 1.3) : rng.range(0.15, 0.85);
+  return lerp(-0.2 + rng.signed(0.35), -HALF_PI + lean + l * 0.1, smoothstep(0, 0.4, d));
+}
+
+/** The foreground in depth bands: small strokes far away, large ones in front. */
+interface Bands {
+  bands: number;
+  /** Ground per stroke, in brush units² at the stroke's own scale. */
+  per: number;
+  /** A stroke's colour (null: no stroke here) and angle, given its place, depth and light. */
+  color(x: number, y: number, d: number, l: number): Lab | null;
+  angle(x: number, y: number, d: number, l: number): number;
+  len: [number, number];
+  wid: [number, number];
+  alpha: [number, number];
+  texture: number;
+}
+
+function* paintBands(b: Brush, L: Layout, M: Meadow, s: Bands): Gen {
+  const { rng } = b;
+  const { w, bu } = L;
+  const area = w * L.meadowH;
+  for (let band = 0; band < s.bands; band++) {
+    const k = Math.max(1.5 * persp((band + 0.5) / s.bands), 0.6);
+    const count = Math.round(area / s.bands / (bu * bu * k * k * s.per));
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const x = rng.next() * w;
+      const d = (band + rng.next()) / s.bands;
+      const y = groundY(L, x, d) + (d > 0.96 ? bu * 0.6 : 0);
+      const l = M.light(x, y);
+      const col = s.color(x, y, d, l);
+      if (!col) continue;
+      const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+      centred(
+        b,
+        x,
+        y,
+        s.angle(x, y, d, l),
+        bu * rng.range(s.len[0], s.len[1]) * sc,
+        bu * rng.range(s.wid[0], s.wid[1]) * sc,
+        rng.signed(0.1),
+        col,
+        rng.range(s.alpha[0], s.alpha[1]),
+        s.texture,
+      );
+    }
+  }
+}
+
+/** Level strokes over the far ground, between the horizon and the crest of the foreground. */
+function* paintFarBand(b: Brush, L: Layout, density: number, color: (x: number, y: number) => Lab): Gen {
+  const { rng } = b;
+  const { w, bu, hz } = L;
+  const sf = Math.max(bu * 0.4, 1.9);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const n = Math.round((area / (sf * sf)) * density);
+  for (let i = 0; i < n; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const c = colAt(L.crest, x) + bu * 0.5;
+    if (c <= hz) continue;
+    const y = rng.range(hz, c);
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.1),
+      sf * rng.range(1.6, 3.2),
+      sf * rng.range(0.45, 0.8),
+      0,
+      color(x, y),
+      rng.range(0.65, 0.9),
+      0.3,
+    );
+  }
+}
+
+/** Small strokes along the crest give the foreground a soft edge against what lies beyond. */
+function paintCrestEdge(b: Brush, L: Layout, pick: () => Lab): void {
+  const { rng } = b;
+  const { w, bu } = L;
+  const sc0 = Math.max(1.5 * persp(0), 1.1 / bu);
+  const n = Math.round(w / (bu * sc0 * 0.8));
+  for (let i = 0; i < n; i++) {
+    const x = rng.next() * w;
+    centred(
+      b,
+      x,
+      colAt(L.crest, x) + rng.signed(bu * sc0 * 0.4),
+      rng.signed(0.6) - 0.2,
+      bu * rng.range(1.2, 2.2) * sc0,
+      bu * rng.range(0.35, 0.6) * sc0,
+      0,
+      pick(),
+      rng.range(0.7, 0.9),
+      0.3,
+    );
+  }
+}
+
+/** Sunlit tips of grass, last of all. */
+function* paintTips(b: Brush, L: Layout, M: Meadow, per: number, pick: () => Lab): Gen {
+  const { rng } = b;
+  const { w, bu } = L;
+  const n = Math.round((w * L.meadowH) / (bu * bu * per));
+  for (let i = 0; i < n; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = Math.pow(rng.next(), 0.8);
+    const y = groundY(L, x, d);
+    if (M.light(x, y) < -0.25 || M.path(x, y) > 0.5) continue;
+    const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+    centred(
+      b,
+      x,
+      y,
+      lerp(rng.signed(0.3), -HALF_PI + rng.range(0.3, 0.8), smoothstep(0, 0.4, d)),
+      bu * rng.range(1.2, 2.4) * sc,
+      bu * rng.range(0.25, 0.5) * sc,
+      0.05,
+      pick(),
+      rng.range(0.7, 0.9),
+      0.5,
+    );
+  }
+}
+
+/** Flowers in the grass: buttercups, daisies, poppies, cornflowers and thrift, as the biome has them. */
+function* paintFlowers(b: Brush, L: Layout, M: Meadow, per: number): Gen {
+  const { rng } = b;
+  const { w, bu } = L;
+  const n = Math.round((w * L.meadowH) / (bu * bu * per));
+  for (let i = 0; i < n; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const d = rng.next();
+    const y = groundY(L, x, d);
+    const kind = M.flower(x, y, rng.next());
+    if (kind === FLOWER_NONE || M.path(x, y) > 0.6) continue;
+    const sc = Math.max(1.5 * persp(d), 1.1 / bu);
+    const far = d < 0.25;
+    if (kind === FLOWER_BUTTERCUP || kind === FLOWER_THRIFT) {
+      const thrift = kind === FLOWER_THRIFT;
+      const r = bu * (thrift ? 0.3 : 0.26) * sc * rng.range(0.8, 1.3);
+      const col = rng.pick(thrift ? COAST.thrift : BUTTERCUP);
+      const n = far ? 1 : 2;
+      for (let j = 0; j < n; j++) {
+        centred(
+          b,
+          x + rng.signed(r),
+          y + rng.signed(r * 0.6),
+          far ? rng.signed(0.25) : rng.signed(Math.PI),
+          r * rng.range(1.6, 2.4),
+          r * rng.range(1.0, 1.4),
+          rng.signed(0.2),
+          col,
+          rng.range(0.8, 0.95),
+          0.3,
+        );
+      }
+    } else if (kind === FLOWER_DAISY) {
+      const r = bu * 0.3 * sc * rng.range(0.8, 1.2);
+      centred(b, x, y, rng.signed(0.4), r * 2.4, r * 1.3, 0, rng.pick(DAISY), rng.range(0.85, 0.97), 0.2);
+      if (!far) b.dab(x + r * 0.1, y, r * 0.4, 0, BUTTERCUP[2], 0.9);
+    } else if (kind === FLOWER_POPPY) {
+      const r = bu * 0.36 * sc * rng.range(0.8, 1.25);
+      const col = rng.pick(POPPY);
+      centred(b, x, y, rng.signed(0.5), r * 2.2, r * 1.6, rng.signed(0.2), col, 0.92, 0.4);
+      if (!far) {
+        b.dab(x - r * 0.3, y - r * 0.3, r * 0.6, rng.signed(1), lighten(col, 0.08), 0.75);
+        b.dab(x + r * 0.15, y + r * 0.15, r * 0.25, 0, hexLab("#3a1f22"), 0.8);
+      }
+    } else {
+      const r = bu * 0.22 * sc * rng.range(0.8, 1.2);
+      centred(b, x, y, rng.signed(1), r * 2, r * 1.2, 0, rng.pick(CORNFLOWER), 0.9, 0.2);
+    }
+  }
+}
+
+/* ------------------------------------------------------------------ land: coast */
+
+function* paintCoastLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  const foot = L.foot ?? L.crest;
+  const xEnd = L.marks[0];
+  const landRight = colAt(L.near, w) < h;
+  const toSea = landRight ? -1 : 1;
+  const onLand = (x: number) => (landRight ? x > xEnd : x < xEnd);
+  const footEnd = colAt(foot, xEnd - toSea * 2);
+  const S = skyStyle(L.biome, L.light);
+  // by day the sea glitters white; at golden hour and dusk it gives back the glow of the sky
+  const glints = L.light === "day" ? COAST.glint : [rampAt(S.sky, 0.95), rampAt(S.sky, 1), ...S.haze];
+
+  // the coast running on into the distance, pale in the sea air
+  fillBelow(ctx, L, L.far, hz + 1, vgrad(ctx, L, hz - F * 0.04, hz, ["#b8b8d6", "#a6aacc"]));
+  yield* paintRange(b, L, L.far, hz, COAST.far, COAST.farLit, 0.4, 0.5, L.near);
+
+  // the sea: level strokes, fine and pale at the horizon, broader and deeper blue below, glittering
+  // towards the sun and turquoise over the shallows under the cliffs
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.32, ["#a4b6d4", "#5a8cc4", "#3a72ac"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  const sSea = hashInt(seed, 64);
+  let seaArea = 0;
+  for (let x = 0; x < w; x += 4) seaArea += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const nSea = Math.round(seaArea / (bu * bu * 0.3));
+  for (let i = 0; i < nSea; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const bottom = colAt(L.crest, x) + bu;
+    // (more, smaller strokes towards the horizon)
+    const y = hz + (bottom - hz) * Math.pow(rng.next(), 1.3);
+    const p = clamp((y - hz) / (F * 0.3), 0, 1);
+    const s = bu * (0.2 + 0.8 * p);
+    const out = (xEnd - x) * -toSea;
+    const shallow = onLand(x)
+      ? smoothstep(F * 0.05, 0, y - colAt(foot, x))
+      : smoothstep(F * 0.07, 0, out) * smoothstep(F * 0.05, 0, Math.abs(y - footEnd - F * 0.01));
+    const glint =
+      fbm(x / (F * 0.12), (y - hz) / (F * 0.015), sSea, 0, 2) +
+      0.45 * (1 - x / w) -
+      0.25 +
+      (L.light === "day" ? 0 : 0.25 * (1 - p));
+    const r = rng.next();
+    if (glint > 0.4 && r < 0.55) {
+      const grade = b.grade;
+      b.grade = null;
+      centred(
+        b,
+        x,
+        y,
+        rng.signed(0.04),
+        s * rng.range(1.2, 2.6),
+        s * rng.range(0.22, 0.4),
+        0,
+        rng.pick(glints),
+        rng.range(0.7, 0.95),
+        0.2,
+      );
+      b.grade = grade;
+      continue;
+    }
+    const col =
+      r < 0.55 + shallow * 0.4 && shallow > 0.2
+        ? rng.pick(COAST.turq)
+        : r > 0.86
+          ? rng.pick(COAST.deep)
+          : r > 0.74
+            ? lighten(rampAt(COAST.sea, p), 0.07)
+            : rampAt(COAST.sea, clamp(p + rng.signed(0.1), 0, 1));
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.05),
+      s * rng.range(1.8, 3.6),
+      s * rng.range(0.3, 0.55),
+      rng.signed(0.06),
+      col,
+      rng.range(0.6, 0.9),
+      0.4,
+    );
+  }
+
+  // sails far out
+  for (let k = 1; k + 2 < L.marks.length; k += 3) {
+    const sx = L.marks[k];
+    const sy = L.marks[k + 1];
+    const sz = L.marks[k + 2];
+    centred(
+      b,
+      sx + sz * 0.1,
+      sy + sz * 0.04,
+      0,
+      sz * 0.75,
+      Math.max(0.6, sz * 0.15),
+      0,
+      hexLab("#3a3c58"),
+      0.9,
+      0,
+    );
+    b.stroke(sx, sy, -HALF_PI + 0.06, sz, sz * 0.42, 0.06, COAST.glint[1], 0.97, 0);
+    b.stroke(
+      sx + sz * 0.26,
+      sy - sz * 0.05,
+      -HALF_PI + 0.12,
+      sz * 0.7,
+      sz * 0.24,
+      0.04,
+      COAST.glint[2],
+      0.92,
+      0,
+    );
+    centred(
+      b,
+      sx + sz * 0.05,
+      sy + sz * 0.3,
+      0,
+      sz * 0.5,
+      Math.max(0.5, sz * 0.1),
+      0,
+      COAST.glint[0],
+      0.45,
+      0,
+    );
+  }
+  yield;
+
+  // the headland: a green cap over warm cliffs, the face turned to the sun pale, the other violet
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, L, hz - F * 0.1, hz + F * 0.14, ["#cdb690", "#b59e88", "#7c7a96"]);
+  ctx.beginPath();
+  for (let x = 0; x <= w; x += 2) ctx.lineTo(x, Math.min(colAt(L.near, x), colAt(foot, x)));
+  for (let x = Math.ceil(w); x >= 0; x -= 2) ctx.lineTo(x, colAt(foot, x));
+  ctx.closePath();
+  ctx.fill();
+  const sStrata = hashInt(seed, 19);
+  const s = Math.max(bu * 0.5, 2);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, colAt(foot, x) - colAt(L.near, x)) * 4;
+  const nCliff = Math.round((area / (s * s)) * 1.1);
+  for (let i = 0; i < nCliff; i++) {
+    if ((i & 31) === 31) yield;
+    const x = landRight ? rng.range(xEnd, w) : rng.range(0, xEnd);
+    const top = colAt(L.near, x);
+    const bot = colAt(foot, x);
+    if (bot <= top + 1) continue;
+    const y = rng.range(top, bot + s * 0.3);
+    const v = (y - top) / (bot - top);
+    const slope = (colAt(L.near, x + 4) - colAt(L.near, x - 4)) / 8;
+    if (y - top < F * 0.012 + (bot - top) * 0.1) {
+      const col = -slope * 2 + rng.signed(0.6) > 0 ? rng.pick(COAST.capLit) : rng.pick(COAST.cap);
+      centred(
+        b,
+        x,
+        y,
+        Math.atan(slope) + rng.signed(0.2),
+        s * rng.range(1.4, 2.6),
+        s * rng.range(0.45, 0.8),
+        rng.signed(0.1),
+        col,
+        rng.range(0.75, 0.92),
+        0.4,
+      );
+      continue;
+    }
+    const endFace = Math.abs(x - xEnd) < (bot - top) * 0.45 + F * 0.015;
+    const strata = Math.sin(y / (F * 0.011) + 2 * fbm(x / (F * 0.1), y / (F * 0.04), sStrata, 0, 2));
+    const sun =
+      (endFace ? (landRight ? 0.75 : -0.6) : 0.25) +
+      strata * 0.25 +
+      0.45 * fbm(x / (F * 0.025), y / (F * 0.05), sStrata + 1, 0, 2) -
+      v * 0.5;
+    let col =
+      sun > 0.4 ? rng.pick(COAST.cliffLit) : sun > -0.15 ? rng.pick(COAST.cliff) : rng.pick(COAST.cliffShade);
+    if (v > 0.86 && rng.chance(0.6)) col = rng.pick(COAST.rock);
+    centred(
+      b,
+      x,
+      y,
+      rng.chance(0.7) ? HALF_PI + rng.signed(0.12) : rng.signed(0.1),
+      s * rng.range(1.3, 2.6),
+      s * rng.range(0.45, 0.8),
+      rng.signed(0.1),
+      col,
+      rng.range(0.75, 0.92),
+      0.5,
+    );
+  }
+  // often a sea stack off the point, cut off from the cliff
+  if (rng.chance(0.7)) {
+    const sx = xEnd + toSea * F * rng.range(0.045, 0.07);
+    const base = footEnd + F * 0.006;
+    const tall = (footEnd - colAt(L.near, xEnd - toSea * 3)) * rng.range(0.45, 0.65);
+    const half = F * rng.range(0.008, 0.012);
+    for (let i = 0; i < 30; i++) {
+      const v = rng.next();
+      const x = sx + rng.signed(half) * (1 - v * 0.35);
+      const lit = x < sx + rng.signed(half * 0.4);
+      const col =
+        v < 0.15 ? rng.pick(COAST.rock) : lit ? rng.pick(COAST.cliffLit) : rng.pick(COAST.cliffShade);
+      centred(
+        b,
+        x,
+        base - v * tall,
+        HALF_PI + rng.signed(0.1),
+        Math.max(1.2, tall * 0.3),
+        Math.max(0.7, half * 0.7),
+        0,
+        col,
+        0.92,
+        0.3,
+      );
+    }
+    centred(
+      b,
+      sx,
+      base - tall * 0.96,
+      rng.signed(0.2),
+      half * 2,
+      Math.max(0.6, half * 0.6),
+      0,
+      rng.pick(COAST.capLit),
+      0.9,
+      0,
+    );
+    for (let k = 0; k < 5; k++) {
+      centred(
+        b,
+        sx + rng.signed(half * 2),
+        base + rng.signed(bu * 0.2),
+        0,
+        bu * rng.range(0.8, 1.6),
+        Math.max(0.5, bu * 0.22),
+        0,
+        rng.pick(COAST.foam),
+        0.85,
+        0,
+      );
+    }
+  }
+  // surf breaking along the foot of the cliffs, and lines of foam fanning out round the point
+  for (let x = landRight ? xEnd : 0; landRight ? x < w : x < xEnd; x += bu * rng.range(0.45, 0.8)) {
+    const y = colAt(foot, x);
+    const p = clamp((y - hz) / (F * 0.3), 0, 1);
+    centred(
+      b,
+      x,
+      y + rng.signed(bu * 0.2),
+      rng.signed(0.08),
+      bu * (0.6 + p) * rng.range(1.2, 2.2),
+      bu * (0.25 + 0.3 * p),
+      0,
+      rng.pick(COAST.foam),
+      rng.range(0.7, 0.95),
+      0.3,
+    );
+  }
+  for (let j = 0; j < 4; j++) {
+    const y = footEnd + F * (0.004 + j * 0.012);
+    const len = F * (0.03 + j * 0.035) * rng.range(0.8, 1.2);
+    for (let t = 0; t < len; t += bu * 0.8) {
+      if (rng.chance(0.3)) continue;
+      centred(
+        b,
+        xEnd + toSea * (t - F * 0.01),
+        y + rng.signed(bu * 0.15) + t * 0.04,
+        rng.signed(0.06),
+        bu * rng.range(0.8, 1.6) * (0.5 + 0.15 * j),
+        Math.max(0.5, bu * 0.2),
+        0,
+        rng.pick(COAST.foam),
+        rng.range(0.5, 0.85) * (1 - j * 0.15),
+        0,
+      );
+    }
+  }
+  yield;
+
+  // the cliff top we stand on: sea grass, thrift and gorse
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#a6ae66", "#7e9446", "#587a3c", "#3c5c34"]));
+  const tawny = labs(["#b09a5c", "#c0a868", "#a08c58"]);
+  yield* paintBands(b, L, M, {
+    bands: 16,
+    per: 1.5,
+    color: (_x, _y, d, l) => (rng.chance(0.12) ? rng.pick(tawny) : grassColor(rng, l, d)),
+    angle: (_x, _y, d, l) => grassAngle(rng, d, l),
+    len: [1.3, 2.7],
+    wid: [0.4, 0.75],
+    alpha: [0.7, 0.95],
+    texture: 0.7,
+  });
+  yield* paintFlowers(b, L, M, 3.4);
+  yield* paintTips(b, L, M, 8, () => (rng.chance(0.3) ? rng.pick(GRASS.pale) : rng.pick(GRASS.sun)));
+  paintCrestEdge(b, L, () => (rng.chance(0.55) ? rng.pick(GRASS.sun) : rng.pick(tawny)));
+}
+
+/* ------------------------------------------------------------------ land: lavender */
+
+/** A little stone farmhouse: its gable end in the sun, the long side in shade, a low tiled roof. */
+function paintHouse(b: Brush, L: Layout): void {
+  const { rng } = b;
+  const hx = L.marks[2];
+  const hy = L.marks[3];
+  const s = L.marks[4];
+  const wall = s * 0.5;
+  centred(b, hx + s * 0.22, hy - wall * 0.5, 0, s * 0.6, wall, 0, rng.pick(LAVENDER.wallShade), 0.97, 0.15);
+  centred(b, hx - s * 0.26, hy - wall * 0.5, 0, s * 0.5, wall, 0, rng.pick(LAVENDER.wall), 0.97, 0.15);
+  centred(
+    b,
+    hx + s * 0.04,
+    hy - wall - s * 0.06,
+    rng.signed(0.02),
+    s * 1.2,
+    s * 0.2,
+    0,
+    rng.pick(LAVENDER.roof),
+    0.97,
+    0.15,
+  );
+  b.dab(hx - s * 0.3, hy - wall * 0.5, Math.max(0.45, s * 0.06), 0, hexLab("#4a3a44"), 0.8);
+  b.dab(hx + s * 0.3, hy - wall * 0.45, Math.max(0.45, s * 0.05), 0, hexLab("#4a3a44"), 0.7);
+}
+
+function* paintLavenderLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  // the long blue mountain, then low hills grey-green with olive trees
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, L.landTop, hz, ["#b0b4d6", "#9ca4cc"]));
+  yield* paintRange(b, L, L.far, hz, LAVENDER.far, LAVENDER.farLit, 0.45, 0.5, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, hz - F * 0.03, hz, ["#949a88", "#8a9082"]));
+  yield* paintRange(b, L, L.near, hz + F * 0.004, LAVENDER.hill, LAVENDER.hillLit, 0.42, 0.25, L.crest);
+  for (let x = rng.range(0, F * 0.02), i = 0; x < w; i++) {
+    const r = Math.max(1.6, F * rng.range(0.006, 0.01));
+    const top = colAt(L.near, x);
+    if (rng.chance(0.5))
+      clump(b, x, rng.range(top + r * 1.5, hz + F * 0.004), r, LAVENDER.olive, LAVENDER.oliveLit);
+    x += r * rng.range(1.5, 3.5);
+    if ((i & 7) === 7) yield;
+  }
+  paintHouse(b, L);
+
+  // the field: rows of lavender running away to the vanishing point, each bush violet in the sun
+  // on its left, blue-violet in shade on its right, bare ochre earth between
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#a294c8", "#8a70bc", "#6e58a8", "#5c4a98"]));
+  const vx = L.marks[0];
+  const spacing = L.marks[1];
+  const area = w * L.meadowH;
+  const bands = 16;
+  for (let band = 0; band < bands; band++) {
+    const k = Math.max(1.5 * persp((band + 0.5) / bands), 0.6);
+    const count = Math.round(area / bands / (bu * bu * k * k * 1.4));
+    for (let i = 0; i < count; i++) {
+      if ((i & 31) === 31) yield;
+      const x = rng.next() * w;
+      const d = (band + rng.next()) / bands;
+      const y = groundY(L, x, d) + (d > 0.96 ? bu * 0.6 : 0);
+      const below = Math.max(0.5, y - hz);
+      const rowW = spacing * below;
+      const f = lavenderRow(L, x, y);
+      const along = Math.atan2(below, x - vx);
+      const l = M.light(x, y);
+      const sc = Math.max(1.5 * persp(d), 1.2 / bu);
+      const q = below / (h - hz);
+      let col: Lab;
+      let ang = along + rng.signed(0.06);
+      let len = bu * sc * rng.range(1.4, 2.8);
+      let wid = Math.min(bu * sc * rng.range(0.35, 0.6), Math.max(0.7, rowW * 0.3));
+      if (f < 0.16 || f > 0.84) {
+        col =
+          l > -0.15
+            ? rng.pick(rng.chance(0.25) ? LAVENDER.leaf : LAVENDER.earth)
+            : rng.pick(LAVENDER.earthShade);
+      } else {
+        const across = (f - 0.5) / 0.36;
+        const lit = -across * 0.7 + 0.15 + l * 0.35 + rng.signed(0.3);
+        col =
+          lit > 0.45
+            ? rng.pick(LAVENDER.lit)
+            : lit > -0.15
+              ? rng.pick(LAVENDER.mid)
+              : rng.pick(LAVENDER.shade);
+        if (rng.chance(0.07)) col = rng.pick(LAVENDER.leaf);
+        if (q > 0.4 && rng.chance(0.3)) {
+          // flower spikes standing up out of the near bushes
+          ang = -HALF_PI + 0.15 + rng.signed(0.35);
+          len = Math.min(len, rowW * 0.5);
+        }
+        wid = Math.min(bu * sc * rng.range(0.4, 0.7), Math.max(0.7, rowW * 0.4));
+      }
+      if (q < 0.18) col = mix(col, rng.pick(LAVENDER.haze), 0.55 * (1 - q / 0.18));
+      centred(b, x, y, ang, len, wid, rng.signed(0.1), col, rng.range(0.7, 0.95), 0.5);
+    }
+  }
+  // each row drawn out: a lit edge on the left of the bush, a dark line of shade on its right
+  const H = h - hz;
+  const r0 = Math.floor((0 - vx) / (spacing * H)) - 1;
+  const r1 = Math.ceil((w - vx) / (spacing * H)) + 1;
+  for (let r = r0; r <= r1; r++) {
+    for (let pass = 0; pass < 2; pass++) {
+      const f = pass === 0 ? 0.82 : 0.22;
+      for (let y = h + bu; y > hz + H * 0.05;) {
+        const below = y - hz;
+        const step = Math.max(bu * 0.6, below * 0.12);
+        const x = vx + (r + f) * spacing * below;
+        if (x > -bu && x < w + bu) {
+          const ang = Math.atan2(below, x - vx);
+          const q = below / H;
+          centred(
+            b,
+            x,
+            y,
+            ang + rng.signed(0.05),
+            step * rng.range(1.2, 1.8),
+            Math.max(0.6, spacing * below * (pass === 0 ? 0.11 : 0.08)),
+            0,
+            pass === 0 ? rng.pick(LAVENDER.shade) : rng.pick(LAVENDER.lit),
+            (pass === 0 ? 0.85 : 0.5) * smoothstep(0.04, 0.25, q),
+            0,
+          );
+        }
+        y -= step;
+      }
+    }
+    yield;
+  }
+  castShadows(b, L, "cypress", LAVENDER.shade, 0.9);
+}
+
+/* ------------------------------------------------------------------ land: autumn */
+
+/** Each crown's colours (shade, middle, light) by colour family: gold, orange, rust, red, olive, green. */
+const CROWN_FAMILIES: [Lab[], Lab[], Lab[]][] = [
+  [AUTUMN.olive, AUTUMN.gold, AUTUMN.grassSun],
+  [AUTUMN.rust, AUTUMN.orange, AUTUMN.gold],
+  [AUTUMN.shade, AUTUMN.rust, AUTUMN.orange],
+  [AUTUMN.violet, AUTUMN.red, AUTUMN.orange],
+  [AUTUMN.shade, AUTUMN.olive, AUTUMN.gold],
+  [AUTUMN.shade, AUTUMN.green, AUTUMN.olive],
+];
+
+function autumnGrass(rng: Rng, l: number, d: number): Lab {
+  if (rng.chance(0.06)) return rng.pick(AUTUMN.grassGreen);
+  if (rng.chance(0.04)) return rng.pick(AUTUMN.rust);
+  if (rng.chance(0.3 * (1 - smoothstep(0, 0.1, d)))) return rng.pick(AUTUMN.grassCool);
+  const sun = l * 1.2 + (0.3 - d) * 0.3 + rng.signed(0.35);
+  if (sun > 0.3) return rng.pick(AUTUMN.grassSun);
+  if (sun > -0.1) return rng.pick(AUTUMN.grassMid);
+  return rng.chance(0.35) ? rng.pick(AUTUMN.grassCool) : rng.pick(AUTUMN.grassDark);
+}
+
+function* paintAutumnLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, hz - F * 0.16, hz, ["#b0b4d4", "#9ea6cc"]));
+  yield* paintRange(b, L, L.far, hz, AUTUMN.far, AUTUMN.farLit, 0.45, 0.5, L.near);
+
+  // the wood: dark beneath its canopy; each crown in its own colour, lit on its upper left
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, L.landTop, hz, ["#7a5038", "#4a3634"]));
+  const crowns = L.marks;
+  const s = Math.max(bu * 0.42, 1.8);
+  for (let k = 0; k < crowns.length; k += 4) {
+    const cx = crowns[k];
+    const cy = crowns[k + 1];
+    const r = crowns[k + 2];
+    const [shade, mid, lit] = CROWN_FAMILIES[crowns[k + 3]];
+    const n = Math.round(clamp((r * r * 2.4) / (s * s), 5, 80));
+    for (let i = 0; i < n; i++) {
+      const a = rng.next() * TAU;
+      const rr = Math.sqrt(rng.next());
+      const dx = Math.cos(a) * rr;
+      const dy = Math.sin(a) * rr;
+      const l = -dx * 0.55 - dy * 0.6 + rng.signed(0.35);
+      const col = l > 0.35 ? rng.pick(lit) : l > -0.3 ? rng.pick(mid) : rng.pick(shade);
+      centred(
+        b,
+        cx + dx * r,
+        cy + dy * r * 0.9,
+        rng.signed(Math.PI),
+        s * rng.range(1.2, 2.2),
+        s * rng.range(0.6, 0.95),
+        rng.signed(0.2),
+        col,
+        rng.range(0.8, 0.95),
+        0.4,
+      );
+    }
+    if ((k & 15) === 12) yield;
+  }
+  // in the shade under the canopy: trunks, a few pale birch stems among them
+  for (let x = rng.range(0, F * 0.02); x < w; x += F * rng.range(0.01, 0.026)) {
+    const len = F * rng.range(0.025, 0.05);
+    const pale = rng.chance(0.18);
+    centred(
+      b,
+      x,
+      hz - len * 0.5,
+      HALF_PI + rng.signed(0.06),
+      len,
+      Math.max(0.6, F * (pale ? 0.005 : 0.004)),
+      0,
+      pale ? BIRCH_BARK[0] : rng.pick(AUTUMN.shade),
+      pale ? 0.9 : 0.7,
+      0,
+    );
+  }
+  yield;
+
+  // the meadow in front of the wood: tawny grass, fallen leaves
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.08, ["#8a7448", "#a08a52"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  yield* paintFarBand(b, L, 0.5, () =>
+    rng.chance(0.35) ? rng.pick(AUTUMN.grassDark) : rng.pick(AUTUMN.grassMid),
+  );
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#c8a860", "#a88848", "#806a3a", "#5e5232"]));
+  yield* paintBands(b, L, M, {
+    bands: 16,
+    per: 1.5,
+    color: (_x, _y, d, l) => autumnGrass(rng, l, d),
+    angle: (_x, _y, d, l) => grassAngle(rng, d, l),
+    len: [1.3, 2.7],
+    wid: [0.4, 0.75],
+    alpha: [0.7, 0.95],
+    texture: 0.7,
+  });
+  castShadows(b, L, "birch", AUTUMN.violet, 0.8);
+  // fallen leaves, thicker under the trees
+  const nLeaves = Math.round((w * L.meadowH) / (bu * bu * 4));
+  for (let i = 0; i < nLeaves; i++) {
+    if ((i & 31) === 31) yield;
+    let x = rng.next() * w;
+    let d = Math.pow(rng.next(), 0.7);
+    if (rng.chance(0.5) && L.trees.length) {
+      const t = rng.pick(L.trees);
+      x = t.x + rng.signed(t.wd * 0.8);
+      d = clamp(M.depth(t.x, t.y) + rng.signed(0.12), 0, 1);
+    }
+    const y = groundY(L, x, d);
+    const sc = Math.max(1.5 * persp(d), 1.1 / bu);
+    b.dab(
+      x,
+      y,
+      Math.max(0.5, bu * 0.2 * sc),
+      rng.signed(Math.PI),
+      rng.pick(AUTUMN.leaf),
+      rng.range(0.8, 0.95),
+    );
+  }
+  yield* paintTips(b, L, M, 7, () => (rng.chance(0.4) ? rng.pick(AUTUMN.grassSun) : rng.pick(GRASS.pale)));
+  paintCrestEdge(b, L, () => (rng.chance(0.5) ? rng.pick(AUTUMN.grassSun) : rng.pick(AUTUMN.grassMid)));
+}
+
+/* ------------------------------------------------------------------ land: lake */
+
+/** The lake's mountains: snow up high, rock below it, forest and pasture lower down, lit on the left. */
+function* paintAlps(b: Brush, L: Layout, seed: number): Gen {
+  const { rng } = b;
+  const { w, bu, F, hz, near, peaks } = L;
+  const s = Math.max(bu * 0.55, 2.2);
+  const sRidge = hashInt(seed, 18);
+  const sZone = hashInt(seed, 21);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, hz - colAt(near, x)) * 4;
+  const faceAt = (x: number, y: number) => {
+    let best = 0;
+    let bd = Infinity;
+    for (let k = 0; k < peaks.length; k += 4) {
+      const d = Math.abs(x - peaks[k]) / peaks[k + 2];
+      if (d < bd) {
+        bd = d;
+        best = k;
+      }
+    }
+    return (
+      x -
+      (peaks[best] +
+        (y - peaks[best + 1]) * peaks[best + 3] +
+        F * 0.04 * fbm(y / (F * 0.06), best, sRidge, 0, 2))
+    );
+  };
+  const count = Math.round((area / (s * s)) * 0.7);
+  for (let i = 0; i < count; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const top = colAt(near, x);
+    if (top >= hz) continue;
+    const y = rng.range(top + s * 0.2, hz + s);
+    const alt = (hz - y) / (F * 0.3) + 0.22 * fbm(x / (F * 0.05), y / (F * 0.05), sZone, 0, 2);
+    const lit = faceAt(x, y) + rng.signed(s * 1.5) < 0;
+    let col: Lab;
+    if (alt > 0.66)
+      col = lit ? rng.pick(SNOW.lit) : rng.chance(0.3) ? rng.pick(SNOW.deep) : rng.pick(SNOW.shade);
+    else if (alt > 0.34)
+      col = lit ? rng.pick(rng.chance(0.6) ? LAKE.rockLit : LAKE.rock) : rng.pick(LAKE.rockShade);
+    else if (lit && rng.chance(0.18)) col = rng.pick(LAKE.pasture);
+    else col = lit && rng.chance(0.5) ? rng.pick(LAKE.forestLit) : rng.pick(LAKE.forest);
+    // mist over the water at the foot of the range
+    const v = (y - top) / Math.max(1, hz - top);
+    if (v > 0.75) col = mix(col, rng.pick(LAKE.far), (v - 0.75) * 1.4);
+    const ang =
+      alt < 0.34 && rng.chance(0.6)
+        ? -HALF_PI + rng.signed(0.3)
+        : rng.chance(0.3)
+          ? rng.signed(0.2)
+          : HALF_PI + (lit ? 0.55 : -0.55) + rng.signed(0.3);
+    centred(
+      b,
+      x,
+      y,
+      ang,
+      s * rng.range(1.4, 2.8),
+      s * rng.range(0.5, 0.9),
+      rng.signed(0.12),
+      col,
+      rng.range(0.7, 0.92),
+      0.5,
+    );
+  }
+  // the skyline: snow and rock catch a bright edge on the sunlit side
+  const nEdge = Math.round(w / (s * 1.2));
+  for (let i = 0; i < nEdge; i++) {
+    const x = rng.next() * w;
+    const top = colAt(near, x);
+    if (top >= hz - s) continue;
+    const slope = (colAt(near, x + 3) - colAt(near, x - 3)) / 6;
+    const high = (hz - top) / (F * 0.3) > 0.6;
+    const lit = faceAt(x, top + s) < 0;
+    centred(
+      b,
+      x,
+      top + s * 0.35,
+      Math.atan(slope),
+      s * rng.range(1.4, 2.6),
+      s * rng.range(0.4, 0.7),
+      0,
+      high ? rng.pick(lit ? SNOW.lit : SNOW.shade) : rng.pick(lit ? LAKE.rockLit : LAKE.forest),
+      0.85,
+      0.3,
+    );
+  }
+}
+
+/**
+ * The lake: the sky first, mirrored (each depth gives back the sky as high above the shore as it
+ * lies below it), then the painted mountains flipped about the far shore, then all of it repainted
+ * in level strokes of the colour beneath, broken by ripples and silver wind lines.
+ */
+function* paintLakeWater(ctx: Ctx, b: Brush, L: Layout, seed: number): Gen {
+  const { rng } = b;
+  const { w, h, bu, F, hz, dpr } = L;
+  const S = skyStyle(L.biome, L.light);
+  let shore = hz;
+  for (let x = 0; x <= w; x += 2) shore = Math.max(shore, colAt(L.crest, x));
+  shore = Math.min(h, shore + bu);
+  const tint = L.grade ? L.grade(LAKE.water[0]) : LAKE.water[0];
+  const g = ctx.createLinearGradient(0, hz, 0, shore);
+  for (let k = 0; k <= 4; k++) {
+    const dy = ((shore - hz) * k) / 4;
+    g.addColorStop(
+      k / 4,
+      hex(lighten(mix(rampAt(S.sky, clamp((hz - dy * 1.3) / hz, 0, 1)), tint, 0.3), -0.05)),
+    );
+  }
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = g;
+  ctx.fillRect(0, hz, w, shore - hz);
+  yield;
+
+  const cw = ctx.canvas.width;
+  const top = Math.max(0, Math.floor((L.landTop - 2) * dpr));
+  const base = Math.round(hz * dpr);
+  if (base > top) {
+    const copy = makeCanvas(cw, base - top);
+    copy.getContext("2d")?.drawImage(ctx.canvas, 0, top, cw, base - top, 0, 0, cw, base - top);
+    ctx.save();
+    ctx.setTransform(1, 0, 0, -1, 0, 2 * base - top);
+    ctx.globalAlpha = 0.9;
+    ctx.drawImage(copy, 0, 0);
+    ctx.restore();
+    release(copy);
+  }
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = vgrad(ctx, L, hz, shore, ["#5a86a8", "#2c4c68"]);
+  ctx.fillRect(0, hz, w, shore - hz);
+  yield;
+
+  const y0 = Math.floor(hz * dpr);
+  const rows = Math.max(1, Math.ceil(shore * dpr) - y0);
+  const data = ctx.getImageData(0, y0, cw, rows).data;
+  const grade = b.grade;
+  // (the colours sampled from the canvas are already in the light of the hour)
+  b.grade = null;
+  const sRip = hashInt(seed, 65);
+  const skyLight = [rampAt(S.sky, 0.55), rampAt(S.sky, 0.75), rampAt(S.sky, 0.9)];
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, colAt(L.crest, x) + bu - hz) * 4;
+  const n = Math.round(area / (bu * bu * 0.4));
+  for (let i = 0; i < n; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const y = hz + (colAt(L.crest, x) + bu * 0.5 - hz) * rng.next();
+    const p = clamp((y - hz) / (F * 0.25), 0, 1);
+    const s = bu * (0.22 + 0.6 * p);
+    const px = Math.min(cw - 1, Math.max(0, Math.floor(x * dpr)));
+    const py = clamp(Math.floor(y * dpr) - y0, 0, rows - 1);
+    const o = (py * cw + px) * 4;
+    let col = rgbLab(data[o], data[o + 1], data[o + 2]);
+    const rip = fbm(x / (F * 0.3), (y - hz) / (F * 0.012), sRip, 0, 2);
+    if (rip > 0.32 && rng.chance(0.6)) col = mix(col, rng.pick(skyLight), 0.55);
+    else col = lighten(col, rng.signed(0.03));
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.03),
+      s * rng.range(1.6, 3.4),
+      s * rng.range(0.25, 0.45),
+      0,
+      col,
+      rng.range(0.55, 0.85),
+      0.3,
+    );
+  }
+  b.grade = grade;
+  // silver wind lines across the water, and a pale line of shingle along the far shore
+  const nLines = 2 + rng.int(3);
+  for (let k = 0; k < nLines; k++) {
+    const yl = rng.range(hz + F * 0.012, Math.max(hz + F * 0.02, L.crestMin - F * 0.02));
+    const x0 = rng.range(-0.2, 0.7) * w;
+    const len = w * rng.range(0.2, 0.5);
+    const p = clamp((yl - hz) / (F * 0.25), 0, 1);
+    for (let x = x0; x < x0 + len; x += bu * (0.8 + p)) {
+      if (rng.chance(0.25)) continue;
+      centred(
+        b,
+        x,
+        yl + (x - x0) * 0.01 + rng.signed(0.3),
+        rng.signed(0.03),
+        bu * (1 + 1.5 * p) * rng.range(1, 1.8),
+        Math.max(0.5, bu * (0.1 + 0.12 * p)),
+        0,
+        rng.pick(LAKE.ripple),
+        rng.range(0.45, 0.75),
+        0,
+      );
+    }
+  }
+  for (let x = rng.range(0, bu); x < w; x += bu * rng.range(0.6, 1.1)) {
+    centred(
+      b,
+      x,
+      hz + rng.signed(0.4),
+      rng.signed(0.04),
+      bu * rng.range(0.8, 1.6),
+      Math.max(0.5, bu * 0.12),
+      0,
+      rng.chance(0.6) ? rng.pick(LAKE.ripple) : rng.pick(LAKE.stone),
+      0.6,
+      0,
+    );
+  }
+}
+
+function* paintLakeLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, hz - F * 0.2, hz, ["#c6cae2", "#aab2d6"]));
+  yield* paintRange(b, L, L.far, hz, LAKE.far, LAKE.farLit, 0.5, 0.5, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, L.landTop, hz, ["#aeb0c8", "#5a7068", "#3a564a"]));
+  yield* paintAlps(b, L, seed);
+  // dark woods along the far shore
+  const sLine = hashInt(seed, 61);
+  for (let tx = -2, i = 0; tx < w + 2; i++) {
+    const r = F * rng.range(0.01, 0.018);
+    if (fbm(tx / (F * 0.25), 0.7, sLine, 0, 2) > -0.3) {
+      centred(
+        b,
+        tx,
+        hz - r * 0.9 + F * 0.003,
+        -HALF_PI + rng.signed(0.06),
+        r * 2,
+        r * 0.7,
+        0,
+        rng.pick(LAKE.forest),
+        0.92,
+        0.3,
+      );
+      if (rng.chance(0.4)) {
+        centred(
+          b,
+          tx - r * 0.2,
+          hz - r * 1.1,
+          -HALF_PI,
+          r * 0.9,
+          r * 0.35,
+          0,
+          rng.pick(LAKE.forestLit),
+          0.8,
+          0,
+        );
+      }
+    }
+    tx += r * rng.range(0.6, 1.2);
+    if ((i & 15) === 15) yield;
+  }
+  yield* paintLakeWater(ctx, b, L, seed);
+
+  // the near bank: alpine grass, stones and reeds at the water's edge
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#8a9e52", "#62843e", "#466a36", "#34563a"]));
+  yield* paintBands(b, L, M, {
+    bands: 14,
+    per: 1.5,
+    color: (_x, _y, d, l) => grassColor(rng, l, d),
+    angle: (_x, _y, d, l) => grassAngle(rng, d, l),
+    len: [1.3, 2.7],
+    wid: [0.4, 0.75],
+    alpha: [0.7, 0.95],
+    texture: 0.7,
+  });
+  castShadows(b, L, "fir", GRASS.deep, 1);
+  for (let x = rng.range(0, bu); x < w; x += bu * rng.range(0.5, 1.4)) {
+    const y = colAt(L.crest, x);
+    const sc = Math.max(1.5 * persp(0.04), 1.1 / bu);
+    if (rng.chance(0.55)) {
+      const r = bu * sc * rng.range(0.25, 0.5);
+      b.dab(x, y + r * 0.3, r, rng.signed(0.3), rng.pick(LAKE.stoneShade), 0.9);
+      b.dab(x - r * 0.25, y, r * 0.7, rng.signed(0.3), rng.pick(LAKE.stone), 0.9);
+    } else {
+      for (let j = 0; j < 3; j++) {
+        b.stroke(
+          x + rng.signed(bu * 0.5),
+          y + bu * 0.2,
+          -HALF_PI + rng.range(0, 0.35),
+          bu * sc * rng.range(1.2, 2.4),
+          Math.max(0.5, bu * sc * 0.12),
+          0.05,
+          rng.pick(LAKE.reed),
+          0.9,
+          0,
+        );
+      }
+    }
+  }
+  yield* paintFlowers(b, L, M, 4);
+  yield* paintTips(b, L, M, 8, () => (rng.chance(0.3) ? rng.pick(GRASS.pale) : rng.pick(GRASS.sun)));
+}
+
+/* ------------------------------------------------------------------ land: sakura */
+
+function* paintSakuraLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  const foot = L.foot ?? L.crest;
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, L.landTop, hz, ["#b6c0d6", "#a0b0cc"]));
+  yield* paintRange(b, L, L.far, hz, SAKURA.far, SAKURA.farLit, 0.45, 0.55, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, hz - F * 0.03, hz, ["#8ea496", "#7e9a8a"]));
+  yield* paintRange(b, L, L.near, hz + F * 0.004, SAKURA.hill, SAKURA.hillLit, 0.42, 0.25, L.crest);
+  // distant trees, blossom among the green
+  for (let x = -F * 0.02, i = 0; x < w + F * 0.02; i++) {
+    const r = Math.max(1.8, F * rng.range(0.008, 0.013));
+    const pink = rng.chance(0.4);
+    clump(b, x, hz + F * 0.003, r, pink ? SAKURA.shade : TREE_LINE, pink ? SAKURA.mid : TREE_LINE_LIT);
+    x += r * rng.range(1.0, 1.7);
+    if ((i & 7) === 7) yield;
+  }
+  // the far bank, in fresh grass
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, L, hz, hz + F * 0.08, ["#98b070", "#7ea456"]);
+  ctx.fillRect(0, hz, w, h - hz);
+  const fieldFar = labs(["#9cb46a", "#a8bc70", "#8aa860", "#b4c27a"]);
+  yield* paintFarBand(b, L, 0.55, () => (rng.chance(0.25) ? rng.pick(GRASS.mid) : rng.pick(fieldFar)));
+
+  // the river: the sky in it, under each tree its blossom mirrored, ripples of light
+  const S = skyStyle(L.biome, L.light);
+  const tone = (c: Lab) => (L.grade ? L.grade(c) : c);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = vgrad(ctx, L, hz, L.crestMin + F * 0.05, ["#a8c2d8", "#8eb0cc"]);
+  ctx.beginPath();
+  for (let x = 0; x <= w; x += 2) ctx.lineTo(x, colAt(foot, x));
+  for (let x = Math.ceil(w); x >= 0; x -= 2) ctx.lineTo(x, colAt(L.crest, x) + bu);
+  ctx.closePath();
+  ctx.fill();
+  const grade = b.grade;
+  // (the sky's colours are already those of the hour)
+  b.grade = null;
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, colAt(L.crest, x) - colAt(foot, x)) * 4;
+  const nRiver = Math.round(area / (bu * bu * 0.42));
+  for (let i = 0; i < nRiver; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const top = colAt(foot, x);
+    const y = rng.range(top, colAt(L.crest, x) + bu * 0.5);
+    const p = clamp((y - hz) / (F * 0.3), 0, 1);
+    const s = bu * (0.3 + 0.7 * p);
+    let col: Lab | null = null;
+    for (const t of L.trees) {
+      // the mirrored crown: from below the trunk down to as far below the bank as the crown is high
+      const below = y - colAt(foot, t.x);
+      if (
+        Math.abs(x - t.x) < t.wd * (0.42 - below / (t.ht * 4)) &&
+        below > t.ht * 0.25 &&
+        below < t.ht * 0.95
+      ) {
+        col = tone(rng.chance(0.75) ? rng.pick(SAKURA.waterPink) : rng.pick(SAKURA.shade));
+      }
+    }
+    if (!col || rng.chance(0.2)) {
+      const r = rng.next();
+      col =
+        r < 0.5
+          ? mix(rampAt(S.sky, rng.range(0.4, 0.95)), tone(SAKURA.water[0]), 0.3)
+          : r < 0.65
+            ? tone(rng.pick(SAKURA.waterShade))
+            : tone(rng.pick(SAKURA.water));
+    }
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.04),
+      s * rng.range(1.4, 3),
+      s * rng.range(0.22, 0.4),
+      0,
+      col,
+      rng.range(0.7, 0.92),
+      0.3,
+    );
+    // petals afloat
+    if (rng.chance(0.05)) b.dab(x, y, Math.max(0.5, s * 0.14), 0, tone(rng.pick(SAKURA.petal)), 0.9);
+  }
+  b.grade = grade;
+  // the far bank's edge
+  for (let x = rng.range(0, bu); x < w; x += bu * rng.range(0.6, 1.1)) {
+    centred(
+      b,
+      x,
+      colAt(foot, x),
+      rng.signed(0.05),
+      bu * rng.range(1, 1.8),
+      Math.max(0.5, bu * 0.18),
+      0,
+      rng.pick(SAKURA.bank),
+      0.85,
+      0,
+    );
+  }
+  yield;
+
+  // the near bank: spring grass with daisies and dandelions, petals blown into it
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#a8c070", "#86a850", "#5e8a40", "#3e6a38"]));
+  yield* paintBands(b, L, M, {
+    bands: 14,
+    per: 1.8,
+    color: (_x, _y, d, l) => grassColor(rng, l + 0.1, d),
+    angle: (_x, _y, d, l) => grassAngle(rng, d, l),
+    len: [1.3, 2.7],
+    wid: [0.4, 0.75],
+    alpha: [0.7, 0.95],
+    texture: 0.7,
+  });
+  const nPetals = Math.round((w * L.meadowH) / (bu * bu * 9));
+  for (let i = 0; i < nPetals; i++) {
+    const x = rng.next() * w;
+    const d = rng.next();
+    const sc = Math.max(1.5 * persp(d), 1.1 / bu);
+    b.dab(x, groundY(L, x, d), Math.max(0.5, bu * sc * 0.12), rng.signed(1), rng.pick(SAKURA.petal), 0.85);
+  }
+  yield* paintFlowers(b, L, M, 4);
+  yield* paintTips(b, L, M, 8, () => (rng.chance(0.3) ? rng.pick(GRASS.pale) : rng.pick(GRASS.sun)));
+  paintCrestEdge(b, L, () => (rng.chance(0.5) ? rng.pick(GRASS.sun) : rng.pick(GRASS.mid)));
+}
+
+/* ------------------------------------------------------------------ land: wheat */
+
+/** Rolling country between `line` and the horizon: ripe fields, green ones and ploughland, hedged. */
+function* paintPatchwork(b: Brush, L: Layout, seed: number): Gen {
+  const { rng } = b;
+  const { w, bu, F, hz } = L;
+  const line = L.near;
+  const s = Math.max(bu * 0.42, 2);
+  const sField = hashInt(seed, 66);
+  let area = 0;
+  for (let x = 0; x < w; x += 4) area += Math.max(0, colAt(L.crest, x) + s - colAt(line, x)) * 4;
+  const count = Math.round((area / (s * s)) * 0.9);
+  const slopeAt = (x: number) => (colAt(line, x + 4) - colAt(line, x - 4)) / 8;
+  for (let i = 0; i < count; i++) {
+    if ((i & 31) === 31) yield;
+    const x = rng.next() * w;
+    const top = colAt(line, x);
+    const low = colAt(L.crest, x) + s;
+    if (low <= top) continue;
+    const y = rng.range(top + s * 0.15, low);
+    // (fields flatten with distance below the hills)
+    const flat = smoothstep(hz - F * 0.01, hz + F * 0.03, y);
+    // fields are bands that follow the swell of the land
+    const fv = fbm(x / (F * 0.22), (y - top) / (F * 0.02) + x / (F * 0.6), sField, 0, 2);
+    const sun = -slopeAt(x) * 2.5 * (1 - flat) + rng.signed(0.35);
+    let col =
+      fv > 0.18
+        ? rng.pick(sun > 0.1 ? WHEAT.lit : WHEAT.fields)
+        : fv < -0.3
+          ? rng.pick(WHEAT.fieldsGreen)
+          : fv < -0.1
+            ? rng.pick(WHEAT.ploughed)
+            : rng.pick(WHEAT.fields);
+    // the air between: bluer towards the skyline of the far hills
+    col = mix(col, rng.pick(HAZE), 0.25 * rng.next());
+    centred(
+      b,
+      x,
+      y,
+      Math.atan(slopeAt(x)) * 0.8 * (1 - flat) + rng.signed(0.2 - 0.12 * flat),
+      s * rng.range(1.5, 3),
+      s * rng.range(0.5, 0.85) * (1 - 0.3 * flat),
+      rng.signed(0.1),
+      col,
+      rng.range(0.6, 0.88),
+      0.4,
+    );
+  }
+  // hedges and copses along the field edges
+  const sHedge = hashInt(seed, 67);
+  for (let x = -F * 0.02, i = 0; x < w + F * 0.02; i++) {
+    const r = Math.max(1.8, F * rng.range(0.007, 0.012));
+    if (fbm(x / (F * 0.15), 0.4, sHedge, 0, 2) > 0.05) {
+      const top = colAt(line, x);
+      clump(b, x, top + rng.range(r, Math.max(r * 1.2, (hz - top) * 0.7)), r, TREE_LINE, TREE_LINE_LIT);
+    }
+    x += r * rng.range(1.1, 2.2);
+    if ((i & 7) === 7) yield;
+  }
+}
+
+function* paintWheatLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
+  const b = landBrush(ctx, L, seed);
+  const { rng } = b;
+  const { w, h, bu, F, hz } = L;
+  fillBelow(ctx, L, L.far, h, vgrad(ctx, L, L.landTop, hz, ["#b2b8d2", "#98a6c8"]));
+  yield* paintRange(b, L, L.far, hz, HILL_FAR, HILL_FAR_LIT, 0.42, 0.55, L.near);
+  fillBelow(ctx, L, L.near, h, vgrad(ctx, L, hz - F * 0.07, hz, ["#c8b678", "#b0a86a"]));
+  yield* paintPatchwork(b, L, seed);
+
+  // the wheat: gold in the sun, cool and violet-grey where a cloud's shadow passes over it
+  fillBelow(ctx, L, L.crest, h, vgrad(ctx, L, L.crestMin, h, ["#e2c468", "#d4ac50", "#b88e3e", "#8e6c34"]));
+  const wheatColor = (l: number, d: number): Lab => {
+    if (rng.chance(0.05)) return rng.pick(WHEAT.green);
+    if (rng.chance(0.3 * (1 - smoothstep(0, 0.12, d)))) return mix(rng.pick(WHEAT.gold), rng.pick(HAZE), 0.4);
+    const sun = l * 1.2 + (0.3 - d) * 0.3 + rng.signed(0.35);
+    if (sun > 0.35) return rng.pick(rng.chance(0.5) ? WHEAT.lit : WHEAT.gold);
+    if (sun > -0.05) return rng.pick(rng.chance(0.6) ? WHEAT.gold : WHEAT.mid);
+    if (sun > -0.4) return rng.pick(rng.chance(0.5) ? WHEAT.mid : WHEAT.dark);
+    return rng.pick(rng.chance(0.6) ? WHEAT.shade : WHEAT.dark);
+  };
+  yield* paintBands(b, L, M, {
+    bands: 20,
+    per: 1.4,
+    color: (x, y, d, l) => (M.path(x, y) > 0.55 && rng.chance(0.6) ? null : wheatColor(l, d)),
+    angle: (_x, _y, d) => lerp(rng.signed(0.25), -HALF_PI + rng.range(0.05, 0.45), smoothstep(0, 0.3, d)),
+    len: [1.4, 3],
+    wid: [0.35, 0.65],
+    alpha: [0.75, 0.95],
+    texture: 0.7,
+  });
+  // the track: pale dust between the wheat
+  const P = L.path ?? { a: 0, b: 0, c: 0, k: 0, ph: 0, half: 0, rough: 0 };
+  const nPath = Math.round((F * P.half * 2 * L.meadowH) / (bu * bu * 0.35));
+  for (let i = 0; i < nPath; i++) {
+    if ((i & 31) === 31) yield;
+    const d = Math.sqrt(rng.next());
+    const p = persp(d);
+    const v = 1 / p;
+    const x = w / 2 + (P.a + P.b * Math.sin(v * P.k + P.ph) + rng.signed(1.1) * P.half) * F * p;
+    const y = groundY(L, x, d);
+    const core = M.path(x, y);
+    if (core < 0.2 || rng.next() > core + 0.2) continue;
+    const sc = 1.5 * p;
+    centred(
+      b,
+      x,
+      y,
+      rng.signed(0.3),
+      bu * rng.range(1.2, 2.4) * sc,
+      bu * rng.range(0.4, 0.75) * sc,
+      rng.signed(0.12),
+      M.light(x, y) > -0.05 ? rng.pick(PATH) : rng.pick(PATH_SHADE),
+      rng.range(0.5, 0.8),
+      0.6,
+    );
+  }
+  yield* paintFlowers(b, L, M, 3.6);
+  // ears of wheat catching the sun
+  yield* paintTips(b, L, M, 5, () => (rng.chance(0.6) ? rng.pick(WHEAT.lit) : rng.pick(GRASS.pale)));
+  paintCrestEdge(b, L, () => (rng.chance(0.6) ? rng.pick(WHEAT.lit) : rng.pick(WHEAT.gold)));
+}
+
+const PAINT_LAND: Record<MeadowBiome, (ctx: Ctx, L: Layout, M: Meadow, seed: number) => Gen> = {
+  meadow: paintMeadowLand,
+  snow: paintSnowLand,
+  desert: paintDesertLand,
+  coast: paintCoastLand,
+  lavender: paintLavenderLand,
+  autumn: paintAutumnLand,
+  lake: paintLakeLand,
+  sakura: paintSakuraLand,
+  wheat: paintWheatLand,
+};
+
 function* paintLand(ctx: Ctx, L: Layout, M: Meadow, seed: number): Gen {
-  if (L.biome === "snow") yield* paintSnowLand(ctx, L, M, seed);
-  else if (L.biome === "desert") yield* paintDesertLand(ctx, L, M, seed);
-  else yield* paintMeadowLand(ctx, L, M, seed);
+  yield* PAINT_LAND[L.biome](ctx, L, M, seed);
 }
 
 /* ------------------------------------------------------------------ trees */
@@ -2384,12 +4508,20 @@ function spriteSheet(L: Layout): Sheet {
     width = Math.max(width, x);
     return s;
   };
-  // room around each tree for its crown (and, for a shrub, its shadow on the right)
+  // room around each tree for its crown (and, for some, the shadow it casts to the right, longer
+  // at golden hour)
+  const sh = Math.max(1, L.shadow);
   const reach: Record<TreeKind, [number, number]> = {
-    poplar: [0.8, 1.4],
-    oak: [0.75, 1.3],
+    poplar: [0.8, sh > 1 ? 1.9 * sh : 1.4],
+    oak: [0.75, sh > 1 ? 0.3 + 1.1 * sh : 1.3],
+    maple: [0.75, sh > 1 ? 0.3 + 1.1 * sh : 1.3],
     pine: [0.62, 0.66],
-    shrub: [0.6, 1.5],
+    fir: [0.62, 0.66],
+    shrub: [0.6, Math.max(1.5, 0.4 + 1.1 * sh)],
+    gorse: [0.6, Math.max(1.5, 0.4 + 1.1 * sh)],
+    cypress: [0.75, 0.8],
+    birch: [0.8, 0.85],
+    cherry: [0.62, 0.66],
   };
   const trees = L.trees.map((t) => {
     const left = t.wd * reach[t.kind][0] + 3;
@@ -2400,13 +4532,28 @@ function spriteSheet(L: Layout): Sheet {
   return { width, height: y + rowH, trees };
 }
 
-function paintPoplar(b: Brush, t: Tree): void {
+/** How dark a tree's own cast shadow is at this hour. */
+const shadowAlpha = (L: Layout, a: number) => a * Math.min(1, 0.3 + 0.7 * L.shadow);
+
+function paintPoplar(b: Brush, t: Tree, L: Layout): void {
   const { rng } = b;
   const H = t.ht;
   const W = t.wd;
   const half = (s: number) => W * 0.5 * Math.pow(1 - s, 0.8) * smoothstep(0.02, 0.26, s) + W * 0.04;
   // its shadow on the field, falling to the right
-  centred(b, W * 0.9, -W * 0.05, 0.03, W * 1.8, Math.max(0.8, W * 0.2), 0, rng.pick(POPLAR_DARK), 0.45, 0);
+  const sh = L.shadow;
+  centred(
+    b,
+    W * 0.9 * sh,
+    -W * 0.05,
+    0.03,
+    W * 1.8 * sh,
+    Math.max(0.8, W * 0.2),
+    0,
+    rng.pick(POPLAR_DARK),
+    shadowAlpha(L, 0.45),
+    0,
+  );
   b.stroke(0, 0, -HALF_PI, H * 0.2, Math.max(0.7, W * 0.1), 0, TRUNK, 0.9, 0);
   const n = Math.round(clamp((H * W) / 5, 24, 150));
   // shadowed body first, then the sunlit left flank
@@ -2449,21 +4596,38 @@ function paintPoplar(b: Brush, t: Tree): void {
   );
 }
 
-function paintOak(b: Brush, t: Tree): void {
+interface CrownColors {
+  dark: Lab[];
+  mid: Lab[];
+  lit: Lab[];
+  cool: Lab[];
+}
+
+const OAK_CROWN: CrownColors = { dark: POPLAR_DARK, mid: POPLAR_MID, lit: POPLAR_LIT, cool: POPLAR_COOL };
+const MAPLE_CROWN: CrownColors = {
+  dark: AUTUMN.rust,
+  mid: [...AUTUMN.orange, ...AUTUMN.red],
+  lit: AUTUMN.gold,
+  cool: AUTUMN.shade,
+};
+
+/** A round-crowned tree (oak, or a maple in autumn colour) with its shadow on the grass. */
+function paintRound(b: Brush, t: Tree, L: Layout, crown: CrownColors): void {
   const { rng } = b;
   const H = t.ht;
   const W = t.wd;
+  const sh = L.shadow;
   for (let k = 0; k < 3; k++) {
     centred(
       b,
-      W * rng.range(0.25, 0.6),
+      W * rng.range(0.25, 0.6) * sh,
       rng.signed(H * 0.02),
       rng.signed(0.05),
-      W * rng.range(0.6, 0.9),
+      W * rng.range(0.6, 0.9) * sh,
       Math.max(0.8, H * 0.07),
       0,
       rng.pick(GRASS.deep),
-      0.5,
+      shadowAlpha(L, 0.5),
       0,
     );
   }
@@ -2482,12 +4646,8 @@ function paintOak(b: Brush, t: Tree): void {
       let col: Lab;
       if (pass === 0) {
         col =
-          lit < 0.35
-            ? rng.pick(POPLAR_DARK)
-            : rng.chance(0.15)
-              ? rng.pick(POPLAR_COOL)
-              : rng.pick(POPLAR_MID);
-      } else if (lit > 0.55) col = rng.pick(POPLAR_LIT);
+          lit < 0.35 ? rng.pick(crown.dark) : rng.chance(0.15) ? rng.pick(crown.cool) : rng.pick(crown.mid);
+      } else if (lit > 0.55) col = rng.pick(crown.lit);
       else continue;
       centred(
         b,
@@ -2505,28 +4665,23 @@ function paintOak(b: Brush, t: Tree): void {
   }
 }
 
-/** A dark spruce: drooping boughs in tiers, sunlit on the left, with snow along their upper sides. */
-function paintPine(b: Brush, t: Tree): void {
+/**
+ * A dark spruce or fir: drooping boughs in tiers, sunlit on the left; in the snow, with snow along
+ * the upper side of its boughs.
+ */
+function paintPine(b: Brush, t: Tree, snowy: boolean): void {
   const { rng } = b;
   const H = t.ht;
   const W = t.wd;
+  const dark = snowy ? PINE_DARK : FIR_DARK;
+  const mid = snowy ? PINE_MID : FIR_MID;
+  const litCol = snowy ? PINE_LIT : FIR_LIT;
   b.stroke(0, 0, -HALF_PI, H * 0.14, Math.max(0.8, W * 0.08), 0, TRUNK, 0.95, 0);
   // a dark body first, so the boughs read as one mass
   const half = (s: number) => W * 0.5 * Math.pow(1 - s, 0.85) + W * 0.03;
   for (let i = 0; i < 10; i++) {
     const s = 0.08 + i * 0.09;
-    centred(
-      b,
-      rng.signed(W * 0.04),
-      -s * H,
-      -HALF_PI,
-      H * 0.12,
-      half(s) * 1.1,
-      0,
-      rng.pick(PINE_DARK),
-      0.9,
-      0.3,
-    );
+    centred(b, rng.signed(W * 0.04), -s * H, -HALF_PI, H * 0.12, half(s) * 1.1, 0, rng.pick(dark), 0.9, 0.3);
   }
   // then boughs at irregular heights, drooping, longer low down
   const n = Math.round(clamp(H / 2.2, 18, 60));
@@ -2537,7 +4692,7 @@ function paintPine(b: Brush, t: Tree): void {
     const thick = Math.max(0.9, H * rng.range(0.03, 0.05));
     const ang = side < 0 ? Math.PI - rng.range(0.2, 0.55) : rng.range(0.2, 0.55);
     const y0 = -s * H;
-    const bough = side < 0 ? rng.pick(rng.chance(0.45) ? PINE_LIT : PINE_MID) : rng.pick(PINE_DARK);
+    const bough = side < 0 ? rng.pick(rng.chance(0.45) ? litCol : mid) : rng.pick(dark);
     b.stroke(
       side * len * 0.1,
       y0,
@@ -2550,7 +4705,7 @@ function paintPine(b: Brush, t: Tree): void {
       0.5,
     );
     // snow lies along the upper side of some boughs, warm where the sun reaches it
-    if (rng.chance(0.55)) {
+    if (snowy && rng.chance(0.55)) {
       const snow = side < 0 ? rng.pick(PINE_SNOW) : rng.pick(PINE_SNOW_SHADE);
       b.stroke(
         side * len * 0.2,
@@ -2565,30 +4720,33 @@ function paintPine(b: Brush, t: Tree): void {
       );
     }
   }
-  centred(b, 0, -H * 0.95, -HALF_PI, H * 0.12, Math.max(0.7, W * 0.07), 0, PINE_DARK[0], 0.95, 0);
+  centred(b, 0, -H * 0.95, -HALF_PI, H * 0.12, Math.max(0.7, W * 0.07), 0, dark[0], 0.95, 0);
 }
 
-/** A low desert shrub: grey-green twigs lit from the left, with its violet shadow on the sand. */
-function paintShrub(b: Brush, t: Tree): void {
+/** A low shrub lit from the left, with its shadow: grey-green desert scrub, or gorse in flower. */
+function paintShrub(b: Brush, t: Tree, L: Layout, gorse: boolean): void {
   const { rng } = b;
   const H = t.ht;
   const W = t.wd;
+  const sh = L.shadow;
+  const shadow = gorse ? GRASS.deep : DESERT.shadow;
   for (let k = 0; k < 3; k++) {
     centred(
       b,
-      W * rng.range(0.35, 0.7),
+      W * rng.range(0.35, 0.7) * sh,
       rng.signed(H * 0.04),
       rng.signed(0.05),
-      W * rng.range(0.6, 0.9),
+      W * rng.range(0.6, 0.9) * sh,
       Math.max(0.8, H * 0.22),
       0,
-      rng.pick(DESERT.shadow),
-      0.55,
+      rng.pick(shadow),
+      shadowAlpha(L, 0.55),
       0,
     );
   }
   const n = Math.round(clamp((W * H) / 3, 14, 90));
-  for (let pass = 0; pass < 2; pass++) {
+  for (let pass = 0; pass < 3; pass++) {
+    if (pass === 2 && !gorse) break;
     for (let i = 0; i < (pass === 0 ? n : n * 0.5); i++) {
       const a = rng.next() * TAU;
       const rr = Math.sqrt(rng.next());
@@ -2596,9 +4754,21 @@ function paintShrub(b: Brush, t: Tree): void {
       const y = -H * 0.45 + Math.sin(a) * rr * H * 0.45;
       const lit = 0.5 - (x / (W * 0.5)) * 0.45 - ((y + H * 0.45) / (H * 0.45)) * 0.45 + rng.signed(0.25);
       let col: Lab;
-      if (pass === 0) col = lit < 0.35 ? rng.pick(SHRUB_SHADE) : rng.pick(SHRUB);
-      else if (lit > 0.55) col = rng.pick(SHRUB_LIT);
-      else continue;
+      if (pass === 0) {
+        col = gorse
+          ? rng.pick(lit < 0.35 ? GRASS.deep : GRASS.dark)
+          : lit < 0.35
+            ? rng.pick(SHRUB_SHADE)
+            : rng.pick(SHRUB);
+      } else if (pass === 1) {
+        if (lit < 0.55) continue;
+        col = gorse ? rng.pick(GRASS.mid) : rng.pick(SHRUB_LIT);
+      } else {
+        // gorse flowers: yellow, brightest in the sun
+        if (lit < 0.2) continue;
+        b.dab(x, y, Math.max(0.6, H * rng.range(0.07, 0.11)), 0, rng.pick(COAST.gorse), 0.92);
+        continue;
+      }
       centred(
         b,
         x,
@@ -2615,17 +4785,260 @@ function paintShrub(b: Brush, t: Tree): void {
   }
 }
 
-const PAINT_TREE: Record<TreeKind, (b: Brush, t: Tree) => void> = {
+/** A cypress: a dark green flame, widest low down, drawn up to a point, its left side in the sun. */
+function paintCypress(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  const half = (s: number) => W * 0.62 * smoothstep(0, 0.16, s) * Math.pow(1 - s, 0.85) + W * 0.03;
+  b.stroke(0, 0, -HALF_PI, H * 0.07, Math.max(0.7, W * 0.14), 0, TRUNK, 0.9, 0);
+  const n = Math.round(clamp((H * W) / 4, 28, 170));
+  for (let pass = 0; pass < 2; pass++) {
+    for (let i = 0; i < (pass === 0 ? n : n * 0.45); i++) {
+      const s = rng.range(0.04, 0.96);
+      const u = pass === 0 ? rng.signed(1) : rng.range(-1, 0.1);
+      const lit = 0.45 - u * 0.65 + rng.signed(0.3);
+      let col: Lab;
+      if (pass === 0) col = lit > 0.5 ? rng.pick(CYPRESS_MID) : rng.pick(CYPRESS_DARK);
+      else if (lit > 0.62) col = rng.pick(CYPRESS_LIT);
+      else continue;
+      // the foliage twists up the tree like a flame
+      centred(
+        b,
+        u * half(s),
+        -s * H,
+        -HALF_PI + u * 0.35 + rng.signed(0.25),
+        H * rng.range(0.06, 0.1),
+        Math.max(0.7, W * rng.range(0.22, 0.36)),
+        rng.signed(0.2),
+        col,
+        rng.range(0.85, 0.97),
+        0.5,
+      );
+    }
+  }
+  centred(b, 0, -H * 0.96, -HALF_PI, H * 0.08, Math.max(0.6, W * 0.12), 0, CYPRESS_DARK[0], 0.95, 0);
+}
+
+/**
+ * A birch in autumn: a slender white trunk, lit on the left and lavender in shade, marked with
+ * black, under a thin crown of yellowing leaves that hangs from fine branches.
+ */
+function paintBirch(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  const lean = rng.signed(0.05);
+  const tw = Math.max(1, W * 0.085);
+  const along = (s: number): [number, number] => [lean * H * s * s, -H * s];
+  const leaves = (front: boolean) => {
+    const count = Math.round(clamp((W * H) / 10, 24, 140) * (front ? 0.55 : 1));
+    for (let i = 0; i < count; i++) {
+      const s = rng.range(0.32, 0.99);
+      const [tx, ty] = along(s);
+      const spread = W * 0.5 * (0.35 + 0.65 * Math.sin(Math.PI * clamp((s - 0.3) / 0.75, 0, 1)));
+      const u = rng.signed(1);
+      const x = tx + u * spread;
+      const y = ty + rng.signed(H * 0.04) + Math.abs(u) * H * 0.05;
+      const lit = 0.45 - u * 0.55 + (s - 0.6) * 0.5 + rng.signed(0.3);
+      const col =
+        lit > 0.55
+          ? rng.pick(rng.chance(0.3) ? AUTUMN.grassSun : AUTUMN.gold)
+          : lit > -0.1
+            ? rng.pick(rng.chance(0.5) ? AUTUMN.orange : AUTUMN.olive)
+            : rng.pick(rng.chance(0.7) ? AUTUMN.rust : AUTUMN.shade);
+      // small leaves hanging down from the twigs
+      centred(
+        b,
+        x,
+        y,
+        HALF_PI + rng.signed(0.6),
+        Math.max(0.9, H * rng.range(0.025, 0.045)),
+        Math.max(0.7, W * rng.range(0.05, 0.09)),
+        rng.signed(0.2),
+        col,
+        rng.range(front ? 0.85 : 0.7, 0.95),
+        0.3,
+      );
+    }
+  };
+  leaves(false);
+  // fine branches rising from the trunk and arching out
+  const nBranch = 4 + rng.int(4);
+  for (let i = 0; i < nBranch; i++) {
+    const s = rng.range(0.4, 0.88);
+    const [x, y] = along(s);
+    const side = i % 2 === 0 ? -1 : 1;
+    b.stroke(
+      x,
+      y,
+      -HALF_PI + side * rng.range(0.5, 1.1),
+      W * rng.range(0.25, 0.45),
+      Math.max(0.5, tw * 0.28),
+      side * 0.12,
+      BIRCH_MARK,
+      0.75,
+      0,
+    );
+  }
+  // the trunk in segments, tapering: white in the sun, lavender-grey on its shaded side
+  const segs = 6;
+  for (let k = 0; k < segs; k++) {
+    const s0 = k / segs;
+    const s1 = (k + 1.15) / segs;
+    const [x0, y0] = along(s0);
+    const [x1, y1] = along(Math.min(1, s1));
+    const ang = Math.atan2(y1 - y0, x1 - x0);
+    const len = Math.hypot(x1 - x0, y1 - y0);
+    const wid = tw * (1 - s0 * 0.7);
+    const nx = -Math.sin(ang);
+    const ny = Math.cos(ang);
+    b.stroke(x0, y0, ang, len, wid, 0, rng.pick(BIRCH_SHADE), 0.97, 0.2);
+    b.stroke(
+      x0 + nx * wid * 0.2,
+      y0 + ny * wid * 0.2,
+      ang,
+      len,
+      wid * 0.6,
+      0,
+      rng.pick(BIRCH_BARK),
+      0.97,
+      0.2,
+    );
+  }
+  // black marks across the bark
+  const nMarks = Math.round(clamp(H / 5, 5, 18));
+  for (let i = 0; i < nMarks; i++) {
+    const s = rng.range(0.03, 0.75);
+    const [x, y] = along(s);
+    const wid = tw * (1 - s * 0.7);
+    centred(
+      b,
+      x + rng.signed(wid * 0.2),
+      y,
+      rng.signed(0.25),
+      wid * rng.range(0.5, 1.1),
+      Math.max(0.5, wid * rng.range(0.15, 0.3)),
+      0,
+      BIRCH_MARK,
+      0.85,
+      0,
+    );
+  }
+  leaves(true);
+}
+
+/**
+ * A cherry tree in full flower: a dark, leaning trunk forking into limbs under a broad, lobed
+ * cloud of blossom, pale pink in the sun and mauve beneath, a few limbs showing through.
+ */
+function paintCherry(b: Brush, t: Tree): void {
+  const { rng } = b;
+  const H = t.ht;
+  const W = t.wd;
+  const trunkH = H * rng.range(0.16, 0.22);
+  const tilt = rng.signed(0.25);
+  const tw = Math.max(1, W * 0.065);
+  b.stroke(0, 0, -HALF_PI + tilt, trunkH, tw, rng.signed(0.12), rng.pick(SAKURA.bark), 0.97, 0.4);
+  const fx = Math.cos(-HALF_PI + tilt) * trunkH;
+  const fy = Math.sin(-HALF_PI + tilt) * trunkH;
+  // limbs spreading wide and low, as a cherry's do
+  const nLimbs = 3 + rng.int(3);
+  const limbs: number[] = [];
+  for (let i = 0; i < nLimbs; i++) {
+    const side = i % 2 === 0 ? -1 : 1;
+    const ang = -HALF_PI + side * rng.range(0.2, 1.2);
+    const len = H * rng.range(0.18, 0.36);
+    b.stroke(fx, fy, ang, len, tw * 0.55, side * rng.range(0.05, 0.15), rng.pick(SAKURA.bark), 0.95, 0.3);
+    limbs.push(fx + Math.cos(ang) * len * 0.7, fy + Math.sin(ang) * len * 0.7, ang);
+  }
+  // the blossom: a broad, uneven cloud of lobes, its edges hanging low at the sides
+  const cy = -H * 0.5;
+  const nLobes = 7 + rng.int(5);
+  const lobes: number[] = [];
+  for (let k = 0; k < nLobes; k++) {
+    const u = rng.signed(1);
+    const r = W * rng.range(0.12, 0.2) * (1 - 0.25 * Math.abs(u));
+    const dome = H * 0.26 * (1 - u * u);
+    lobes.push(
+      u * (W * 0.5 - r * 0.8),
+      cy - dome * rng.range(0.4, 1.1) + H * 0.16 * u * u + rng.signed(H * 0.05),
+      r,
+    );
+  }
+  const n = Math.round(clamp((W * H) / 13, 20, 90));
+  for (let pass = 0; pass < 3; pass++) {
+    const count = pass === 0 ? n : pass === 1 ? n * 0.7 : n * 0.3;
+    for (let i = 0; i < count; i++) {
+      const k = rng.int(nLobes) * 3;
+      const a = rng.next() * TAU;
+      const rr = Math.sqrt(rng.next());
+      const lx = Math.cos(a) * rr;
+      const ly = Math.sin(a) * rr;
+      const x = lobes[k] + lx * lobes[k + 2];
+      const y = lobes[k + 1] + ly * lobes[k + 2] * 0.8;
+      // lit from the upper left, darker underneath the whole canopy
+      const lit =
+        0.5 - lx * 0.35 - ly * 0.4 - ((y - cy) / (H * 0.4)) * 0.3 - (x / W) * 0.3 + rng.signed(0.22);
+      let col: Lab;
+      if (pass === 0)
+        col = lit < 0.2 ? rng.pick(SAKURA.deep) : lit < 0.45 ? rng.pick(SAKURA.shade) : rng.pick(SAKURA.mid);
+      else if (pass === 1) {
+        if (lit < 0.4) continue;
+        col = lit > 0.62 ? rng.pick(SAKURA.lit) : rng.pick(SAKURA.mid);
+      } else {
+        if (lit < 0.66) continue;
+        col = rng.pick(SAKURA.lit);
+      }
+      centred(
+        b,
+        x,
+        y,
+        rng.signed(Math.PI),
+        W * rng.range(0.09, 0.15),
+        Math.max(0.7, W * rng.range(0.06, 0.1)),
+        rng.signed(0.25),
+        col,
+        rng.range(0.82, 0.96),
+        0.4,
+      );
+    }
+  }
+  // a few dark limbs showing through the blossom
+  for (let i = 0; i < limbs.length; i += 3) {
+    if (rng.chance(0.5)) continue;
+    b.stroke(
+      limbs[i],
+      limbs[i + 1],
+      limbs[i + 2] + rng.signed(0.3),
+      H * rng.range(0.06, 0.12),
+      tw * 0.25,
+      0.1,
+      SAKURA.bark[0],
+      0.7,
+      0,
+    );
+  }
+}
+
+const PAINT_TREE: Record<TreeKind, (b: Brush, t: Tree, L: Layout) => void> = {
   poplar: paintPoplar,
-  oak: paintOak,
-  pine: paintPine,
-  shrub: paintShrub,
+  oak: (b, t, L) => paintRound(b, t, L, OAK_CROWN),
+  maple: (b, t, L) => paintRound(b, t, L, MAPLE_CROWN),
+  pine: (b, t) => paintPine(b, t, true),
+  fir: (b, t) => paintPine(b, t, false),
+  shrub: (b, t, L) => paintShrub(b, t, L, false),
+  gorse: (b, t, L) => paintShrub(b, t, L, true),
+  cypress: paintCypress,
+  birch: paintBirch,
+  cherry: paintCherry,
 };
 
 function* paintSheet(ctx: Ctx, L: Layout, sheet: Sheet, seed: number): Gen {
   const rng = new Rng(hashInt(seed, 505));
   const b = new Brush(ctx, rng);
   b.scale = L.dpr;
+  b.grade = L.grade;
   ctx.lineCap = "round";
   const at = (s: Sprite, paint: () => void) => {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -2639,7 +5052,7 @@ function* paintSheet(ctx: Ctx, L: Layout, sheet: Sheet, seed: number): Gen {
   };
   for (let i = 0; i < L.trees.length; i++) {
     const t = L.trees[i];
-    at(sheet.trees[i], () => PAINT_TREE[t.kind](b, t));
+    at(sheet.trees[i], () => PAINT_TREE[t.kind](b, t, L));
     yield;
   }
 }
@@ -2778,8 +5191,13 @@ interface Motion {
   head: Float32Array;
   headColor: Int8Array;
   eyeColor: Int8Array;
+  /** Colours in the light of the hour. */
+  stemColor: string;
+  headColors: [string, number][];
+  eyeColors: [string, number][];
   sheen: [string, number, number][];
   drift: Drift | null;
+  flakes: Flakes | null;
 }
 
 /** Snow or sand that the gusts lift and carry along the ground. */
@@ -2798,6 +5216,23 @@ interface Drift {
   /** Share that drifts even in a lull, and how high a gust lifts it (× brush unit). */
   floor: number;
   lift: number;
+}
+
+/** Leaves or petals that the wind carries down through the air, turning over as they fall. */
+interface Flakes {
+  w: number;
+  x0: Float32Array;
+  y0: Float32Array;
+  /** How far each falls before it starts again, how fast it falls and how fast the wind carries it. */
+  fall: Float32Array;
+  vy: Float32Array;
+  speed: Float32Array;
+  size: Float32Array;
+  phase: Float32Array;
+  spin: Float32Array;
+  color: Int8Array;
+  colors: string[];
+  alpha: number;
 }
 
 /** Blade colours, darkest to lightest, then the cool and accent ones: [colour, alpha]. */
@@ -2826,6 +5261,8 @@ const HEAD_COLORS: [string, number][] = [
   ["#d8412a", 0.92],
   ["#ea5c36", 0.92],
   ["#6274c8", 0.88],
+  ["#e47ea2", 0.92],
+  ["#f0a2bc", 0.92],
 ];
 /** The hearts of daisies and poppies. */
 const EYE_COLORS: [string, number][] = [
@@ -2833,24 +5270,38 @@ const EYE_COLORS: [string, number][] = [
   ["#3a1c20", 0.85],
 ];
 /** Head radius for each flower kind, in brush units at the bottom edge. */
-const HEAD_SIZE = [0, 0.32, 0.38, 0.5, 0.32];
+const HEAD_SIZE = [0, 0.32, 0.38, 0.5, 0.32, 0.36];
 /** The pale side of the grass that a gust turns up as it presses it down: [colour, alpha, from]. */
 const SHEEN: [string, number, number][] = [
   ["#d8e29a", 0.6, 0.3],
   ["#eef0c4", 0.75, 0.52],
 ];
 
+/** What the wind carries: streaks low over the ground (snow, sand) or flakes through the air. */
+interface DriftLook {
+  flakes: boolean;
+  colors: string[];
+  alpha: number;
+  /** Foreground area (CSS px²) per particle. */
+  per: number;
+}
+
 /** How each biome's plants look and how many there are. */
 interface PlantLook {
+  /**
+   * Meadow grass: 14 colours (see bladeColor). Other biomes: 6, darkest to lightest and then two
+   * accents (see dryColor).
+   */
   colors: [string, number][];
   /** Share of the meadow's number of tufts, and whether they grow in patches rather than all over. */
   amount: number;
   patchy: boolean;
   sheen: [string, number, number][];
+  drift: DriftLook | null;
 }
 
 const PLANT_LOOKS: Record<MeadowBiome, PlantLook> = {
-  meadow: { colors: BLADE_COLORS, amount: 1, patchy: false, sheen: SHEEN },
+  meadow: { colors: BLADE_COLORS, amount: 1, patchy: false, sheen: SHEEN, drift: null },
   snow: {
     colors: [
       ["#6e6044", 0.85],
@@ -2863,6 +5314,7 @@ const PLANT_LOOKS: Record<MeadowBiome, PlantLook> = {
     amount: 0.07,
     patchy: true,
     sheen: [["#efe6cc", 0.5, 0.45]],
+    drift: { flakes: false, colors: ["#f6f6fb"], alpha: 0.9, per: 160 },
   },
   desert: {
     colors: [
@@ -2879,10 +5331,107 @@ const PLANT_LOOKS: Record<MeadowBiome, PlantLook> = {
       ["#f0deb0", 0.5, 0.35],
       ["#faf0d2", 0.6, 0.6],
     ],
+    drift: { flakes: false, colors: ["#f3dcb2"], alpha: 0.6, per: 200 },
+  },
+  coast: {
+    colors: [
+      ["#3a6436", 0.85],
+      ["#58843e", 0.85],
+      ["#86a646", 0.85],
+      ["#b2be5e", 0.85],
+      ["#5a8a7a", 0.8],
+      ["#b09a5c", 0.8],
+    ],
+    amount: 0.75,
+    patchy: false,
+    sheen: [
+      ["#dce6a0", 0.55, 0.32],
+      ["#eef0c8", 0.7, 0.55],
+    ],
+    drift: null,
+  },
+  lavender: {
+    colors: [
+      ["#483e8a", 0.9],
+      ["#6656ac", 0.9],
+      ["#8a72ca", 0.9],
+      ["#b096de", 0.9],
+      ["#7c8e72", 0.8],
+      ["#c8a0d6", 0.8],
+    ],
+    amount: 0.9,
+    patchy: false,
+    sheen: [["#dccaee", 0.5, 0.38]],
+    drift: null,
+  },
+  autumn: {
+    colors: [
+      ["#665632", 0.85],
+      ["#967840", 0.85],
+      ["#bc9650", 0.85],
+      ["#dab86a", 0.85],
+      ["#a25a32", 0.8],
+      ["#7e8446", 0.8],
+    ],
+    amount: 0.6,
+    patchy: false,
+    sheen: [
+      ["#f0d890", 0.55, 0.35],
+      ["#faecc0", 0.65, 0.58],
+    ],
+    drift: { flakes: true, colors: ["#e08a38", "#c85a2e", "#ebb63e", "#b0442a"], alpha: 0.95, per: 900 },
+  },
+  lake: {
+    colors: [
+      ["#2c5236", 0.85],
+      ["#446c3a", 0.85],
+      ["#6a8e3e", 0.85],
+      ["#96ac4a", 0.85],
+      ["#4e7468", 0.8],
+      ["#a8a45e", 0.8],
+    ],
+    amount: 0.6,
+    patchy: false,
+    sheen: [["#d0e09a", 0.5, 0.35]],
+    drift: null,
+  },
+  sakura: {
+    colors: [
+      ["#2e5c34", 0.85],
+      ["#4c8038", 0.85],
+      ["#76a440", 0.85],
+      ["#a6c656", 0.85],
+      ["#5a8a76", 0.8],
+      ["#eab6ca", 0.75],
+    ],
+    amount: 0.6,
+    patchy: false,
+    sheen: [
+      ["#d8eca0", 0.55, 0.32],
+      ["#f2f6d0", 0.65, 0.55],
+    ],
+    drift: { flakes: true, colors: ["#fbd2de", "#f6c0d2", "#fff2f4"], alpha: 0.92, per: 420 },
+  },
+  wheat: {
+    colors: [
+      ["#8a6a30", 0.85],
+      ["#b48c40", 0.85],
+      ["#d8b050", 0.85],
+      ["#f0d070", 0.85],
+      ["#9aa04a", 0.8],
+      ["#c8a878", 0.8],
+    ],
+    amount: 1.15,
+    patchy: false,
+    sheen: [
+      ["#f8e6a0", 0.6, 0.28],
+      ["#fff4cc", 0.75, 0.5],
+    ],
+    drift: null,
   },
 };
 
-/** A dry grass colour (snow and desert), lighter where the sun falls. */
+/** A dry grass colour (and any other biome's), lighter where the sun falls. */
 function dryColor(rng: Rng, light: number): number {
   const r = rng.next();
   if (light > 0.2) return r < 0.6 ? 2 + rng.int(2) : 1 + rng.int(4) * (r < 0.8 ? 0 : 1);
@@ -2944,6 +5493,7 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
   const rng = new Rng(hashInt(seed, 303));
   const { w, h, bu, F } = L;
   let top = h;
+  const tone = (c: string) => graded(L, c);
 
   // tufts all over the meadow, as many per px near as far, so the near ones (larger) dominate
   const bladeRows: number[][] = [];
@@ -2958,6 +5508,8 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
     const y = c + d * (h - c) + bu * 0.3;
     if (M.path(x, y) > 0.5 && rng.chance(0.85)) continue;
     if (look.patchy && fbm(M.gx(x, d) * 1.8, (1 / p) * 1.6, sPatch, 0, 2) < 0.12) continue;
+    // lavender grows only along its rows
+    if (L.biome === "lavender" && !onLavenderRow(L, x, y)) continue;
     const sc = 1.5 * p;
     const len = Math.max(3, bu * sc * rng.range(1.8, 4));
     const hw = Math.max(0.5, bu * sc * rng.range(0.09, 0.16));
@@ -2986,8 +5538,8 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
   const bladeEnd = sliceEnds(bladeRows);
   // two strengths of each colour: some blades are thin glazes over the painted grass
   const palette = look.colors.flatMap(([c, a]): [string, number][] => [
-    [c, a],
-    [c, a * 0.55],
+    [tone(c), a],
+    [tone(c), a * 0.55],
   ]);
   const bladeGroups: Group[][] = [];
   let start = 0;
@@ -3024,7 +5576,9 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
           ? 2 + rng.int(2)
           : kind === FLOWER_POPPY
             ? 4 + rng.int(2)
-            : 6;
+            : kind === FLOWER_THRIFT
+              ? 7 + rng.int(2)
+              : 6;
     const eye = r > 1.8 && kind === FLOWER_DAISY ? 0 : r > 1.8 && kind === FLOWER_POPPY ? 1 : -1;
     stemRows.push([
       d,
@@ -3052,9 +5606,11 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
 
   // snow or sand lifted by the gusts, low over the ground (or off the dune crests)
   let drift: Drift | null = null;
-  if (L.biome !== "meadow") {
+  let flakes: Flakes | null = null;
+  const dl = look.drift;
+  if (dl && !dl.flakes) {
     const snow = L.biome === "snow";
-    const n = Math.round(clamp((w * L.meadowH) / (snow ? 160 : 200), 24, 140));
+    const n = Math.round(clamp((w * L.meadowH) / dl.per, 24, 140));
     const rows: number[][] = [];
     for (let i = 0; i < n; i++) {
       const x = rng.next() * w;
@@ -3085,10 +5641,49 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
       len: c(4),
       thick: c(5),
       phase: c(6),
-      color: snow ? "#f6f6fb" : "#f3dcb2",
-      alpha: snow ? 0.9 : 0.6,
+      color: tone(dl.colors[0]),
+      alpha: dl.alpha,
       floor: snow ? 0.12 : 0,
       lift: snow ? 1.6 : 0.8,
+    };
+  } else if (dl) {
+    // leaves or petals let go high up and carried down and across on the wind
+    const n = Math.round(clamp((w * h) / dl.per, 14, 110));
+    const rows: number[][] = [];
+    const petals = L.biome === "sakura";
+    for (let i = 0; i < n; i++) {
+      const x = rng.next() * w;
+      const y0 = lerp(L.hz - F * 0.16, L.crestMin + (h - L.crestMin) * 0.35, rng.next());
+      const fall = (h - y0) * rng.range(0.35, 0.85);
+      const d = clamp((y0 + fall - L.crestMin) / Math.max(1, h - L.crestMin), 0, 1);
+      const r = bu * (0.45 + 0.55 * persp(d)) * (petals ? rng.range(0.24, 0.34) : rng.range(0.36, 0.52));
+      rows.push([
+        x,
+        y0,
+        fall,
+        rng.range(2.5, 7) * (petals ? 0.8 : 1.2),
+        F * rng.range(0.06, 0.16),
+        Math.max(petals ? 0.9 : 1.2, r),
+        rng.next(),
+        rng.signed(3) || 1,
+        rng.int(dl.colors.length),
+      ]);
+      top = Math.min(top, y0 - bu);
+    }
+    const c = (k: number) => Float32Array.from(rows, (r) => r[k]);
+    flakes = {
+      w,
+      x0: c(0),
+      y0: c(1),
+      fall: c(2),
+      vy: c(3),
+      speed: c(4),
+      size: c(5),
+      phase: c(6),
+      spin: c(7),
+      color: Int8Array.from(rows, (r) => r[8]),
+      colors: dl.colors.map(tone),
+      alpha: dl.alpha,
     };
   }
 
@@ -3133,8 +5728,12 @@ function buildMotion(L: Layout, M: Meadow, seed: number, sheet: Sheet): Motion {
     head: Float32Array.from(stemRows, (r) => r[11]),
     headColor: Int8Array.from(stemRows, (r) => r[12]),
     eyeColor: Int8Array.from(stemRows, (r) => r[13]),
-    sheen: look.sheen,
+    stemColor: tone(STEM_COLOR),
+    headColors: HEAD_COLORS.map(([c, a]): [string, number] => [tone(c), a]),
+    eyeColors: EYE_COLORS.map(([c, a]): [string, number] => [tone(c), a]),
+    sheen: look.sheen.map(([c, a, from]): [string, number, number] => [tone(c), a, from]),
     drift,
+    flakes,
   };
 }
 
@@ -3284,14 +5883,14 @@ function drawMotion(ctx: Ctx, m: Motion, t: number): void {
     // flower stems, then their heads nodding at the tips
     bend(stems, s0, s1, t, 1.3);
     ctx.globalAlpha = 0.95;
-    ctx.fillStyle = STEM_COLOR;
+    ctx.fillStyle = m.stemColor;
     for (let i = s0; i < s1; i++) {
       ctx.beginPath();
       plantPath(ctx, stems, i, SINGLE, 0.15, false);
       ctx.fill();
     }
     for (let pass = 0; pass < 2; pass++) {
-      const colors = pass === 0 ? HEAD_COLORS : EYE_COLORS;
+      const colors = pass === 0 ? m.headColors : m.eyeColors;
       const which = pass === 0 ? m.headColor : m.eyeColor;
       const size = pass === 0 ? 1 : 0.3;
       for (let c = 0; c < colors.length; c++) {
@@ -3318,6 +5917,7 @@ function drawMotion(ctx: Ctx, m: Motion, t: number): void {
     s0 = s1;
   }
   if (m.drift) drawDrift(ctx, m.drift, t);
+  if (m.flakes) drawFlakes(ctx, m.flakes, t);
   ctx.globalAlpha = 1;
 }
 
@@ -3336,6 +5936,28 @@ function drawDrift(ctx: Ctx, p: Drift, t: number): void {
     const y = p.y0[i] - g * p.lift * p.thick[i] * 4 + Math.sin(t * 1.7 + p.phase[i]) * p.thick[i];
     ctx.globalAlpha = p.alpha * seen;
     ctx.fillRect(x - len, y, len, p.thick[i]);
+  }
+}
+
+/** Leaves or petals falling slowly downwind, fluttering and turning over (narrow when edge-on). */
+function drawFlakes(ctx: Ctx, p: Flakes, t: number): void {
+  const margin = p.w * 0.08;
+  const span = p.w + margin * 2;
+  for (let c = 0; c < p.colors.length; c++) {
+    ctx.fillStyle = p.colors[c];
+    for (let i = 0; i < p.x0.length; i++) {
+      if (p.color[i] !== c) continue;
+      const f = ((((t * p.vy[i]) / p.fall[i] + p.phase[i]) % 1) + 1) % 1;
+      const r = p.size[i];
+      const spin = t * p.spin[i] + p.phase[i] * TAU;
+      const x =
+        ((((p.x0[i] + t * p.speed[i]) % span) + span) % span) - margin + Math.sin(spin * 0.7) * r * 2.5;
+      const y = p.y0[i] + f * p.fall[i];
+      ctx.globalAlpha = p.alpha * smoothstep(0, 0.12, f) * smoothstep(1, 0.86, f);
+      ctx.beginPath();
+      ctx.ellipse(x, y, r, r * (0.22 + 0.5 * Math.abs(Math.cos(spin))), spin * 0.5, 0, TAU);
+      ctx.fill();
+    }
   }
 }
 
@@ -3458,11 +6080,13 @@ function show(el: HTMLCanvasElement, s: Shown, width: number, height: number): v
 
 export function createMeadowEngine(
   els: MeadowCanvases,
-  options: { seed: number; paused: boolean; biome?: MeadowBiome },
+  options: { seed: number; paused: boolean; biome?: MeadowBiome; light?: MeadowLight },
 ): MeadowEngine {
   const { root } = els;
   const seed = options.seed >>> 0;
-  const biome = options.biome ?? "meadow";
+  // (an unknown name, say from an older client, paints the meadow by day)
+  const biome = options.biome && BIOMES.includes(options.biome) ? options.biome : "meadow";
+  const light = options.light && LIGHTS.includes(options.light) ? options.light : "day";
   let paused = options.paused;
   let visible = true;
   let destroyed = false;
@@ -3583,7 +6207,7 @@ export function createMeadowEngine(
   const generate = (w: number, h: number) => {
     job?.cancel();
     const dpr = pickDpr(w, h);
-    const L = computeLayout(w, h, dpr, seed, biome);
+    const L = computeLayout(w, h, dpr, seed, biome, light);
     const progressive = current === null;
     const layout = spriteSheet(L);
     const bufs: Buffers = {

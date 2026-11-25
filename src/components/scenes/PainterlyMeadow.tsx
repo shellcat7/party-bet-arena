@@ -1,13 +1,13 @@
 import { useEffect, useRef } from "react";
 import { createMeadowEngine } from "./meadowPainter";
-import type { MeadowBiome, MeadowEngine } from "./meadowPainter";
+import type { MeadowBiome, MeadowEngine, MeadowLight } from "./meadowPainter";
 
-export type { MeadowBiome };
+export type { MeadowBiome, MeadowLight };
 
 export interface PainterlyMeadowProps {
   /** Accessible description of the scene (announced as an image). */
   label: string;
-  /** Seed for the painting; the same seed, biome and size always give the same painting. */
+  /** Seed for the painting; the same seed, biome, light and size always give the same painting. */
   seed?: number;
   /**
    * Stops the wind animation (the last frame stays on screen). Paused from the first render, the
@@ -15,8 +15,13 @@ export interface PainterlyMeadowProps {
    */
   paused?: boolean;
   className?: string;
-  /** The landscape: a windy meadow (default), a snowy mountain range or desert dunes. */
+  /**
+   * The landscape: a windy meadow (default), a snowy mountain range, desert dunes, sea cliffs,
+   * lavender rows, an autumn wood, an alpine lake, cherry trees by a river or a wheat field.
+   */
   biome?: MeadowBiome;
+  /** The hour: full daylight (default), golden hour or dusk. */
+  light?: MeadowLight;
 }
 
 /**
@@ -30,6 +35,7 @@ export function PainterlyMeadow({
   paused = false,
   className,
   biome = "meadow",
+  light = "day",
 }: PainterlyMeadowProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const skyRef = useRef<HTMLCanvasElement>(null);
@@ -53,20 +59,21 @@ export function PainterlyMeadow({
     if (!root || !sky || !ground || !trees || !motion) return;
     const engine = createMeadowEngine(
       { root, sky, ground, trees, motion },
-      { seed, paused: pausedRef.current, biome },
+      { seed, paused: pausedRef.current, biome, light },
     );
     engineRef.current = engine;
     return () => {
       engine.destroy();
       engineRef.current = null;
     };
-  }, [seed, biome]);
+  }, [seed, biome, light]);
 
   return (
     <div
       ref={rootRef}
       className={className ? `scene-meadow ${className}` : "scene-meadow"}
       data-biome={biome}
+      data-light={light}
     >
       <canvas ref={skyRef} className="scene-meadow__layer scene-meadow__sky" aria-hidden="true" />
       <canvas ref={groundRef} className="scene-meadow__layer" role="img" aria-label={label} />

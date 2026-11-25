@@ -89,6 +89,12 @@ export function landscapeLabel(t: Translate, biome: Biome) {
     meadow: t("風の吹く草原を描いた油絵風の風景", "A painted, windswept meadow"),
     snow: t("雪山を描いた油絵風の風景", "A painted snowy mountain range"),
     desert: t("砂丘と岩山の砂漠を描いた油絵風の風景", "A painted desert of dunes and mesas"),
+    coast: t("海辺の断崖を描いた油絵風の風景", "A painted coast of sea cliffs"),
+    lavender: t("ラベンダー畑を描いた油絵風の風景", "A painted lavender field"),
+    autumn: t("紅葉の森のはずれを描いた油絵風の風景", "A painted autumn wood"),
+    lake: t("山あいの湖を描いた油絵風の風景", "A painted mountain lake"),
+    sakura: t("川沿いの桜並木を描いた油絵風の風景", "A painted row of cherry trees by a river"),
+    wheat: t("実った麦畑を描いた油絵風の風景", "A painted wheat field"),
   };
   return labels[biome];
 }
