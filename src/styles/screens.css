@@ -40,12 +40,20 @@
   text-align: center;
 }
 
+.launch__scene {
+  width: 100%;
+  height: clamp(150px, 26dvh, 230px);
+  overflow: hidden;
+  border-radius: var(--radius-l);
+}
+
 .launch__intro .brand-mark {
-  margin-bottom: 8px;
+  margin: 20px 0 8px;
 }
 
 .launch__intro h1 {
   font-size: 1.6rem;
+  font-weight: 700;
   line-height: 1.3;
 }
 
