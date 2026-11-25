@@ -32,7 +32,6 @@ const messages: Record<string, string> = {
   "Bet status": "Stato delle scommesse",
   "Bet type": "Tipo di scommessa",
   Betting: "Scommesse",
-  "Betting closed. Waiting for the result": "Scommesse chiuse. In attesa del risultato",
   "Betting closes automatically when you confirm.":
     "Alla conferma, le scommesse verranno chiuse automaticamente.",
   "Betting is closed": "Scommesse chiuse",
@@ -93,8 +92,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "Inserisci una scommessa per qualcuno",
   "Enter results": "Inserisci risultati",
   "Enter the invitation from your host": "Inserisci i dati dell'invito ricevuto dall'organizzatore",
-  "Everyone has bet. Waiting for the host to close betting":
-    "Hanno scommesso tutti. In attesa che l'organizzatore chiuda le scommesse",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "I saldi e lo storico di tutti verranno eliminati e i partecipanti perderanno l'accesso. L'operazione non può essere annullata.",
   "Everything can be changed later": "Puoi modificare tutto in seguito",
@@ -111,7 +108,6 @@ const messages: Record<string, string> = {
   History: "Storico",
   Hit: "Vinta",
   Host: "Organizzatore",
-  "If it hits (est.)": "Se vince (stima)",
   "Increase {label}": "Aumenta {label}",
   "Invitation details filled in. Enter a display name to join.":
     "Dati dell'invito compilati. Inserisci un nome visualizzato per entrare.",
@@ -298,7 +294,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "Questo dispositivo non risulta tra i membri della stanza.",
   "This only removes it from this device.": "La stanza verrà rimossa solo dall'elenco di questo dispositivo.",
   "This race": "Questa gara",
-  "This race has a result": "Il risultato di questa gara è disponibile",
   "This race is settled": "Questa gara è stata liquidata",
   "This room is full (max {max}).": "Questa stanza è al completo (max {max}).",
   "This room is no longer available.": "Questa stanza non è più disponibile.",
@@ -325,17 +320,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "Annullata (rimborsata)",
   "Void this ticket?": "Eliminare questa scommessa?",
   "Void ticket": "Elimina scommessa",
-  "Waiting for the host to enter the result.": "In attesa che l'organizzatore inserisca il risultato.",
-  "Waiting for {count} more":
-    "{count, plural, one {Manca ancora # scommettitore} other {Mancano ancora # scommettitori}}",
   "Welcome back, {name}": "Ti diamo il bentornato, {name}",
   "Who has bet": "Chi ha scommesso",
   "Who is this bet for?": "Per chi è questa scommessa?",
   Win: "Vincente",
   You: "Tu",
   "You can bet again until betting closes.": "Puoi scommettere di nuovo fino alla chiusura delle scommesse.",
-  "You can bet again when the next race opens.":
-    "Potrai scommettere di nuovo all'apertura della prossima gara.",
   "You can't open this room from this device.": "Non puoi aprire questa stanza da questo dispositivo.",
   "You didn't bet on this race.": "Non hai scommesso su questa gara.",
   "You don't have permission to do that.": "Non hai l'autorizzazione per questa operazione.",
@@ -388,6 +378,41 @@ const messages: Record<string, string> = {
   "({max} races in total)": "({max} gare in totale)",
   "{count, plural, one {# ticket} other {# tickets}}":
     "{count, plural, one {# scommessa} other {# scommesse}}",
+  Racing: "In corsa",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "Quando la gara è finita, inserisci l'ordine d'arrivo nella scheda Gara.",
+  "Start the next race to enter bets for others again.":
+    "Avvia la gara successiva per inserire di nuovo scommesse per gli altri.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "Paesaggio in stile pittura a olio: una persona con un parasole su una collina ventosa",
+  "Little helpers carrying tickets": "Piccoli aiutanti che trasportano le scommesse",
+  "While the race runs": "Durante la gara",
+  "Rules and settings": "Regole e impostazioni",
+  "Races, starting points, odds": "Gare, punti iniziali, quote",
+  "Line-up for the next race": "Partenti della prossima gara",
+  "Add, rename, grant points": "Aggiungi, rinomina, assegna punti",
+  "Invitation QR": "QR d'invito",
+  "For anyone joining late": "Per chi arriva in ritardo",
+  Standings: "Classifica",
+  "You're in": "Scommessa fatta",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "{count, plural, one {Manca ancora # scommettitore.} other {Mancano ancora # scommettitori.}} La gara inizia alla chiusura delle scommesse.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "Hanno scommesso tutti. La gara inizia quando l'organizzatore chiude le scommesse.",
+  "Race in progress": "Gara in corso",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "Le scommesse sono chiuse. Il risultato apparirà qui appena l'organizzatore inserisce l'ordine d'arrivo.",
+  "The result is in": "C'è il risultato",
+  "Your ticket hit": "Hai indovinato",
+  "No luck this time": "Stavolta niente",
+  "You can bet here as soon as the next race opens.":
+    "Potrai scommettere qui appena si apre la prossima gara.",
+  "Little helpers setting up the next race": "Piccoli aiutanti che preparano la prossima gara",
+  "All {max} races finished": "Tutte le {max} gare concluse",
+  "The tournament is over": "Il torneo è finito",
+  "See the final standings and records.": "Guarda la classifica finale e i record.",
+  "See final results": "Vedi i risultati finali",
+  Placed: "Registrata",
 };
 
 export default messages;

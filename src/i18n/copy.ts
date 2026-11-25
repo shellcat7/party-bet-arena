@@ -33,7 +33,7 @@ export function betTypeCopy(t: Translate): Record<BetType, { title: string; note
 export function raceStatusCopy(t: Translate): Record<RaceStatus, string> {
   return {
     betting: t("受付中", "Open"),
-    closed: t("締切", "Closed"),
+    closed: t("レース中", "Racing"),
     settled: t("確定", "Settled"),
   };
 }

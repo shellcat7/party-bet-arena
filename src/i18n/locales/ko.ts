@@ -30,7 +30,6 @@ const messages: Record<string, string> = {
   "Bet status": "베팅 현황",
   "Bet type": "베팅 종류",
   Betting: "베팅 접수",
-  "Betting closed. Waiting for the result": "베팅이 마감되었어요. 결과를 기다리고 있어요",
   "Betting closes automatically when you confirm.": "확정하면 베팅이 자동으로 마감돼요.",
   "Betting is closed": "베팅이 마감되었어요",
   "Betting is closed for this race": "이 경주의 베팅은 마감되었어요",
@@ -89,8 +88,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "베팅 대리 입력",
   "Enter results": "순위 입력",
   "Enter the invitation from your host": "진행자에게 받은 초대 정보를 입력해 주세요",
-  "Everyone has bet. Waiting for the host to close betting":
-    "모두 베팅했어요. 진행자가 마감하기를 기다리고 있어요",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "모든 참가자의 잔액과 기록이 삭제되고, 참가자는 더 이상 방에 접근할 수 없어요. 이 작업은 되돌릴 수 없어요.",
   "Everything can be changed later": "모든 설정은 나중에 바꿀 수 있어요",
@@ -107,7 +104,6 @@ const messages: Record<string, string> = {
   History: "기록",
   Hit: "적중",
   Host: "진행자",
-  "If it hits (est.)": "적중 시(예상)",
   "Increase {label}": "{label} 늘리기",
   "Invitation details filled in. Enter a display name to join.":
     "초대 정보가 입력되었어요. 표시 이름을 입력하고 참가해 주세요.",
@@ -289,7 +285,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "이 기기에서 참가한 방이 아니에요.",
   "This only removes it from this device.": "이 기기의 목록에서만 삭제돼요.",
   "This race": "이번 경주",
-  "This race has a result": "이 경주의 결과가 나왔어요",
   "This race is settled": "이 경주는 정산이 끝났어요",
   "This room is full (max {max}).": "이 방은 정원이 찼어요(최대 {max}명).",
   "This room is no longer available.": "이 방은 더 이상 사용할 수 없어요.",
@@ -315,15 +310,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "무효(환불)",
   "Void this ticket?": "이 베팅을 취소할까요?",
   "Void ticket": "베팅 취소",
-  "Waiting for the host to enter the result.": "진행자가 결과를 입력할 때까지 기다려 주세요.",
-  "Waiting for {count} more": "{count}명의 베팅을 기다리고 있어요",
   "Welcome back, {name}": "{name} 님으로 다시 참가했어요",
   "Who has bet": "베팅 현황",
   "Who is this bet for?": "누구의 베팅을 입력할까요?",
   Win: "단승식",
   You: "나",
   "You can bet again until betting closes.": "마감 전까지 다시 베팅할 수 있어요.",
-  "You can bet again when the next race opens.": "다음 경주가 시작되면 다시 베팅할 수 있어요.",
   "You can't open this room from this device.": "이 기기에서는 이 방을 열 수 없어요.",
   "You didn't bet on this race.": "이 경주에는 베팅하지 않았어요.",
   "You don't have permission to do that.": "이 작업을 할 권한이 없어요.",
@@ -372,6 +364,40 @@ const messages: Record<string, string> = {
   "({delta} from start)": "(시작 대비 {delta})",
   "({max} races in total)": "(총 {max}경주)",
   "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, other {#건}}",
+  Racing: "경주 중",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "경주가 끝나면 ‘진행’ 탭에서 순위를 입력하세요.",
+  "Start the next race to enter bets for others again.":
+    "다음 경주를 시작하면 다시 대신 베팅을 입력할 수 있습니다.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "바람 부는 언덕에서 양산을 든 사람을 그린 유화풍 풍경",
+  "Little helpers carrying tickets": "베팅권을 나르는 작은 도우미들",
+  "While the race runs": "경주가 진행되는 동안",
+  "Rules and settings": "규칙과 설정",
+  "Races, starting points, odds": "경주 수, 시작 포인트, 배당 방식",
+  "Line-up for the next race": "다음 경주 출전자",
+  "Add, rename, grant points": "추가, 이름 변경, 포인트 지급",
+  "Invitation QR": "초대 QR",
+  "For anyone joining late": "중간에 참가하는 사람용",
+  Standings: "순위",
+  "You're in": "베팅 완료",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "아직 {count}명의 베팅을 기다리고 있습니다. 마감되면 경주가 시작됩니다.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "모두 베팅했습니다. 진행자가 마감하면 경주가 시작됩니다.",
+  "Race in progress": "경주 진행 중",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "베팅이 마감되었습니다. 진행자가 순위를 입력하면 결과가 이 화면에 표시됩니다.",
+  "The result is in": "결과가 나왔습니다",
+  "Your ticket hit": "적중했습니다",
+  "No luck this time": "이번에는 빗나갔습니다",
+  "You can bet here as soon as the next race opens.": "다음 경주가 시작되면 이 화면에서 베팅할 수 있습니다.",
+  "Little helpers setting up the next race": "다음 경주를 준비하는 작은 도우미들",
+  "All {max} races finished": "전체 {max}경주 종료",
+  "The tournament is over": "대회가 끝났습니다",
+  "See the final standings and records.": "최종 순위와 기록을 확인할 수 있습니다.",
+  "See final results": "최종 결과 보기",
+  Placed: "접수됨",
 };
 
 export default messages;

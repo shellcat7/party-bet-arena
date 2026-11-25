@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Flag, Lock, Minus, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, Lock, Minus, Plus, Trash2, Users, X } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
 import { Avatar, Points, EmptyState, Lane, SegmentedControl } from "../../components/ui";
 import { betErrorMessage, betTypeCopy, raceName } from "../../i18n/copy";
@@ -38,7 +38,6 @@ export function BetScreen() {
     : (room.players[0]?.id ?? "");
   const bettorId = isHost ? proxyId : (controller.me?.id ?? "");
   const bettor = getPlayer(room, bettorId);
-  const myTicket = !isHost && bettor ? getPlayerBets(room, bettor.id)[0] : undefined;
 
   if (room.players.length === 0 && isHost) {
     return (
@@ -67,26 +66,7 @@ export function BetScreen() {
 
   return (
     <div className="screen">
-      {!isHost && myTicket && race.status !== "settled" && <PlacedTicket room={room} bet={myTicket} />}
-      {!isHost && race.status === "settled" && (
-        <section className="notice notice--card">
-          <Flag size={20} aria-hidden="true" />
-          <div>
-            <strong>{t("このレースの結果が出ました", "This race has a result")}</strong>
-            <p>{t("次のレースが始まるとベットできます。", "You can bet again when the next race opens.")}</p>
-            <button
-              className="link-button"
-              type="button"
-              onClick={() => nav.push({ name: "race", raceId: race.id })}
-            >
-              {t("結果と払戻を見る", "See the result and payouts")}
-            </button>
-          </div>
-        </section>
-      )}
-      {!isHost && myTicket && race.status === "betting" && <BettorStatus room={room} />}
-
-      {race.status !== "betting" && !myTicket && !(race.status === "settled" && !isHost) && (
+      {race.status !== "betting" && (
         <section className="notice notice--card">
           <Lock size={20} aria-hidden="true" />
           <div>
@@ -97,8 +77,14 @@ export function BetScreen() {
             </strong>
             <p>
               {race.status === "closed"
-                ? t("幹事が着順を入力するまでお待ちください。", "Waiting for the host to enter the result.")
-                : t("次のレースが始まるとベットできます。", "You can bet again when the next race opens.")}
+                ? t(
+                    "レースが終わったら、進行タブで着順を入力してください。",
+                    "When the race is over, enter the finishing order on the Run tab.",
+                  )
+                : t(
+                    "次のレースを始めると、代行でベットを入力できます。",
+                    "Start the next race to enter bets for others again.",
+                  )}
             </p>
           </div>
         </section>
@@ -141,7 +127,7 @@ export function BetScreen() {
         </section>
       )}
 
-      {race.status === "betting" && bettor && !myTicket && (
+      {race.status === "betting" && bettor && (
         <BetForm
           key={bettor.id}
           room={room}
@@ -380,109 +366,6 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
         </button>
       </section>
     </form>
-  );
-}
-
-function PlacedTicket(props: { room: Room; bet: Bet }) {
-  const { t } = useI18n();
-  const { room, bet } = props;
-  const labels = betTypeCopy(t);
-  const picks = getBetPickIds(bet).map((id) => room.contestants.find((contestant) => contestant.id === id));
-  const multiplier = getDraftMultiplier(room, { type: bet.type, contestantIds: getBetPickIds(bet) });
-  const confirm = useConfirm();
-  const { controller } = useOpenRoom();
-  const cancel = async () => {
-    const ok = await confirm({
-      title: t("ベットを取り消しますか？", "Cancel this bet?"),
-      message: t("締切までなら、もう一度ベットできます。", "You can bet again until betting closes."),
-      confirmLabel: t("取り消す", "Cancel bet"),
-      tone: "danger",
-    });
-    if (ok) await controller.actions.cancelOwnBet();
-  };
-  const waitingFor = room.players.length - new Set(room.currentRace.bets.map((item) => item.playerId)).size;
-
-  return (
-    <section className="card placed-ticket" aria-labelledby="placed-title">
-      <header className="placed-ticket__head">
-        <span className="placed-ticket__icon" aria-hidden="true">
-          <Check size={20} strokeWidth={3} />
-        </span>
-        <div>
-          <h2 id="placed-title">{t("ベットを受け付けました", "Bet placed")}</h2>
-          <p>
-            {room.currentRace.status === "betting"
-              ? waitingFor > 0
-                ? t("あと{count}人のベットを待っています", "Waiting for {count} more", { count: waitingFor })
-                : t(
-                    "全員ベットしました。締切を待っています",
-                    "Everyone has bet. Waiting for the host to close betting",
-                  )
-              : t("ベットは締め切られました。結果を待っています", "Betting closed. Waiting for the result")}
-          </p>
-        </div>
-      </header>
-      <dl className="placed-ticket__body">
-        <div>
-          <dt>{labels[bet.type].title}</dt>
-          <dd>
-            {picks.map((contestant, index) => (
-              <span key={index}>
-                {contestant ? `${contestant.icon} ${contestant.name}` : "?"}
-                {index < picks.length - 1 && <i aria-hidden="true"> → </i>}
-              </span>
-            ))}
-          </dd>
-        </div>
-        <div>
-          <dt>{t("ベット額", "Stake")}</dt>
-          <dd>
-            <Points value={bet.amount} />
-          </dd>
-        </div>
-        <div>
-          <dt>{t("的中時（目安）", "If it hits (est.)")}</dt>
-          <dd>
-            <Points value={Math.floor(bet.amount * multiplier)} />
-          </dd>
-        </div>
-      </dl>
-      {room.currentRace.status === "betting" && (
-        <button
-          className="button button--secondary button--block"
-          type="button"
-          onClick={() => void cancel()}
-        >
-          {t("取り消して選び直す", "Cancel and choose again")}
-        </button>
-      )}
-    </section>
-  );
-}
-
-function BettorStatus(props: { room: Room }) {
-  const { t } = useI18n();
-  const placed = new Set(props.room.currentRace.bets.map((bet) => bet.playerId));
-  return (
-    <section className="card bettor-status" aria-labelledby="bettor-status-title">
-      <div className="bettor-status__head">
-        <strong id="bettor-status-title">{t("ベット状況", "Bet status")}</strong>
-        <span>
-          {placed.size} / {props.room.players.length}
-        </span>
-      </div>
-      <ul>
-        {props.room.players.map((player) => (
-          <li key={player.id} className={placed.has(player.id) ? "is-done" : undefined}>
-            <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
-            <span>{player.name}</span>
-            {placed.has(player.id) && (
-              <Check size={14} strokeWidth={3} aria-label={t("ベット済み", "Bet placed")} />
-            )}
-          </li>
-        ))}
-      </ul>
-    </section>
   );
 }
 

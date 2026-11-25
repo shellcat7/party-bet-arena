@@ -36,7 +36,7 @@ test("a participant joins by QR, bets, and sees the host's result live", async (
   await player.getByRole("button", { name: "Join", exact: true }).click();
   await player.locator(".racer").nth(2).click();
   await player.getByRole("button", { name: "Place bet" }).click();
-  await expect(player.getByRole("heading", { name: "Bet placed" })).toBeVisible();
+  await expect(player.getByRole("heading", { name: "You're in" })).toBeVisible();
 
   // The host sees the bet arrive, adds a proxy bettor at the same time, then settles.
   await expect(host.getByText("1 / 1人")).toBeVisible();
@@ -51,7 +51,8 @@ test("a participant joins by QR, bets, and sees the host's result live", async (
 
   await nav(host, "進行").click();
   await host.getByRole("button", { name: "ベットを締め切る" }).click();
-  await expect(player.getByText("Betting closed. Waiting for the result")).toBeVisible();
+  // The participant's phone switches to the race-in-progress screen.
+  await expect(player.getByRole("heading", { name: "Race in progress" })).toBeVisible();
   await host.getByRole("button", { name: "着順を入力する" }).click();
   const picks = host.locator(".finish-pick");
   await picks.nth(2).click();
@@ -67,7 +68,7 @@ test("a participant joins by QR, bets, and sees the host's result live", async (
 
   // Reloading reconnects to the room; the next race brings them back to betting.
   await player.reload();
-  await expect(player.getByText("This race has a result")).toBeVisible();
+  await expect(player.getByRole("heading", { name: "Your ticket hit" })).toBeVisible();
   await host.getByRole("button", { name: "第2レースを始める" }).click();
   await expect(player.getByRole("heading", { name: "Race 2" })).toBeVisible();
 

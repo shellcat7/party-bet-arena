@@ -238,3 +238,15 @@ export function BrandMark(props: { size?: number }) {
     />
   );
 }
+
+/** open = betting, live = race running, result = settled. One colour per phase across the app. */
+export type PhaseTone = "open" | "live" | "result";
+
+export function PhaseTag(props: { tone: PhaseTone; children: ReactNode }) {
+  return (
+    <span className={`phase-tag phase-tag--${props.tone}`}>
+      <i aria-hidden="true" />
+      {props.children}
+    </span>
+  );
+}

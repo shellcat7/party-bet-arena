@@ -1,6 +1,10 @@
-import { Check } from "lucide-react";
+import type { ReactNode } from "react";
+import { Check, ChevronRight, Flag, QrCode, SlidersHorizontal, Trophy, Users } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
+import { PainterlyMeadow } from "../../components/scenes/PainterlyMeadow";
+import { PixelCarriers } from "../../components/scenes/PixelCarriers";
 import { Avatar, Points, Lane } from "../../components/ui";
+import type { PhaseTone } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { isFinalRace, isGameOver, rankPlayers } from "../../lib/settlement";
@@ -9,6 +13,7 @@ import { useOpenRoom } from "../../state/AppContext";
 import { useCorrectResult } from "./useCorrectResult";
 
 const phases: RaceStatus[] = ["betting", "closed", "settled"];
+const tones: Record<RaceStatus, PhaseTone> = { betting: "open", closed: "live", settled: "result" };
 
 export function HostHomeScreen() {
   const { t, formatList } = useI18n();
@@ -49,7 +54,19 @@ export function HostHomeScreen() {
 
   return (
     <div className="screen">
-      <section className="card stage-card" aria-labelledby="stage-title">
+      <section className={`card stage-card stage-card--${tones[race.status]}`} aria-labelledby="stage-title">
+        <div className="stage-card__scene">
+          {race.status === "closed" || gameOver ? (
+            <PainterlyMeadow
+              label={t(
+                "風の吹く丘で日傘をさす人を描いた油絵風の風景",
+                "An oil-painting-style scene of a person with a parasol on a windy hill",
+              )}
+            />
+          ) : (
+            <PixelCarriers label={t("チケットを運ぶ小さなキャラクター", "Little helpers carrying tickets")} />
+          )}
+        </div>
         <div className="stage-card__head">
           <h2 id="stage-title">
             {raceName(t, race.number)}
@@ -229,6 +246,8 @@ export function HostHomeScreen() {
         )}
       </section>
 
+      {race.status === "closed" && <WhileRacing />}
+
       <section className="card" aria-labelledby="summary-title">
         <h2 id="summary-title" className="card__title">
           {t("このレース", "This race")}
@@ -306,5 +325,70 @@ export function HostHomeScreen() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Things a host can get ready while everyone waits for the race to finish. */
+function WhileRacing() {
+  const { t } = useI18n();
+  const { controller, nav } = useOpenRoom();
+  return (
+    <section className="card" aria-labelledby="while-racing-title">
+      <h2 id="while-racing-title" className="card__title">
+        {t("待っている間に", "While the race runs")}
+      </h2>
+      <ul className="shortcut-list">
+        <Shortcut
+          icon={<SlidersHorizontal size={20} />}
+          label={t("ルールと設定", "Rules and settings")}
+          detail={t("レース数、初期ポイント、オッズの方式", "Races, starting points, odds")}
+          onClick={() => nav.replace({ name: "manage", section: "rules" })}
+        />
+        <Shortcut
+          icon={<Flag size={20} />}
+          label={t("対戦者", "Racers")}
+          detail={t("次のレースの顔ぶれ", "Line-up for the next race")}
+          onClick={() => nav.replace({ name: "manage", section: "racers" })}
+        />
+        <Shortcut
+          icon={<Users size={20} />}
+          label={t("参加者", "Bettors")}
+          detail={t("追加、名前の変更、ポイント付与", "Add, rename, grant points")}
+          onClick={() => nav.replace({ name: "manage", section: "bettors" })}
+        />
+        {controller.isOnlineRoom ? (
+          <Shortcut
+            icon={<QrCode size={20} />}
+            label={t("招待QR", "Invitation QR")}
+            detail={t("途中から参加する人に", "For anyone joining late")}
+            onClick={() => nav.push({ name: "invite" })}
+          />
+        ) : (
+          <Shortcut
+            icon={<Trophy size={20} />}
+            label={t("順位", "Standings")}
+            detail={t("ここまでの順位", "Standings so far")}
+            onClick={() => nav.replace({ name: "ranking" })}
+          />
+        )}
+      </ul>
+    </section>
+  );
+}
+
+function Shortcut(props: { icon: ReactNode; label: string; detail: string; onClick: () => void }) {
+  return (
+    <li>
+      <button type="button" onClick={props.onClick}>
+        <span className="shortcut-list__icon" aria-hidden="true">
+          {props.icon}
+        </span>
+        <span className="shortcut-list__text">
+          <strong>{props.label}</strong>
+          <small>{props.detail}</small>
+        </span>
+        <ChevronRight size={18} aria-hidden="true" />
+      </button>
+    </li>
   );
 }

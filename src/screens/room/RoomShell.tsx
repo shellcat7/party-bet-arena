@@ -4,6 +4,7 @@ import {
   ChevronLeft,
   CloudOff,
   Eye,
+  Flag,
   History,
   House,
   QrCode,
@@ -21,6 +22,7 @@ import { useOpenRoom } from "../../state/AppContext";
 import type { Screen, ScreenName } from "../../state/navigation";
 import { TAB_SCREENS } from "../../state/navigation";
 import { BetScreen } from "./BetScreen";
+import { PlayerRaceScreen } from "./PlayerRaceScreen";
 import { FinalScreen } from "./FinalScreen";
 import { HistoryScreen } from "./HistoryScreen";
 import { HostHomeScreen } from "./HostHomeScreen";
@@ -79,12 +81,18 @@ function RemovedNotice() {
   );
 }
 
+/** The host enters bets for others here; a participant's tab follows the race instead. */
+function BetTab() {
+  const { controller } = useOpenRoom();
+  return controller.role === "host" ? <BetScreen /> : <PlayerRaceScreen />;
+}
+
 function renderScreen(screen: Screen) {
   switch (screen.name) {
     case "home":
       return <HostHomeScreen />;
     case "bet":
-      return <BetScreen />;
+      return <BetTab />;
     case "ranking":
       return <RankingScreen />;
     case "history":
@@ -187,7 +195,7 @@ function BottomNav() {
           { name: "manage", label: t("管理", "Manage"), icon: <Settings2 size={22} /> },
         ]
       : [
-          { name: "bet", label: t("ベット", "Bet"), icon: <Ticket size={22} /> },
+          { name: "bet", label: t("レース", "Race"), icon: <Flag size={22} /> },
           { name: "ranking", label: t("順位", "Ranks"), icon: <Trophy size={22} /> },
           { name: "history", label: t("履歴", "History"), icon: <History size={22} /> },
         ];

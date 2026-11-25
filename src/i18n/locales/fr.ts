@@ -31,7 +31,6 @@ const messages: Record<string, string> = {
   "Bet status": "État des paris",
   "Bet type": "Type de pari",
   Betting: "Paris",
-  "Betting closed. Waiting for the result": "Paris clos. En attente du résultat",
   "Betting closes automatically when you confirm.":
     "Les paris seront clos automatiquement lorsque vous validerez.",
   "Betting is closed": "Les paris sont clos",
@@ -92,8 +91,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "Saisir un pari pour un parieur",
   "Enter results": "Saisir les résultats",
   "Enter the invitation from your host": "Saisissez l'invitation reçue de l'organisateur",
-  "Everyone has bet. Waiting for the host to close betting":
-    "Tout le monde a parié. En attente de la clôture des paris par l'organisateur",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "Les soldes et l'historique de tous les participants seront supprimés, et ceux-ci perdront l'accès au salon. Cette action est irréversible.",
   "Everything can be changed later": "Tout peut être modifié par la suite",
@@ -110,7 +107,6 @@ const messages: Record<string, string> = {
   History: "Historique",
   Hit: "Gagné",
   Host: "Organisateur",
-  "If it hits (est.)": "Gain estimé",
   "Increase {label}": "Augmenter {label}",
   "Invitation details filled in. Enter a display name to join.":
     "Les informations de l'invitation ont été remplies. Saisissez un nom affiché pour rejoindre le salon.",
@@ -298,7 +294,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "Cet appareil n'est pas membre de ce salon.",
   "This only removes it from this device.": "Le salon sera uniquement retiré de cet appareil.",
   "This race": "Cette course",
-  "This race has a result": "Le résultat de cette course est disponible",
   "This race is settled": "Cette course est réglée",
   "This room is full (max {max}).": "Ce salon est complet ({max} maximum).",
   "This room is no longer available.": "Ce salon n'est plus disponible.",
@@ -324,17 +319,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "Annulé (remboursé)",
   "Void this ticket?": "Supprimer ce pari ?",
   "Void ticket": "Supprimer le pari",
-  "Waiting for the host to enter the result.": "En attente de la saisie du résultat par l'organisateur.",
-  "Waiting for {count} more":
-    "{count, plural, one {En attente d'un dernier parieur} other {En attente de # autres parieurs}}",
   "Welcome back, {name}": "Content de vous revoir, {name}",
   "Who has bet": "Qui a parié",
   "Who is this bet for?": "Pour qui est ce pari ?",
   Win: "Gagnant",
   You: "Vous",
   "You can bet again until betting closes.": "Vous pourrez parier à nouveau jusqu'à la clôture des paris.",
-  "You can bet again when the next race opens.":
-    "Vous pourrez parier à nouveau à l'ouverture de la prochaine course.",
   "You can't open this room from this device.": "Vous ne pouvez pas ouvrir ce salon depuis cet appareil.",
   "You didn't bet on this race.": "Vous n'avez pas parié sur cette course.",
   "You don't have permission to do that.": "Vous n'avez pas l'autorisation d'effectuer cette action.",
@@ -385,6 +375,41 @@ const messages: Record<string, string> = {
   "({delta} from start)": "({delta} depuis le début)",
   "({max} races in total)": "({max} courses au total)",
   "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, one {# pari} other {# paris}}",
+  Racing: "En course",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "Une fois la course terminée, saisissez l'ordre d'arrivée dans l'onglet Pilotage.",
+  "Start the next race to enter bets for others again.":
+    "Lancez la course suivante pour saisir à nouveau des paris pour les autres.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "Paysage façon peinture à l'huile : une personne avec une ombrelle sur une colline venteuse",
+  "Little helpers carrying tickets": "Petits assistants qui transportent les paris",
+  "While the race runs": "Pendant la course",
+  "Rules and settings": "Règles et réglages",
+  "Races, starting points, odds": "Courses, points de départ, cotes",
+  "Line-up for the next race": "Partants de la prochaine course",
+  "Add, rename, grant points": "Ajouter, renommer, donner des points",
+  "Invitation QR": "QR d'invitation",
+  "For anyone joining late": "Pour les retardataires",
+  Standings: "Classement",
+  "You're in": "Pari enregistré",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "{count, plural, one {Encore # parieur attendu.} other {Encore # parieurs attendus.}} La course commence à la clôture des paris.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "Tout le monde a parié. La course commence quand l'organisateur clôt les paris.",
+  "Race in progress": "Course en cours",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "Les paris sont clos. Le résultat s'affichera ici dès que l'organisateur aura saisi l'ordre d'arrivée.",
+  "The result is in": "Le résultat est tombé",
+  "Your ticket hit": "Pari gagnant",
+  "No luck this time": "Pas de chance cette fois",
+  "You can bet here as soon as the next race opens.":
+    "Vous pourrez parier ici dès l'ouverture de la course suivante.",
+  "Little helpers setting up the next race": "Petits assistants qui préparent la course suivante",
+  "All {max} races finished": "Les {max} courses sont terminées",
+  "The tournament is over": "Le tournoi est terminé",
+  "See the final standings and records.": "Consultez le classement final et les records.",
+  "See final results": "Voir les résultats finaux",
+  Placed: "Enregistré",
 };
 
 export default messages;

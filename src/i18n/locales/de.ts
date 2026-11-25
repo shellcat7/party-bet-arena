@@ -31,7 +31,6 @@ const messages: Record<string, string> = {
   "Bet status": "Wettstatus",
   "Bet type": "Wettart",
   Betting: "Wetten",
-  "Betting closed. Waiting for the result": "Wetten geschlossen. Warten auf das Ergebnis",
   "Betting closes automatically when you confirm.":
     "Beim Bestätigen werden die Wetten automatisch geschlossen.",
   "Betting is closed": "Die Wetten sind geschlossen",
@@ -92,8 +91,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "Wette für jemanden eintragen",
   "Enter results": "Ergebnis eintragen",
   "Enter the invitation from your host": "Gib die Einladung deiner Spielleitung ein",
-  "Everyone has bet. Waiting for the host to close betting":
-    "Alle haben getippt. Warten, bis die Spielleitung die Wetten schließt",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "Alle Guthaben und der Verlauf werden gelöscht und die Tipper verlieren den Zugriff. Das kann nicht rückgängig gemacht werden.",
   "Everything can be changed later": "Alles lässt sich später ändern",
@@ -110,7 +107,6 @@ const messages: Record<string, string> = {
   History: "Verlauf",
   Hit: "Treffer",
   Host: "Spielleitung",
-  "If it hits (est.)": "Bei Treffer (ca.)",
   "Increase {label}": "{label} erhöhen",
   "Invitation details filled in. Enter a display name to join.":
     "Einladungsdaten übernommen. Gib einen Anzeigenamen ein, um beizutreten.",
@@ -297,7 +293,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "Dieses Gerät gehört nicht zu diesem Raum.",
   "This only removes it from this device.": "Der Raum wird nur von diesem Gerät entfernt.",
   "This race": "Dieses Rennen",
-  "This race has a result": "Das Ergebnis dieses Rennens steht fest",
   "This race is settled": "Dieses Rennen ist abgerechnet",
   "This room is full (max {max}).": "Dieser Raum ist voll (max. {max}).",
   "This room is no longer available.": "Dieser Raum ist nicht mehr verfügbar.",
@@ -323,17 +318,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "Storniert (erstattet)",
   "Void this ticket?": "Diese Wette stornieren?",
   "Void ticket": "Wette stornieren",
-  "Waiting for the host to enter the result.": "Warten, bis die Spielleitung das Ergebnis einträgt.",
-  "Waiting for {count} more":
-    "{count, plural, one {Warten auf # weitere Person} other {Warten auf # weitere Personen}}",
   "Welcome back, {name}": "Willkommen zurück, {name}",
   "Who has bet": "Wer hat getippt",
   "Who is this bet for?": "Für wen ist diese Wette?",
   Win: "Sieg",
   You: "Du",
   "You can bet again until betting closes.": "Bis zum Wettschluss kannst du erneut wetten.",
-  "You can bet again when the next race opens.":
-    "Du kannst wieder wetten, sobald das nächste Rennen startet.",
   "You can't open this room from this device.": "Du kannst diesen Raum auf diesem Gerät nicht öffnen.",
   "You didn't bet on this race.": "Du hast bei diesem Rennen nicht gewettet.",
   "You don't have permission to do that.": "Dazu fehlt dir die Berechtigung.",
@@ -386,6 +376,41 @@ const messages: Record<string, string> = {
   "({delta} from start)": "({delta} seit Beginn)",
   "({max} races in total)": "({max} Rennen insgesamt)",
   "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, one {# Wette} other {# Wetten}}",
+  Racing: "Rennen läuft",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "Wenn das Rennen vorbei ist, trag die Platzierung im Tab „Ablauf“ ein.",
+  "Start the next race to enter bets for others again.":
+    "Starte das nächste Rennen, um wieder Wetten für andere einzutragen.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "Landschaft im Stil eines Ölgemäldes: eine Person mit Sonnenschirm auf einem windigen Hügel",
+  "Little helpers carrying tickets": "Kleine Helfer tragen Wettscheine",
+  "While the race runs": "Während des Rennens",
+  "Rules and settings": "Regeln und Einstellungen",
+  "Races, starting points, odds": "Rennen, Startpunkte, Quoten",
+  "Line-up for the next race": "Starterfeld fürs nächste Rennen",
+  "Add, rename, grant points": "Hinzufügen, umbenennen, Punkte vergeben",
+  "Invitation QR": "Einladungs-QR",
+  "For anyone joining late": "Für alle, die später dazukommen",
+  Standings: "Rangliste",
+  "You're in": "Wette abgegeben",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "{count, plural, one {Es fehlt noch # Tipper.} other {Es fehlen noch # Tipper.}} Das Rennen beginnt, wenn die Wetten geschlossen werden.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "Alle haben getippt. Das Rennen beginnt, sobald die Spielleitung die Wetten schließt.",
+  "Race in progress": "Rennen läuft",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "Die Wetten sind geschlossen. Das Ergebnis erscheint hier, sobald die Spielleitung die Platzierung einträgt.",
+  "The result is in": "Das Ergebnis steht fest",
+  "Your ticket hit": "Treffer",
+  "No luck this time": "Diesmal kein Glück",
+  "You can bet here as soon as the next race opens.":
+    "Sobald das nächste Rennen startet, kannst du hier tippen.",
+  "Little helpers setting up the next race": "Kleine Helfer bereiten das nächste Rennen vor",
+  "All {max} races finished": "Alle {max} Rennen beendet",
+  "The tournament is over": "Das Turnier ist vorbei",
+  "See the final standings and records.": "Sieh dir die Endwertung und die Rekorde an.",
+  "See final results": "Endergebnis ansehen",
+  Placed: "Abgegeben",
 };
 
 export default messages;

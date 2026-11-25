@@ -30,7 +30,6 @@ const messages: Record<string, string> = {
   "Bet status": "Стан ставок",
   "Bet type": "Тип ставки",
   Betting: "Ставки",
-  "Betting closed. Waiting for the result": "Ставки закрито. Чекаємо на результат",
   "Betting closes automatically when you confirm.": "Після підтвердження ставки закриються автоматично.",
   "Betting is closed": "Ставки закрито",
   "Betting is closed for this race": "Ставки на цей заїзд закрито",
@@ -90,8 +89,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "Ввести ставку за гравця",
   "Enter results": "Ввести результати",
   "Enter the invitation from your host": "Введи дані запрошення від ведучого",
-  "Everyone has bet. Waiting for the host to close betting":
-    "Усі зробили ставки. Чекаємо, поки ведучий закриє ставки",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "Баланси та історію всіх гравців буде видалено, а гравці втратять доступ. Цю дію не можна скасувати.",
   "Everything can be changed later": "Усе можна змінити пізніше",
@@ -108,7 +105,6 @@ const messages: Record<string, string> = {
   History: "Історія",
   Hit: "Виграш",
   Host: "Ведучий",
-  "If it hits (est.)": "У разі виграшу (орієнт.)",
   "Increase {label}": "Збільшити {label}",
   "Invitation details filled in. Enter a display name to join.":
     "Дані запрошення заповнено. Введи ім’я, щоб приєднатися.",
@@ -293,7 +289,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "Цей пристрій не належить до цієї кімнати.",
   "This only removes it from this device.": "Кімнату буде прибрано лише з цього пристрою.",
   "This race": "Цей заїзд",
-  "This race has a result": "Результати заїзду готові",
   "This race is settled": "Цей заїзд розраховано",
   "This room is full (max {max}).": "Кімната заповнена (максимум {max}).",
   "This room is no longer available.": "Ця кімната більше недоступна.",
@@ -320,16 +315,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "Анульовано (повернено)",
   "Void this ticket?": "Видалити цю ставку?",
   "Void ticket": "Видалити ставку",
-  "Waiting for the host to enter the result.": "Чекаємо, поки ведучий введе результат.",
-  "Waiting for {count} more":
-    "Чекаємо ще {count, plural, one {# ставку} few {# ставки} many {# ставок} other {# ставки}}",
   "Welcome back, {name}": "З поверненням, {name}",
   "Who has bet": "Хто зробив ставку",
   "Who is this bet for?": "Для кого ця ставка?",
   Win: "Перемога",
   You: "Ти",
   "You can bet again until betting closes.": "До закриття ставок можна зробити нову.",
-  "You can bet again when the next race opens.": "Нову ставку можна буде зробити в наступному заїзді.",
   "You can't open this room from this device.": "З цього пристрою не можна відкрити цю кімнату.",
   "You didn't bet on this race.": "У цьому заїзді в тебе немає ставки.",
   "You don't have permission to do that.": "У тебе немає дозволу на цю дію.",
@@ -382,6 +373,41 @@ const messages: Record<string, string> = {
   "({max} races in total)": "(усього заїздів: {max})",
   "{count, plural, one {# ticket} other {# tickets}}":
     "{count, plural, one {# ставка} few {# ставки} many {# ставок} other {# ставки}}",
+  Racing: "Заїзд триває",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "Коли заїзд завершиться, введи результати на вкладці «Гра».",
+  "Start the next race to enter bets for others again.":
+    "Почни наступний заїзд, щоб знову вносити ставки за інших.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "Пейзаж у стилі олійного живопису: людина з парасолькою на вітряному пагорбі",
+  "Little helpers carrying tickets": "Маленькі помічники несуть квитки",
+  "While the race runs": "Поки триває заїзд",
+  "Rules and settings": "Правила й налаштування",
+  "Races, starting points, odds": "Заїзди, стартові бали, коефіцієнти",
+  "Line-up for the next race": "Склад наступного заїзду",
+  "Add, rename, grant points": "Додати, перейменувати, нарахувати бали",
+  "Invitation QR": "QR-запрошення",
+  "For anyone joining late": "Для тих, хто приєднується пізніше",
+  Standings: "Рейтинг",
+  "You're in": "Ставку зроблено",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "{count, plural, one {Чекаємо ще на # гравця.} few {Чекаємо ще на # гравців.} many {Чекаємо ще на # гравців.} other {Чекаємо ще на # гравця.}} Заїзд почнеться, коли ставки закриють.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "Усі зробили ставки. Заїзд почнеться, коли ведучий закриє ставки.",
+  "Race in progress": "Заїзд триває",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "Ставки закрито. Результат з'явиться тут, щойно ведучий введе порядок фінішу.",
+  "The result is in": "Результат готовий",
+  "Your ticket hit": "Ставка зіграла",
+  "No luck this time": "Цього разу не пощастило",
+  "You can bet here as soon as the next race opens.":
+    "Щойно почнеться наступний заїзд, тут можна буде зробити ставку.",
+  "Little helpers setting up the next race": "Маленькі помічники готують наступний заїзд",
+  "All {max} races finished": "Усі заїзди ({max}) завершено",
+  "The tournament is over": "Турнір завершено",
+  "See the final standings and records.": "Переглянь підсумковий рейтинг і рекорди.",
+  "See final results": "Переглянути підсумки",
+  Placed: "Прийнято",
 };
 
 export default messages;

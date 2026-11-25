@@ -31,7 +31,6 @@ const messages: Record<string, string> = {
   "Bet status": "Estado de las apuestas",
   "Bet type": "Tipo de apuesta",
   Betting: "Apuestas",
-  "Betting closed. Waiting for the result": "Apuestas cerradas. Esperando el resultado",
   "Betting closes automatically when you confirm.": "Al confirmar, las apuestas se cerrarán automáticamente.",
   "Betting is closed": "Las apuestas están cerradas",
   "Betting is closed for this race": "Las apuestas de esta carrera están cerradas",
@@ -91,8 +90,6 @@ const messages: Record<string, string> = {
   "Enter a bet for someone": "Apostar en nombre de otro",
   "Enter results": "Introducir resultado",
   "Enter the invitation from your host": "Introduce los datos de la invitación del anfitrión",
-  "Everyone has bet. Waiting for the host to close betting":
-    "Todos han apostado. Esperando a que el anfitrión cierre las apuestas",
   "Everyone's balances and history are deleted and participants lose access. This can't be undone.":
     "Se eliminarán los saldos y el historial de todos, y los participantes perderán el acceso. Esta acción no se puede deshacer.",
   "Everything can be changed later": "Puedes cambiarlo todo más tarde",
@@ -109,7 +106,6 @@ const messages: Record<string, string> = {
   History: "Historial",
   Hit: "Acierto",
   Host: "Anfitrión",
-  "If it hits (est.)": "Si acierta (aprox.)",
   "Increase {label}": "Aumentar {label}",
   "Invitation details filled in. Enter a display name to join.":
     "Se han rellenado los datos de la invitación. Escribe un nombre visible para unirte.",
@@ -296,7 +292,6 @@ const messages: Record<string, string> = {
   "This device isn't a member of that room.": "Este dispositivo no forma parte de esa sala.",
   "This only removes it from this device.": "Solo se eliminará de este dispositivo.",
   "This race": "Esta carrera",
-  "This race has a result": "Esta carrera ya tiene resultado",
   "This race is settled": "Esta carrera se ha liquidado",
   "This room is full (max {max}).": "Esta sala está completa (máximo {max}).",
   "This room is no longer available.": "Esta sala ya no está disponible.",
@@ -322,17 +317,12 @@ const messages: Record<string, string> = {
   "Void (refunded)": "Anulada (reembolsada)",
   "Void this ticket?": "¿Anular esta apuesta?",
   "Void ticket": "Anular apuesta",
-  "Waiting for the host to enter the result.": "Esperando a que el anfitrión introduzca el resultado.",
-  "Waiting for {count} more":
-    "{count, plural, one {Falta # persona por apostar} other {Faltan # personas por apostar}}",
   "Welcome back, {name}": "Hola de nuevo, {name}",
   "Who has bet": "Quién ha apostado",
   "Who is this bet for?": "¿Para quién es la apuesta?",
   Win: "Ganador",
   You: "Tú",
   "You can bet again until betting closes.": "Puedes volver a apostar hasta que se cierren las apuestas.",
-  "You can bet again when the next race opens.":
-    "Podrás volver a apostar cuando se abra la siguiente carrera.",
   "You can't open this room from this device.": "No puedes abrir esta sala desde este dispositivo.",
   "You didn't bet on this race.": "No has apostado en esta carrera.",
   "You don't have permission to do that.": "No tienes permiso para hacer eso.",
@@ -383,6 +373,41 @@ const messages: Record<string, string> = {
   "({delta} from start)": "({delta} desde el inicio)",
   "({max} races in total)": "({max} carreras en total)",
   "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, one {# apuesta} other {# apuestas}}",
+  Racing: "En carrera",
+  "When the race is over, enter the finishing order on the Run tab.":
+    "Cuando termine la carrera, introduce el orden de llegada en la pestaña Partida.",
+  "Start the next race to enter bets for others again.":
+    "Empieza la siguiente carrera para volver a registrar apuestas de otros.",
+  "An oil-painting-style scene of a person with a parasol on a windy hill":
+    "Paisaje al estilo de una pintura al óleo: una persona con sombrilla en una colina ventosa",
+  "Little helpers carrying tickets": "Pequeños ayudantes llevando apuestas",
+  "While the race runs": "Mientras se corre",
+  "Rules and settings": "Reglas y ajustes",
+  "Races, starting points, odds": "Carreras, puntos iniciales, cuotas",
+  "Line-up for the next race": "Participantes de la próxima carrera",
+  "Add, rename, grant points": "Añadir, renombrar, dar puntos",
+  "Invitation QR": "QR de invitación",
+  "For anyone joining late": "Para quien llegue tarde",
+  Standings: "Clasificación",
+  "You're in": "Apuesta hecha",
+  "{count, plural, one {Waiting for # more bettor.} other {Waiting for # more bettors.}} The race starts when betting closes.":
+    "{count, plural, one {Falta # apostante.} other {Faltan # apostantes.}} La carrera empieza cuando se cierren las apuestas.",
+  "Everyone has bet. The race starts when the host closes betting.":
+    "Todos han apostado. La carrera empieza cuando el anfitrión cierre las apuestas.",
+  "Race in progress": "Carrera en curso",
+  "Betting is closed. The result appears here as soon as the host enters the finishing order.":
+    "Las apuestas están cerradas. El resultado aparecerá aquí en cuanto el anfitrión introduzca el orden de llegada.",
+  "The result is in": "Ya hay resultado",
+  "Your ticket hit": "Has acertado",
+  "No luck this time": "Esta vez no hubo suerte",
+  "You can bet here as soon as the next race opens.":
+    "Podrás apostar aquí en cuanto empiece la siguiente carrera.",
+  "Little helpers setting up the next race": "Pequeños ayudantes preparando la siguiente carrera",
+  "All {max} races finished": "Las {max} carreras han terminado",
+  "The tournament is over": "El torneo ha terminado",
+  "See the final standings and records.": "Consulta la clasificación final y los récords.",
+  "See final results": "Ver resultados finales",
+  Placed: "Registrada",
 };
 
 export default messages;

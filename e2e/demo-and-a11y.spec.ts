@@ -37,8 +37,8 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await page.locator(".racer").nth(0).click();
   await expect(page.locator(".ticket__pick").first()).toContainText("ブルー");
   await page.getByRole("button", { name: "ベットする" }).click();
-  await expect(page.getByRole("heading", { name: "ベットを受け付けました" })).toBeVisible();
-  await expect(page.getByText("あと1人のベットを待っています")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ベットしました" })).toBeVisible();
+  await expect(page.getByText(/あと1人のベットを待っています/)).toBeVisible();
 
   // Change of mind before betting closes.
   await page.getByRole("button", { name: "取り消して選び直す" }).click();
@@ -46,7 +46,19 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await expect(page.getByRole("button", { name: "ベットする" })).toBeVisible();
   await page.locator(".racer").nth(0).click();
   await page.getByRole("button", { name: "ベットする" }).click();
-  await expect(page.getByRole("heading", { name: "ベットを受け付けました" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "ベットしました" })).toBeVisible();
+
+  // Once the host closes betting, the participant's race tab locks into "race in progress".
+  await page.getByLabel("デモ・表示中の視点").selectOption({ label: "幹事" });
+  await page.getByRole("button", { name: "ベットを締め切る" }).click();
+  const confirmClose = page.getByRole("dialog").getByRole("button", { name: "締め切る" });
+  if (await confirmClose.isVisible()) await confirmClose.click();
+  await expect(page.getByRole("heading", { name: "待っている間に" })).toBeVisible();
+  await page.getByLabel("デモ・表示中の視点").selectOption({ label: "🌟 あやか" });
+  await expect(page.getByRole("heading", { name: "レース中" })).toBeVisible();
+  await expect(page.getByText("締切", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "ベットする" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "取り消して選び直す" })).toHaveCount(0);
 
   // History with the balance chart and its table view.
   await nav(page, "履歴").click();
