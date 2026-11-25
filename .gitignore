@@ -21,3 +21,7 @@ blob-report
 
 # Agent worktrees
 .claude/worktrees/
+
+# Throwaway scripts used while reviewing screens
+scripts/.audit-*
+scripts/.tmp-*

@@ -7,3 +7,5 @@ package-lock.json
 public
 firebase.rules.json
 .claude
+scripts/.audit-*
+scripts/.tmp-*
