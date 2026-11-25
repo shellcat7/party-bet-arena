@@ -409,7 +409,6 @@ const messages: Record<string, string> = {
   "If it hits (est.)": "Si aciertas (aprox.)",
   "If it hits": "Si aciertas",
   "Placed at": "Hora",
-  "Ticket no.": "N.º",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count, plural, one {Falta # apostante} other {Faltan # apostantes}}",
   "Everyone has bet": "Todos han apostado",

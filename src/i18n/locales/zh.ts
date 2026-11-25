@@ -391,7 +391,6 @@ const messages: Record<string, string> = {
   "If it hits (est.)": "猜中时（预估）",
   "If it hits": "猜中时",
   "Placed at": "受理",
-  "Ticket no.": "单号",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "还在等待 {count} 人投注",
   "Everyone has bet": "所有人都已投注",

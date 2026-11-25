@@ -409,7 +409,6 @@ const messages: Record<string, string> = {
   "If it hits (est.)": "У разі виграшу (орієнт.)",
   "If it hits": "У разі виграшу",
   "Placed at": "Прийнято",
-  "Ticket no.": "№",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count, plural, one {Чекаємо ще на # гравця} few {Чекаємо ще на # гравців} many {Чекаємо ще на # гравців} other {Чекаємо ще на # гравця}}",
   "Everyone has bet": "Усі зробили ставки",

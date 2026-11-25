@@ -412,7 +412,6 @@ const messages: Record<string, string> = {
   "If it hits (est.)": "Bei Treffer (ca.)",
   "If it hits": "Bei Treffer",
   "Placed at": "Abgegeben",
-  "Ticket no.": "Nr.",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count, plural, one {Es fehlt noch # Tipper} other {Es fehlen noch # Tipper}}",
   "Everyone has bet": "Alle haben getippt",

@@ -400,7 +400,6 @@ const messages: Record<string, string> = {
   "If it hits (est.)": "적중 시 (예상)",
   "If it hits": "적중 시",
   "Placed at": "접수",
-  "Ticket no.": "번호",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count}명의 베팅을 기다리는 중",
   "Everyone has bet": "모두 베팅했습니다",

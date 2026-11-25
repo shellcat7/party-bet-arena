@@ -8,7 +8,7 @@ import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
 import { frameColor } from "../../lib/constants";
 import { getBetPickIds } from "../../lib/odds";
-import { biomeForRace, ticketCode } from "../../lib/pass";
+import { biomeForRace } from "../../lib/pass";
 import { isGameOver } from "../../lib/settlement";
 import type { BetType, Room } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
@@ -285,8 +285,7 @@ function TicketPass(props: {
       ]}
       auxFields={[
         { label: t("名前", "Name"), value: bettor },
-        { label: t("受付", "Placed at"), value: formatTime(ticket.createdAt) },
-        { label: t("チケット番号", "Ticket no."), value: ticketCode(ticket.id), align: "end" },
+        { label: t("受付", "Placed at"), value: formatTime(ticket.createdAt), align: "end" },
       ]}
       stub={stubs[status]}
     />
