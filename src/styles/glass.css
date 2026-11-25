@@ -177,3 +177,32 @@
 :root[data-theme="dark"] .toast--error svg:first-child {
   color: var(--negative);
 }
+
+/* ------------------------------------------------------------------------ status bar edge */
+
+/*
+ * In a home-screen app the page runs under the status bar (black-translucent), so the top
+ * safe area (notch, Dynamic Island) holds no controls: every bar starts below it. Content that
+ * scrolls up into that area fades under a strip of the same material instead of colliding with
+ * the clock and the island. Without a safe area (most browsers) the strip has no height. Where the sticky top bar already covers the area, the strip is not
+ * needed.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 40;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--safe-top);
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  -webkit-mask-image: linear-gradient(#000 65%, transparent);
+  mask-image: linear-gradient(#000 65%, transparent);
+  pointer-events: none;
+}
+
+body:has(.room--tab):not(:has(.waiting))::before {
+  display: none;
+}

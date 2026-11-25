@@ -196,6 +196,16 @@
   min-height: 100dvh;
 }
 
+/* Screens without the top bar (result entry, race result, final) start below the safe area, banners
+   included; their page header then needs no inset of its own. */
+.room:not(.room--tab) {
+  padding-top: var(--safe-top);
+}
+
+.room:not(.room--tab) .page-header {
+  padding-top: 0;
+}
+
 .room--tab .room__content {
   padding-bottom: calc(var(--nav-height) + 16px + var(--safe-bottom));
 }
