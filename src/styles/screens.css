@@ -309,7 +309,6 @@
   background: var(--surface-2);
 }
 
-
 .stage-card__head {
   display: flex;
   align-items: center;
@@ -318,7 +317,8 @@
 }
 
 .stage-card h2 {
-  font-size: 1.33rem;
+  font-size: 1.4rem;
+  font-weight: 700;
   line-height: 1.3;
 }
 

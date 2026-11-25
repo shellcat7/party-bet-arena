@@ -74,6 +74,12 @@ await tab(page, "進行").click();
 await page.getByRole("button", { name: "ベットを締め切る" }).click();
 const close = page.getByRole("dialog").getByRole("button", { name: "締め切る" });
 if (await close.isVisible()) await close.click();
+await shot(page, "host-racing", true);
+
+// While the race runs, a participant's phone shows the race in progress
+await page.getByLabel("デモ・表示中の視点").selectOption({ label: "🌟 あやか" });
+await shot(page, "race-live");
+await page.getByLabel("デモ・表示中の視点").selectOption({ label: "幹事" });
 await page.getByRole("button", { name: "着順を入力する" }).click();
 for (const index of [1, 3, 0]) await page.locator(".finish-pick").nth(index).click();
 await shot(page, "results-entry");
@@ -85,13 +91,12 @@ await shot(page, "final", true);
 // Participant's result, leaderboard and history
 await page.getByRole("button", { name: "戻る", exact: true }).click();
 await page.getByLabel("デモ・表示中の視点").selectOption({ label: "🌟 あやか" });
-await page.getByRole("button", { name: "結果と払戻を見る" }).click();
-await shot(page, "race-result");
-await page.getByRole("button", { name: "戻る", exact: true }).click();
 await tab(page, "順位").click();
 await shot(page, "ranking");
 await tab(page, "履歴").click();
 await shot(page, "history");
+await page.locator(".race-history button").first().click();
+await shot(page, "race-result");
 
 // Dark theme
 const dark = await newPage({ colorScheme: "dark" });
