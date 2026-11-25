@@ -409,6 +409,9 @@ const messages: Record<string, string> = {
   "An oil-painting-style landscape of wind moving across a meadow":
     "Пейзаж у стилі олійного живопису: вітер біжить лукою",
   "Payout if it hits (est.)": "Виплата в разі виграшу (орієнт.)",
+  "{count} of {max} have bet": "Ставки зробили {count} з {max}",
+  "Waiting for the result": "Очікуємо результат",
+  "You haven't bet yet": "Ти ще не зробив ставку",
 };
 
 export default messages;

@@ -412,6 +412,9 @@ const messages: Record<string, string> = {
   "An oil-painting-style landscape of wind moving across a meadow":
     "Landschaft im Stil eines Ölgemäldes: Wind streicht über eine Wiese",
   "Payout if it hits (est.)": "Auszahlung bei Treffer (ca.)",
+  "{count} of {max} have bet": "{count} von {max} haben getippt",
+  "Waiting for the result": "Warten auf das Ergebnis",
+  "You haven't bet yet": "Du hast noch nicht getippt",
 };
 
 export default messages;

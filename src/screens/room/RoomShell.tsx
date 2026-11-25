@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import {
   ChevronLeft,
+  ChevronRight,
   CloudOff,
   Eye,
   Flag,
@@ -14,9 +15,10 @@ import {
   UserX,
 } from "lucide-react";
 import { Points, EmptyState } from "../../components/ui";
-import { raceStatusCopy } from "../../i18n/copy";
+import { betTypeCopy, raceName, raceStatusCopy } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
-import { getAvailableBalance } from "../../lib/betting";
+import { getAvailableBalance, getPlayerBets } from "../../lib/betting";
+import { getBetPickIds } from "../../lib/odds";
 import { isGameOver } from "../../lib/settlement";
 import { useOpenRoom } from "../../state/AppContext";
 import type { Screen, ScreenName } from "../../state/navigation";
@@ -146,7 +148,7 @@ function RoomTopBar() {
   return (
     <header className="topbar">
       <button
-        className="icon-button icon-button--quiet"
+        className="glass-button"
         type="button"
         onClick={controller.actions.closeRoom}
         aria-label={t("ルーム一覧に戻る", "Back to rooms")}
@@ -166,13 +168,13 @@ function RoomTopBar() {
         </span>
       </div>
       {me ? (
-        <div className="balance-chip" aria-label={t("あなたの残高", "Your balance")}>
+        <div className="balance-chip glass-capsule" aria-label={t("あなたの残高", "Your balance")}>
           <small>{t("残高", "Balance")}</small>
           <Points value={room.settings.allowDebt ? me.balance : getAvailableBalance(room, me.id)} />
         </div>
       ) : controller.isOnlineRoom ? (
         <button
-          className="icon-button"
+          className="glass-button"
           type="button"
           onClick={() => nav.push({ name: "invite" })}
           aria-label={t("招待QRを表示", "Show invitation QR")}
@@ -192,32 +194,100 @@ function BottomNav() {
   const items: Array<{ name: ScreenName; label: string; icon: ReactNode }> =
     controller.role === "host"
       ? [
-          { name: "home", label: t("進行", "Run"), icon: <House size={22} /> },
-          { name: "bet", label: t("ベット", "Bet"), icon: <Ticket size={22} /> },
-          { name: "ranking", label: t("順位", "Ranks"), icon: <Trophy size={22} /> },
-          { name: "manage", label: t("管理", "Manage"), icon: <Settings2 size={22} /> },
+          { name: "home", label: t("進行", "Run"), icon: <House size={24} /> },
+          { name: "bet", label: t("ベット", "Bet"), icon: <Ticket size={24} /> },
+          { name: "ranking", label: t("順位", "Ranks"), icon: <Trophy size={24} /> },
+          { name: "manage", label: t("管理", "Manage"), icon: <Settings2 size={24} /> },
         ]
       : [
-          { name: "bet", label: t("レース", "Race"), icon: <Flag size={22} /> },
-          { name: "ranking", label: t("順位", "Ranks"), icon: <Trophy size={22} /> },
-          { name: "history", label: t("履歴", "History"), icon: <History size={22} /> },
+          { name: "bet", label: t("レース", "Race"), icon: <Flag size={24} /> },
+          { name: "ranking", label: t("順位", "Ranks"), icon: <Trophy size={24} /> },
+          { name: "history", label: t("履歴", "History"), icon: <History size={24} /> },
         ];
+  const active = items.findIndex((item) => item.name === nav.screen.name);
 
   return (
-    <nav className="bottom-nav" aria-label={t("メインメニュー", "Main menu")}>
-      {items.map((item) => (
-        <button
-          key={item.name}
-          type="button"
-          className={nav.screen.name === item.name ? "is-active" : undefined}
-          aria-current={nav.screen.name === item.name ? "page" : undefined}
-          onClick={() => nav.replace({ name: item.name } as Screen)}
-        >
-          {item.icon}
-          <span>{item.label}</span>
-        </button>
-      ))}
-    </nav>
+    <div className="tab-dock">
+      <RaceAccessory />
+      <nav
+        className="bottom-nav"
+        aria-label={t("メインメニュー", "Main menu")}
+        style={{ "--tabs": items.length, "--active": Math.max(0, active) } as CSSProperties}
+      >
+        {/* The glass lens slides to the selected tab; the inner element restarts its stretch. */}
+        {active >= 0 && (
+          <span className="bottom-nav__lens" aria-hidden="true">
+            <span key={active} />
+          </span>
+        )}
+        {items.map((item) => (
+          <button
+            key={item.name}
+            type="button"
+            className={nav.screen.name === item.name ? "is-active" : undefined}
+            aria-current={nav.screen.name === item.name ? "page" : undefined}
+            onClick={() => nav.replace({ name: item.name } as Screen)}
+          >
+            {item.icon}
+            <span>{item.label}</span>
+          </button>
+        ))}
+      </nav>
+    </div>
+  );
+}
+
+/**
+ * The current race, always one tap away: a capsule above the tab bar (like a mini player) on every
+ * tab except the race screen itself.
+ */
+function RaceAccessory() {
+  const { t } = useI18n();
+  const { room, controller, nav } = useOpenRoom();
+  const isHost = controller.role === "host";
+  const raceTab: ScreenName = isHost ? "home" : "bet";
+  if (nav.screen.name === raceTab) return null;
+
+  const race = room.currentRace;
+  const labels = betTypeCopy(t);
+  let detail: string;
+  if (isHost) {
+    const placed = new Set(race.bets.map((bet) => bet.playerId)).size;
+    detail =
+      race.status === "betting"
+        ? t("{count} / {max}人がベット", "{count} of {max} have bet", {
+            count: placed,
+            max: room.players.length,
+          })
+        : race.status === "closed"
+          ? t("着順の入力待ち", "Waiting for the result")
+          : t("精算済み", "Settled");
+  } else {
+    const ticket = controller.me ? getPlayerBets(room, controller.me.id)[0] : undefined;
+    if (ticket) {
+      const names = getBetPickIds(ticket).map(
+        (id) => room.contestants.find((contestant) => contestant.id === id)?.name ?? "?",
+      );
+      detail = `${labels[ticket.type].title} ${names.join(" → ")} · ${ticket.amount}pt`;
+    } else {
+      detail =
+        race.status === "betting"
+          ? t("まだベットしていません", "You haven't bet yet")
+          : t("このレースはベットしていません。", "You didn't bet on this race.");
+    }
+  }
+
+  return (
+    <button className="race-accessory" type="button" onClick={() => nav.replace({ name: raceTab })}>
+      <i className={`status-dot status-dot--${race.status}`} aria-hidden="true" />
+      <span className="race-accessory__text">
+        <strong>
+          {raceName(t, race.number)} · {raceStatusCopy(t)[race.status]}
+        </strong>
+        <small>{detail}</small>
+      </span>
+      <ChevronRight size={18} aria-hidden="true" />
+    </button>
   );
 }
 

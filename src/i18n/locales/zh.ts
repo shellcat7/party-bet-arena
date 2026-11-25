@@ -388,6 +388,9 @@ const messages: Record<string, string> = {
   Placed: "已受理",
   "An oil-painting-style landscape of wind moving across a meadow": "油画风格的风景：风吹过草原",
   "Payout if it hits (est.)": "猜中时的派彩（预估）",
+  "{count} of {max} have bet": "{count} / {max} 人已投注",
+  "Waiting for the result": "等待输入名次",
+  "You haven't bet yet": "还没有投注",
 };
 
 export default messages;

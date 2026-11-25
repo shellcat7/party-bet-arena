@@ -398,6 +398,9 @@ const messages: Record<string, string> = {
   Placed: "접수됨",
   "An oil-painting-style landscape of wind moving across a meadow": "바람이 초원을 지나가는 유화풍 풍경",
   "Payout if it hits (est.)": "적중 시 배당금(예상)",
+  "{count} of {max} have bet": "{max}명 중 {count}명 베팅",
+  "Waiting for the result": "순위 입력 대기 중",
+  "You haven't bet yet": "아직 베팅하지 않았습니다",
 };
 
 export default messages;
