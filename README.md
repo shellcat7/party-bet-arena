@@ -10,11 +10,11 @@ Firebaseに接続しなくても、「デモを見る」から幹事と参加者
 
 ポイントは遊び用です。現金や景品のやり取りには使用できません。
 
-| 進行（幹事） | ベット | 着順入力 | レース結果 |
+| 進行（幹事） | ベット | レース中（参加者） | 着順入力 |
 | --- | --- | --- | --- |
-| <img src="docs/screenshots/host-home.png" width="190" alt="幹事の進行画面" /> | <img src="docs/screenshots/bet.png" width="190" alt="ベット画面" /> | <img src="docs/screenshots/results-entry.png" width="190" alt="着順入力と精算プレビュー" /> | <img src="docs/screenshots/race-result.png" width="190" alt="参加者のレース結果" /> |
-| **順位** | **履歴** | **最終結果** | **ダーク表示** |
-| <img src="docs/screenshots/ranking.png" width="190" alt="順位" /> | <img src="docs/screenshots/history.png" width="190" alt="レース履歴と残高推移" /> | <img src="docs/screenshots/final.png" width="190" alt="最終結果" /> | <img src="docs/screenshots/bet-dark.png" width="190" alt="ダーク表示のベット画面" /> |
+| <img src="docs/screenshots/host-home.png" width="190" alt="幹事の進行画面" /> | <img src="docs/screenshots/bet.png" width="190" alt="ベット画面" /> | <img src="docs/screenshots/race-live.png" width="190" alt="レース中の参加者の画面" /> | <img src="docs/screenshots/results-entry.png" width="190" alt="着順入力と精算プレビュー" /> |
+| **レース結果** | **履歴** | **最終結果** | **ダーク表示** |
+| <img src="docs/screenshots/race-result.png" width="190" alt="参加者のレース結果" /> | <img src="docs/screenshots/history.png" width="190" alt="レース履歴と残高推移" /> | <img src="docs/screenshots/final.png" width="190" alt="最終結果" /> | <img src="docs/screenshots/placed-dark.png" width="190" alt="ダーク表示の締切待ち画面" /> |
 
 ## 機能
 
@@ -22,6 +22,8 @@ Firebaseに接続しなくても、「デモを見る」から幹事と参加者
 - 単勝・複勝・2連単・3連単のベット。幹事による代行入力と取り消し
 - 対戦者の強さからのオッズ自動計算と、ベットの集まり具合でオッズが変わるモード
 - ベット受付 → 締切 → 着順入力 → 精算 の進行管理。確定前の精算プレビュー
+- 進行に合わせて参加者の画面が切り替わる（ベット → 締切待ち → レース中 → 結果）。レース中はベットできない状態で待つ
+- 幹事のレース中の画面から、ルール・対戦者・参加者・招待の準備に移れる
 - 着順の訂正（直前の精算の取り消し）と、締切前のベットの取り消し
 - 順位と変動、レース履歴、残高推移グラフ、最終結果
 - 9言語（日本語、英語、中国語、韓国語、スペイン語、フランス語、ドイツ語、イタリア語、ウクライナ語）、ライトとダーク表示
@@ -60,6 +62,9 @@ Security Rules で次の制約を課しています。参加コードが一致�
 
 **オッズの計算**
 すべての券種を1つの確率モデル（Plackett–Luce）から計算し、`払戻率 ÷ 的中確率` で倍率を決めています。どの券種を買っても平均の払戻率がそろい（自動オッズでは90%）、期待値が賭け金を上回る券種はありません。テストで券種ごとの払戻率を確認しています。
+
+**待ち時間の絵**
+締切待ちの画面にはピクセルアートのアニメーション（`src/components/scenes/PixelCarriers.tsx`）、レース中の画面にはモネの「散歩、日傘をさす女性」（1875年、パブリックドメイン）の筆致と色合いを参考にした風景（`src/components/scenes/meadowPainter.ts`）を表示します。どちらも画像ファイルを使わず、Canvas にコードで描いています。風景は乱数のシードから筆の一筆ずつを生成し、動かない層はキャッシュして、風で揺れる草やベールだけを毎フレーム描き直します。画面外やタブが非表示のときは停止し、「視差効果を減らす」設定では静止画になります。風景のコードはレース中に初めて読み込みます。
 
 **多言語対応**
 日本語・英語・中国語（簡体字）・韓国語・スペイン語・フランス語・ドイツ語・イタリア語・ウクライナ語に対応しています。英語の原文をキーにしたカタログ方式で、複数形は ICU 形式で表現します。翻訳漏れはテストで検出します。

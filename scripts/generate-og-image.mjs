@@ -11,7 +11,7 @@ import { chromium } from "@playwright/test";
 const icon = await readFile("public/favicon.svg", "utf8");
 const shot = async (name) =>
   `data:image/png;base64,${(await readFile(`docs/screenshots/${name}.png`)).toString("base64")}`;
-const [left, right] = await Promise.all([shot("race-live"), shot("bet")]);
+const [left, right] = await Promise.all([shot("race-live"), shot("host-home")]);
 
 const html = `<!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><style>
