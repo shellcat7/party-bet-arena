@@ -50,6 +50,8 @@ test("a participant joins by QR, bets, and sees the host's result live", async (
   await expect(host.locator(".ticket-list li")).toHaveCount(2);
 
   await nav(host, "進行").click();
+  // Even from another tab, closing betting brings the participant to the race screen.
+  await player.getByRole("navigation", { name: "Main menu" }).getByRole("button", { name: "Ranks" }).click();
   await host.getByRole("button", { name: "ベットを締め切る" }).click();
   // The participant's phone switches to the race-in-progress screen.
   await expect(player.getByRole("heading", { name: "Race in progress" })).toBeVisible();

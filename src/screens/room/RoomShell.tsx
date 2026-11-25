@@ -111,7 +111,8 @@ function renderScreen(screen: Screen) {
 }
 
 /**
- * Participants follow the host: when a race is settled they are taken to their result, and
+ * Participants follow the host: when betting closes they are brought to the race screen (which
+ * now shows the race in progress), when a race is settled they are taken to their result, and
  * when the next race opens they land back on the betting screen.
  */
 function usePlayerAutoNavigation() {
@@ -125,7 +126,9 @@ function usePlayerAutoNavigation() {
     const before = previous.current;
     previous.current = { id: race.id, status: race.status };
     if (controller.role !== "player") return;
-    if (before.id === race.id && before.status !== "settled" && race.status === "settled") {
+    if (before.id === race.id && before.status === "betting" && race.status === "closed") {
+      reset({ name: "bet" });
+    } else if (before.id === race.id && before.status !== "settled" && race.status === "settled") {
       push(gameOver ? { name: "final" } : { name: "race", raceId: race.id });
     } else if (before.id !== race.id || (before.status === "settled" && race.status !== "settled")) {
       // A new race opened, or the host undid the settlement to correct the order.
