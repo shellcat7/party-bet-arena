@@ -1530,10 +1530,3 @@
   flex: none;
   color: var(--text-3);
 }
-
-/* Temporary stand-ins until the scenes are in. */
-.scene-stub {
-  width: 100%;
-  height: 100%;
-  background: #bcd9f2;
-}
