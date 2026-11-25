@@ -51,6 +51,17 @@
 
   --shadow-overlay: 0 12px 32px rgba(15, 17, 21, 0.16);
 
+  /* Type scale (iOS-like steps; the root is 15px). Use these, not ad-hoc sizes. */
+  --text-caption2: 0.733rem;
+  --text-caption: 0.8rem;
+  --text-footnote: 0.867rem;
+  --text-subhead: 0.933rem;
+  --text-body: 1rem;
+  --text-headline: 1.133rem;
+  --text-title3: 1.333rem;
+  --text-title2: 1.467rem;
+  --text-title1: 1.867rem;
+  --text-large: 2.267rem;
   --radius-s: 8px;
   --radius-m: 14px;
   --radius-l: 20px;

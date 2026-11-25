@@ -49,7 +49,6 @@ const messages: Record<string, string> = {
   "Choose an image under 15 MB": "15MB 이하의 이미지를 선택해 주세요",
   "Choose the winner": "1위를 할 출전자를 선택해 주세요",
   "Choose who is betting": "베팅할 참가자를 선택해 주세요",
-  "Clear picks": "선택 해제",
   "Close betting": "베팅 마감",
   "Close betting?": "베팅을 마감할까요?",
   "Confirm & pay out": "확정하고 정산",
@@ -241,7 +240,6 @@ const messages: Record<string, string> = {
   "Scanning the invitation QR with your phone camera opens this screen pre-filled.":
     "휴대폰 카메라로 초대 QR을 스캔하면 정보가 입력된 상태로 이 화면이 열려요.",
   "Scanning…": "읽는 중…",
-  "See all": "전체 보기",
   Self: "본인",
   Settled: "정산 완료",
   "Settling…": "정산하는 중…",
@@ -280,7 +278,6 @@ const messages: Record<string, string> = {
   "This device": "이 기기 설정",
   "This device isn't a member of that room.": "이 기기에서 참가한 방이 아니에요.",
   "This only removes it from this device.": "이 기기의 목록에서만 삭제돼요.",
-  "This race": "이번 경주",
   "This race is settled": "이 경주는 정산이 끝났어요",
   "This room is full (max {max}).": "이 방은 정원이 찼어요(최대 {max}명).",
   "This room is no longer available.": "이 방은 더 이상 사용할 수 없어요.",
@@ -291,9 +288,6 @@ const messages: Record<string, string> = {
   Tickets: "베팅 내역",
   "Tickets this race": "이번 경주 베팅",
   "Tied for 1st": "공동 1위",
-  "Top 3 right now": "현재 상위 3명",
-  "Total staked": "총 베팅액",
-  "Tournament progress": "대회 진행률",
   Trifecta: "삼쌍승식",
   "Undo settlement": "정산 취소",
   "Up to {max}": "최대 {max}경주",
@@ -331,7 +325,6 @@ const messages: Record<string, string> = {
   races: "경주 수",
   "starting points": "시작 포인트",
   strength: "실력",
-  win: "단승식",
   won: "우승",
   x: "배",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
@@ -356,10 +349,7 @@ const messages: Record<string, string> = {
   "1st": "1위",
   "2nd": "2위",
   "3rd": "3위",
-  "Not selected": "미선택",
   "({delta} from start)": "(시작 대비 {delta})",
-  "({max} races in total)": "(총 {max}경주)",
-  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, other {#건}}",
   Racing: "경주 중",
   "When the race is over, enter the finishing order on the Run tab.":
     "경주가 끝나면 ‘진행’ 탭에서 순위를 입력하세요.",
@@ -399,7 +389,6 @@ const messages: Record<string, string> = {
   Type: "종류",
   "If it hits (est.)": "적중 시 (예상)",
   "If it hits": "적중 시",
-  "Placed at": "접수",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count}명의 베팅을 기다리는 중",
   "Everyone has bet": "모두 베팅했습니다",
@@ -409,6 +398,8 @@ const messages: Record<string, string> = {
   "A painted, windswept meadow": "바람 부는 초원을 그린 유화풍 풍경",
   "A painted snowy mountain range": "설산을 그린 유화풍 풍경",
   "A painted desert of dunes and mesas": "모래언덕과 메사가 있는 사막을 그린 유화풍 풍경",
+  "Start over": "다시 선택",
+  "Shown once you pick": "선택하면 표시됩니다",
 };
 
 export default messages;

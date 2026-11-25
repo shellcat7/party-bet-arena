@@ -64,7 +64,7 @@ export default function InviteScreen(props: { isNew: boolean }) {
           <Pass
             className="pass--brand"
             accent="#fdc603"
-            brand={t("ランクパーティ", "Rank Party")}
+            title={t("ランクパーティ", "Rank Party")}
             label={t("「{room}」への招待状", "Invitation to “{room}”", { room: room.name })}
             headerFields={[
               { label: t("レース", "Races"), value: room.settings.maxRaces },

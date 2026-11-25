@@ -52,7 +52,6 @@ const messages: Record<string, string> = {
   "Choose an image under 15 MB": "Scegli un'immagine inferiore a 15 MB",
   "Choose the winner": "Scegli il vincitore",
   "Choose who is betting": "Scegli chi scommette",
-  "Clear picks": "Cancella selezione",
   "Close betting": "Chiudi scommesse",
   "Close betting?": "Chiudere le scommesse?",
   "Confirm & pay out": "Conferma e liquida",
@@ -250,7 +249,6 @@ const messages: Record<string, string> = {
   "Scanning the invitation QR with your phone camera opens this screen pre-filled.":
     "Se inquadri il QR dell'invito con la fotocamera del telefono, questa schermata si apre già compilata.",
   "Scanning…": "Scansione in corso…",
-  "See all": "Vedi tutti",
   Self: "Dallo scommettitore",
   Settled: "Liquidata",
   "Settling…": "Liquidazione in corso…",
@@ -289,7 +287,6 @@ const messages: Record<string, string> = {
   "This device": "Questo dispositivo",
   "This device isn't a member of that room.": "Questo dispositivo non risulta tra i membri della stanza.",
   "This only removes it from this device.": "La stanza verrà rimossa solo dall'elenco di questo dispositivo.",
-  "This race": "Questa gara",
   "This race is settled": "Questa gara è stata liquidata",
   "This room is full (max {max}).": "Questa stanza è al completo (max {max}).",
   "This room is no longer available.": "Questa stanza non è più disponibile.",
@@ -301,9 +298,6 @@ const messages: Record<string, string> = {
   Tickets: "Scommesse",
   "Tickets this race": "Scommesse di questa gara",
   "Tied for 1st": "1° a pari merito",
-  "Top 3 right now": "Primi 3 al momento",
-  "Total staked": "Totale puntato",
-  "Tournament progress": "Avanzamento del torneo",
   Trifecta: "Tris",
   "Undo settlement": "Revoca liquidazione",
   "Up to {max}": "Fino a {max}",
@@ -342,7 +336,6 @@ const messages: Record<string, string> = {
   races: "gare",
   "starting points": "punti iniziali",
   strength: "forza",
-  win: "vincente",
   won: "ha vinto",
   x: "x",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
@@ -369,11 +362,7 @@ const messages: Record<string, string> = {
   "1st": "1°",
   "2nd": "2°",
   "3rd": "3°",
-  "Not selected": "Non selezionato",
   "({delta} from start)": "({delta} dall'inizio)",
-  "({max} races in total)": "({max} gare in totale)",
-  "{count, plural, one {# ticket} other {# tickets}}":
-    "{count, plural, one {# scommessa} other {# scommesse}}",
   Racing: "In corsa",
   "When the race is over, enter the finishing order on the Run tab.":
     "Quando la gara è finita, inserisci l'ordine d'arrivo nella scheda Gara.",
@@ -413,7 +402,6 @@ const messages: Record<string, string> = {
   Type: "Tipo",
   "If it hits (est.)": "Se vinci (stima)",
   "If it hits": "Se vinci",
-  "Placed at": "Ora",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count, plural, one {Manca ancora # scommettitore} other {Mancano ancora # scommettitori}}",
   "Everyone has bet": "Hanno scommesso tutti",
@@ -423,6 +411,8 @@ const messages: Record<string, string> = {
   "A painted, windswept meadow": "Dipinto di un prato battuto dal vento",
   "A painted snowy mountain range": "Dipinto di una catena montuosa innevata",
   "A painted desert of dunes and mesas": "Dipinto di un deserto di dune e altopiani",
+  "Start over": "Ricomincia",
+  "Shown once you pick": "Compare dopo la scelta",
 };
 
 export default messages;

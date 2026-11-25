@@ -49,7 +49,6 @@ const messages: Record<string, string> = {
   "Choose an image under 15 MB": "Вибери зображення до 15 МБ",
   "Choose the winner": "Вибери переможця",
   "Choose who is betting": "Вибери, хто робить ставку",
-  "Clear picks": "Очистити вибір",
   "Close betting": "Закрити ставки",
   "Close betting?": "Закрити ставки?",
   "Confirm & pay out": "Підтвердити й розрахувати",
@@ -245,7 +244,6 @@ const messages: Record<string, string> = {
   "Scanning the invitation QR with your phone camera opens this screen pre-filled.":
     "Якщо відсканувати QR-код запрошення камерою телефону, цей екран відкриється з уже заповненими даними.",
   "Scanning…": "Сканування…",
-  "See all": "Показати всіх",
   Self: "Особисто",
   Settled: "Розраховано",
   "Settling…": "Розрахунок…",
@@ -284,7 +282,6 @@ const messages: Record<string, string> = {
   "This device": "Цей пристрій",
   "This device isn't a member of that room.": "Цей пристрій не належить до цієї кімнати.",
   "This only removes it from this device.": "Кімнату буде прибрано лише з цього пристрою.",
-  "This race": "Цей заїзд",
   "This race is settled": "Цей заїзд розраховано",
   "This room is full (max {max}).": "Кімната заповнена (максимум {max}).",
   "This room is no longer available.": "Ця кімната більше недоступна.",
@@ -295,9 +292,6 @@ const messages: Record<string, string> = {
   Tickets: "Ставки",
   "Tickets this race": "Ставки в цьому заїзді",
   "Tied for 1st": "Спільне 1-ше місце",
-  "Top 3 right now": "Зараз у топ-3",
-  "Total staked": "Загальна сума ставок",
-  "Tournament progress": "Прогрес турніру",
   Trifecta: "Точна трійка",
   "Undo settlement": "Скасувати розрахунок",
   "Up to {max}": "Максимум {max}",
@@ -337,7 +331,6 @@ const messages: Record<string, string> = {
   races: "кількість заїздів",
   "starting points": "стартові очки",
   strength: "рівень сили",
-  win: "перемога",
   won: "— 1-ше місце",
   x: "x",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
@@ -364,11 +357,7 @@ const messages: Record<string, string> = {
   "1st": "1-ше",
   "2nd": "2-ге",
   "3rd": "3-тє",
-  "Not selected": "Не вибрано",
   "({delta} from start)": "({delta} від початку)",
-  "({max} races in total)": "(усього заїздів: {max})",
-  "{count, plural, one {# ticket} other {# tickets}}":
-    "{count, plural, one {# ставка} few {# ставки} many {# ставок} other {# ставки}}",
   Racing: "Заїзд триває",
   "When the race is over, enter the finishing order on the Run tab.":
     "Коли заїзд завершиться, введи результати на вкладці «Гра».",
@@ -408,7 +397,6 @@ const messages: Record<string, string> = {
   Type: "Тип",
   "If it hits (est.)": "У разі виграшу (орієнт.)",
   "If it hits": "У разі виграшу",
-  "Placed at": "Прийнято",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "{count, plural, one {Чекаємо ще на # гравця} few {Чекаємо ще на # гравців} many {Чекаємо ще на # гравців} other {Чекаємо ще на # гравця}}",
   "Everyone has bet": "Усі зробили ставки",
@@ -418,6 +406,8 @@ const messages: Record<string, string> = {
   "A painted, windswept meadow": "Картина вітряної луки",
   "A painted snowy mountain range": "Картина засніженого гірського хребта",
   "A painted desert of dunes and mesas": "Картина пустелі з дюнами та столовими горами",
+  "Start over": "Почати знову",
+  "Shown once you pick": "З'явиться після вибору",
 };
 
 export default messages;

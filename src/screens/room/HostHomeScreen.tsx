@@ -5,7 +5,7 @@ import { Avatar, Points, Lane } from "../../components/ui";
 import type { PhaseTone } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
-import { isFinalRace, isGameOver, rankPlayers } from "../../lib/settlement";
+import { isFinalRace, isGameOver } from "../../lib/settlement";
 import type { RaceStatus } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
 import { useCorrectResult } from "./useCorrectResult";
@@ -22,11 +22,7 @@ export function HostHomeScreen() {
   const bettorsWithTickets = new Set(race.bets.map((bet) => bet.playerId));
   const pool = race.bets.reduce((sum, bet) => sum + bet.amount, 0);
   const gameOver = isGameOver(room);
-  const progress = Math.round(
-    ((race.number - (race.status === "settled" ? 0 : 1)) / room.settings.maxRaces) * 100,
-  );
   const phaseIndex = phases.indexOf(race.status);
-  const leaders = rankPlayers(room.players).slice(0, 3);
   const correctResult = useCorrectResult();
 
   const close = async () => {
@@ -54,27 +50,14 @@ export function HostHomeScreen() {
     <div className="screen">
       <section className={`card stage-card stage-card--${tones[race.status]}`} aria-labelledby="stage-title">
         <div className="stage-card__head">
-          <h2 id="stage-title">
-            {raceName(t, race.number)}
-            <small>{t("（全{max}レース）", "({max} races in total)", { max: room.settings.maxRaces })}</small>
-          </h2>
+          <h2 id="stage-title">{raceName(t, race.number)}</h2>
           {isFinalRace(room) && !gameOver && (
             <span className="badge badge--accent">{t("最終レース", "Final race")}</span>
           )}
         </div>
-        <div
-          className="progress"
-          role="progressbar"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-          aria-label={t("大会の進行度", "Tournament progress")}
-        >
-          <span style={{ width: `${progress}%` }} />
-        </div>
 
         <ol className="phase-steps" aria-label={t("レースの流れ", "Race steps")}>
-          {[t("ベット受付", "Betting"), t("着順入力", "Results"), t("精算済み", "Settled")].map(
+          {[t("ベット受付", "Betting"), t("着順入力", "Results"), t("確定", "Settled")].map(
             (label, index) => (
               <li
                 key={label}
@@ -128,6 +111,12 @@ export function HostHomeScreen() {
                         count: bettorsWithTickets.size,
                         max: room.players.length,
                       })}
+                      {pool > 0 && (
+                        <>
+                          {" · "}
+                          <Points value={pool} />
+                        </>
+                      )}
                     </span>
                   </div>
                   <ul>
@@ -234,37 +223,6 @@ export function HostHomeScreen() {
 
       {race.status === "closed" && <WhileRacing />}
 
-      <section className="card" aria-labelledby="summary-title">
-        <h2 id="summary-title" className="card__title">
-          {t("このレース", "This race")}
-        </h2>
-        <dl className="summary">
-          <div>
-            <dt>{t("ベット総額", "Total staked")}</dt>
-            <dd>
-              <Points value={pool} />
-            </dd>
-          </div>
-          <div>
-            <dt>{t("チケット", "Tickets")}</dt>
-            <dd>
-              {t("{count}枚", "{count, plural, one {# ticket} other {# tickets}}", {
-                count: race.bets.length,
-              })}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("参加者", "Bettors")}</dt>
-            <dd>
-              {t("{count} / {max}人", "{count} / {max}", {
-                count: room.players.length,
-                max: room.settings.maxPlayers,
-              })}
-            </dd>
-          </div>
-        </dl>
-      </section>
-
       <section className="card" aria-labelledby="odds-title">
         <header className="card__header">
           <h2 id="odds-title">{t("オッズ表", "Odds board")}</h2>
@@ -284,32 +242,11 @@ export function HostHomeScreen() {
                 {contestant.icon}
               </span>
               <span className="odds-board__name">{contestant.name}</span>
-              <strong>{contestant.odds.toFixed(1)}</strong>
+              <strong>×{contestant.odds.toFixed(1)}</strong>
             </li>
           ))}
         </ul>
       </section>
-
-      {leaders.length > 0 && room.raceHistory.length > 0 && (
-        <section className="card" aria-labelledby="leaders-title">
-          <header className="card__header">
-            <h2 id="leaders-title">{t("現在のトップ3", "Top 3 right now")}</h2>
-            <button className="link-button" type="button" onClick={() => nav.replace({ name: "ranking" })}>
-              {t("すべて見る", "See all")}
-            </button>
-          </header>
-          <ol className="mini-leaderboard">
-            {leaders.map(({ player, rank }) => (
-              <li key={player.id}>
-                <span className={`rank-badge rank-badge--${rank}`}>{rank}</span>
-                <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
-                <span>{player.name}</span>
-                <Points value={player.balance} />
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
     </div>
   );
 }

@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
+import { Ticket, Trophy } from "lucide-react";
 import { Pass, PassPicks, PassStub } from "../../components/BetPass";
 import type { PassPick, PassStatus } from "../../components/BetPass";
 import { useConfirm } from "../../components/feedback";
-import { Points } from "../../components/ui";
+import { EmptyState, Points } from "../../components/ui";
 import { betTypeCopy, landscapeLabel, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
@@ -137,7 +138,7 @@ function TicketScreen(props: { room: Room; playerId?: string }) {
           }
           action={
             race.status === "settled" ? (
-              <button className="button button--secondary" type="button" onClick={seeResult}>
+              <button className="button button--secondary button--block" type="button" onClick={seeResult}>
                 {t("結果を見る", "View result")}
               </button>
             ) : undefined
@@ -151,11 +152,9 @@ function TicketScreen(props: { room: Room; playerId?: string }) {
 function NoTicket(props: { raceNumber: number; message: string; action?: ReactNode }) {
   const { t } = useI18n();
   return (
-    <section className="no-ticket" aria-label={raceName(t, props.raceNumber)}>
-      <strong>{raceName(t, props.raceNumber)}</strong>
-      <p>{props.message}</p>
-      {props.action}
-    </section>
+    <EmptyState icon={<Ticket size={28} />} title={raceName(t, props.raceNumber)} action={props.action}>
+      {props.message}
+    </EmptyState>
   );
 }
 
@@ -165,19 +164,21 @@ function GameOverScreen(props: { room: Room }) {
   return (
     <div className="screen race-screen">
       <h1 className="sr-only">{t("大会が終わりました", "The tournament is over")}</h1>
-      <section className="no-ticket">
-        <strong>
-          {t("全{max}レース終了", "All {max} races finished", { max: props.room.settings.maxRaces })}
-        </strong>
-        <p>{t("最終順位と記録を確認できます。", "See the final standings and records.")}</p>
-        <button
-          className="button button--primary button--lg"
-          type="button"
-          onClick={() => nav.push({ name: "final" })}
-        >
-          {t("最終結果を見る", "See final results")}
-        </button>
-      </section>
+      <EmptyState
+        icon={<Trophy size={28} />}
+        title={t("全{max}レース終了", "All {max} races finished", { max: props.room.settings.maxRaces })}
+        action={
+          <button
+            className="button button--primary button--block button--lg"
+            type="button"
+            onClick={() => nav.push({ name: "final" })}
+          >
+            {t("最終結果を見る", "See final results")}
+          </button>
+        }
+      >
+        {t("最終順位と記録を確認できます。", "See the final standings and records.")}
+      </EmptyState>
     </div>
   );
 }
@@ -202,7 +203,7 @@ function TicketPass(props: {
   detail?: ReactNode;
   action?: ReactNode;
 }) {
-  const { t, formatTime } = useI18n();
+  const { t } = useI18n();
   const { room, ticket, status } = props;
   const labels = betTypeCopy(t);
   const positions = [t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")];
@@ -217,7 +218,6 @@ function TicketPass(props: {
       position: ticket.contestantIds.length > 1 ? positions[index] : undefined,
     };
   });
-  const bettor = room.players.find((player) => player.id === ticket.playerId)?.name ?? "";
   const estimate = status === "placed" && room.settings.marketOdds;
 
   const stubs: Record<PassStatus, ReactNode> = {
@@ -261,7 +261,7 @@ function TicketPass(props: {
   return (
     <Pass
       accent={picks[0]?.accent ?? frameColor(1)}
-      brand={t("ランクパーティ", "Rank Party")}
+      title={room.name}
       label={t("{race}のチケット", "Ticket for {race}", { race: raceName(t, props.raceNumber) })}
       headerFields={[
         { label: t("レース", "Race"), value: props.raceNumber },
@@ -282,10 +282,6 @@ function TicketPass(props: {
           value: <Points value={Math.floor(ticket.amount * props.multiplier)} />,
           align: "end",
         },
-      ]}
-      auxFields={[
-        { label: t("名前", "Name"), value: bettor },
-        { label: t("受付", "Placed at"), value: formatTime(ticket.createdAt), align: "end" },
       ]}
       stub={stubs[status]}
     />

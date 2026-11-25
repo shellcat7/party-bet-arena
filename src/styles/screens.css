@@ -571,14 +571,12 @@
 }
 
 .bet-form__prompt {
-  display: grid;
-  color: var(--text-3);
-  font-size: 0.87rem;
-}
-
-.bet-form__prompt strong {
-  color: var(--text);
-  font-size: 0.93rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-2);
+  font-size: var(--text-subhead);
 }
 
 .racer-list {
@@ -633,17 +631,15 @@
 }
 
 .racer__odds {
-  display: grid;
-  justify-items: end;
-  font-size: 1.07rem;
+  font-size: var(--text-headline);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  line-height: 1.15;
 }
 
-.racer__odds small {
+/* Win odds shown as a guide while picking an exacta or trifecta. */
+.racer__odds.is-guide {
   color: var(--text-3);
-  font-size: 0.7rem;
+  font-size: var(--text-body);
   font-weight: 400;
 }
 
@@ -667,43 +663,6 @@
 
 .ticket {
   gap: 16px;
-}
-
-.ticket__picks {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding-right: 32px;
-}
-
-.ticket__pick {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 4px 10px;
-  border-radius: var(--radius-s);
-  background: var(--surface-2);
-  font-size: 0.9rem;
-}
-
-.ticket__pick small {
-  color: var(--text-3);
-  font-size: 0.75rem;
-}
-
-.ticket__pick.is-empty {
-  color: var(--text-3);
-}
-
-.ticket__picks .icon-button {
-  position: absolute;
-  top: 4px;
-  right: -6px;
-  width: 32px;
-  height: 32px;
 }
 
 .amount {
@@ -798,7 +757,11 @@
 
 .ticket__payout span {
   color: var(--text-2);
-  font-size: 0.9rem;
+  font-size: var(--text-subhead);
+}
+
+.ticket__payout .ticket__payout-empty {
+  color: var(--text-3);
 }
 
 .ticket__payout strong,

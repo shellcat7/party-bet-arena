@@ -47,7 +47,6 @@ const messages: Record<string, string> = {
   "Choose an image under 15 MB": "请选择15MB以下的图片",
   "Choose the winner": "请选择第1名",
   "Choose who is betting": "请选择投注者",
-  "Clear picks": "清除选择",
   "Close betting": "截止投注",
   "Close betting?": "要截止投注吗？",
   "Confirm & pay out": "确认并派彩",
@@ -236,7 +235,6 @@ const messages: Record<string, string> = {
   "Scanning the invitation QR with your phone camera opens this screen pre-filled.":
     "用手机相机扫描邀请QR码，将打开此页面并自动填写信息。",
   "Scanning…": "正在识别…",
-  "See all": "查看全部",
   Self: "本人",
   Settled: "已结算",
   "Settling…": "正在结算…",
@@ -274,7 +272,6 @@ const messages: Record<string, string> = {
   "This device": "此设备",
   "This device isn't a member of that room.": "此设备不是该房间的成员。",
   "This only removes it from this device.": "仅从此设备的列表中移除，房间不会被删除。",
-  "This race": "本场比赛",
   "This race is settled": "本场比赛已结算",
   "This room is full (max {max}).": "此房间已满（最多{max}人）。",
   "This room is no longer available.": "此房间已不可用。",
@@ -285,9 +282,6 @@ const messages: Record<string, string> = {
   Tickets: "投注",
   "Tickets this race": "本场投注",
   "Tied for 1st": "并列第1名",
-  "Top 3 right now": "当前前三名",
-  "Total staked": "投注总额",
-  "Tournament progress": "赛事进度",
   Trifecta: "三重彩",
   "Undo settlement": "撤销结算",
   "Up to {max}": "最多{max}场",
@@ -324,7 +318,6 @@ const messages: Record<string, string> = {
   races: "比赛场数",
   "starting points": "初始积分",
   strength: "实力",
-  win: "独赢",
   won: "获胜",
   x: "倍",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
@@ -348,10 +341,7 @@ const messages: Record<string, string> = {
   "1st": "第1名",
   "2nd": "第2名",
   "3rd": "第3名",
-  "Not selected": "未选择",
   "({delta} from start)": "（较初始积分 {delta}）",
-  "({max} races in total)": "（共{max}场）",
-  "{count, plural, one {# ticket} other {# tickets}}": "{count, plural, other {#注}}",
   Racing: "比赛中",
   "When the race is over, enter the finishing order on the Run tab.":
     "比赛结束后，请在“赛况”标签页输入名次。",
@@ -390,7 +380,6 @@ const messages: Record<string, string> = {
   Type: "玩法",
   "If it hits (est.)": "猜中时（预估）",
   "If it hits": "猜中时",
-  "Placed at": "受理",
   "{count, plural, one {Waiting for # more bettor} other {Waiting for # more bettors}}":
     "还在等待 {count} 人投注",
   "Everyone has bet": "所有人都已投注",
@@ -399,6 +388,8 @@ const messages: Record<string, string> = {
   "A painted, windswept meadow": "油画风格：风吹过的草原",
   "A painted snowy mountain range": "油画风格：雪山",
   "A painted desert of dunes and mesas": "油画风格：沙丘与方山的沙漠",
+  "Start over": "重新选择",
+  "Shown once you pick": "选择后显示",
 };
 
 export default messages;

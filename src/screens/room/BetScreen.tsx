@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Check, Lock, Minus, Plus, Trash2, Users, X } from "lucide-react";
+import { Check, Lock, Minus, Plus, Trash2, Users } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
 import { Avatar, Points, EmptyState, Lane, SegmentedControl } from "../../components/ui";
 import { betErrorMessage, betTypeCopy, raceName } from "../../i18n/copy";
@@ -152,6 +152,7 @@ function firstWithoutTicket(room: Room, after?: string) {
 function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) {
   const { t } = useI18n();
   const { controller } = useOpenRoom();
+  const isHost = controller.role === "host";
   const { room, bettorId } = props;
   const labels = betTypeCopy(t);
   const [type, setType] = useState<BetType>("win");
@@ -205,13 +206,7 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
       }}
     >
       <section className="card">
-        <header className="card__header">
-          <h2>{raceName(t, room.currentRace.number)}</h2>
-          <span className="badge badge--live">
-            <i aria-hidden="true" />
-            {t("受付中", "Open")}
-          </span>
-        </header>
+        <h2 className="card__title">{raceName(t, room.currentRace.number)}</h2>
         <SegmentedControl
           label={t("ベットの種類", "Bet type")}
           value={type}
@@ -222,10 +217,14 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
             disabled: !isBetTypeAvailable(value, room.contestants.length),
           }))}
         />
-        <p className="bet-form__prompt">
-          <strong>{labels[type].note}</strong>
-          {labels[type].prompt}
-        </p>
+        <div className="bet-form__prompt">
+          <p>{labels[type].prompt}</p>
+          {picks.length > 0 && (
+            <button className="link-button" type="button" onClick={() => setPicks([])}>
+              {t("やり直す", "Start over")}
+            </button>
+          )}
+        </div>
 
         <ul className="racer-list">
           {room.contestants.map((contestant, index) => {
@@ -252,9 +251,9 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
                       {contestant.isCpu ? `CPU Lv${contestant.cpuLevel}` : t("プレイヤー", "Player")}
                     </small>
                   </span>
-                  <span className="racer__odds">
-                    {single.toFixed(1)}
-                    <small>{pickCount === 1 ? t("倍", "x") : t("単勝", "win")}</small>
+                  {/* For exactas and trifectas the win odds are shown muted, as a guide to strength. */}
+                  <span className={pickCount === 1 ? "racer__odds" : "racer__odds is-guide"}>
+                    ×{single.toFixed(1)}
                   </span>
                   <span className="racer__check" aria-hidden="true">
                     {selected ? pickCount > 1 ? position + 1 : <Check size={16} strokeWidth={3} /> : null}
@@ -267,38 +266,18 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
       </section>
 
       <section className="card ticket" aria-label={t("ベット内容", "Your ticket")}>
-        <div className="ticket__picks">
-          <span className="badge">{labels[type].title}</span>
-          {Array.from({ length: pickCount }, (_, index) => {
-            const contestant = room.contestants.find((item) => item.id === picks[index]);
-            return (
-              <span key={index} className={contestant ? "ticket__pick" : "ticket__pick is-empty"}>
-                {pickCount > 1 && <small>{[t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")][index]}</small>}
-                {contestant ? `${contestant.icon} ${contestant.name}` : t("未選択", "Not selected")}
-              </span>
-            );
-          })}
-          {picks.length > 0 && (
-            <button
-              className="icon-button icon-button--quiet"
-              type="button"
-              onClick={() => setPicks([])}
-              aria-label={t("選択をクリア", "Clear picks")}
-            >
-              <X size={16} />
-            </button>
-          )}
-        </div>
-
         <div className="amount">
           <div className="amount__head">
             <label htmlFor="bet-amount">{t("ベット額", "Stake")}</label>
-            <small>
-              {t("使える残高", "Available")}{" "}
-              <Points
-                value={room.settings.allowDebt ? (getPlayer(room, bettorId)?.balance ?? 0) : available}
-              />
-            </small>
+            {/* A participant sees their balance in the top bar; the host needs the bettor's here. */}
+            {isHost && (
+              <small>
+                {t("使える残高", "Available")}{" "}
+                <Points
+                  value={room.settings.allowDebt ? (getPlayer(room, bettorId)?.balance ?? 0) : available}
+                />
+              </small>
+            )}
           </div>
           <div className="amount__input">
             <button
@@ -342,7 +321,15 @@ function BetForm(props: { room: Room; bettorId: string; onPlaced: () => void }) 
             {t("的中時の払戻", "Payout if it hits")}
             {multiplier > 0 && <small> ×{multiplier.toFixed(1)}</small>}
           </span>
-          <strong>{multiplier > 0 ? <Points value={payout} /> : "—"}</strong>
+          {multiplier > 0 ? (
+            <strong>
+              <Points value={payout} />
+            </strong>
+          ) : (
+            <span className="ticket__payout-empty">
+              {t("対戦者を選ぶと表示されます", "Shown once you pick")}
+            </span>
+          )}
         </div>
         {room.settings.marketOdds && (
           <p className="form-help">

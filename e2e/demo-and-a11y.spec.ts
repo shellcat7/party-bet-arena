@@ -35,7 +35,7 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await page.getByRole("radio", { name: "2連単" }).click();
   await page.locator(".racer").nth(1).click();
   await page.locator(".racer").nth(0).click();
-  await expect(page.locator(".ticket__pick").first()).toContainText("コメット");
+  await expect(page.locator(".racer").nth(1)).toHaveAttribute("aria-pressed", "true");
   await page.getByRole("button", { name: "ベットする" }).click();
   await expect(page.getByRole("heading", { name: "ベットしました" })).toBeVisible();
   await expect(page.getByText(/あと1人のベットを待っています/)).toBeVisible();
