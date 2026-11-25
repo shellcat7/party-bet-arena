@@ -383,8 +383,6 @@ const messages: Record<string, string> = {
     "Quando la gara è finita, inserisci l'ordine d'arrivo nella scheda Gara.",
   "Start the next race to enter bets for others again.":
     "Avvia la gara successiva per inserire di nuovo scommesse per gli altri.",
-  "An oil-painting-style scene of a person with a parasol on a windy hill":
-    "Paesaggio in stile pittura a olio: una persona con un parasole su una collina ventosa",
   "Little helpers carrying tickets": "Piccoli aiutanti che trasportano le scommesse",
   "While the race runs": "Durante la gara",
   "Rules and settings": "Regole e impostazioni",
@@ -413,6 +411,8 @@ const messages: Record<string, string> = {
   "See the final standings and records.": "Guarda la classifica finale e i record.",
   "See final results": "Vedi i risultati finali",
   Placed: "Registrata",
+  "An oil-painting-style landscape of wind moving across a meadow":
+    "Paesaggio in stile pittura a olio: il vento attraversa un prato",
 };
 
 export default messages;

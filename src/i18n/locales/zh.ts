@@ -360,8 +360,6 @@ const messages: Record<string, string> = {
   "When the race is over, enter the finishing order on the Run tab.":
     "比赛结束后，请在“赛况”标签页输入名次。",
   "Start the next race to enter bets for others again.": "开始下一场后，即可再次代为投注。",
-  "An oil-painting-style scene of a person with a parasol on a windy hill":
-    "油画风格的风景：有风的山丘上，一个人撑着阳伞",
   "Little helpers carrying tickets": "搬运投注单的小帮手",
   "While the race runs": "比赛进行时",
   "Rules and settings": "规则与设置",
@@ -388,6 +386,7 @@ const messages: Record<string, string> = {
   "See the final standings and records.": "可以查看最终排名和记录。",
   "See final results": "查看最终结果",
   Placed: "已受理",
+  "An oil-painting-style landscape of wind moving across a meadow": "油画风格的风景：风吹过草原",
 };
 
 export default messages;

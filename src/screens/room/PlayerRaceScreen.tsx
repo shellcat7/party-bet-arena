@@ -38,6 +38,10 @@ export function PlayerRaceScreen() {
   return <RaceSettledStage room={room} playerId={me?.id} />;
 }
 
+/**
+ * A waiting screen: the scene fills the screen behind, and the details sit on a card at the top,
+ * leaving the lower part of the scene, where things move, in view.
+ */
 function Stage(props: {
   tone: PhaseTone;
   phase: string;
@@ -47,16 +51,16 @@ function Stage(props: {
   children?: ReactNode;
 }) {
   return (
-    <div className="screen">
-      <section className={`stage stage--${props.tone}`} aria-labelledby="stage-title">
-        <div className="stage__scene">{props.scene}</div>
-        <div className="stage__body" role="status">
+    <div className={`waiting waiting--${props.tone}`}>
+      <div className="waiting__scene">{props.scene}</div>
+      <section className="waiting__panel" aria-labelledby="stage-title">
+        <header className="waiting__head">
           <PhaseTag tone={props.tone}>{props.phase}</PhaseTag>
           <h1 id="stage-title">{props.title}</h1>
-          <p>{props.message}</p>
-        </div>
+          <p role="status">{props.message}</p>
+        </header>
+        {props.children}
       </section>
-      {props.children}
     </div>
   );
 }
@@ -107,8 +111,8 @@ function RaceLiveStage(props: { room: Room; ticket?: Bet }) {
       scene={
         <Meadow
           label={t(
-            "風の吹く丘で日傘をさす人を描いた油絵風の風景",
-            "An oil-painting-style scene of a person with a parasol on a windy hill",
+            "風が草原を渡っていく、油絵風の風景",
+            "An oil-painting-style landscape of wind moving across a meadow",
           )}
         />
       }
@@ -189,8 +193,8 @@ function GameOverStage(props: { room: Room }) {
       scene={
         <Meadow
           label={t(
-            "風の吹く丘で日傘をさす人を描いた油絵風の風景",
-            "An oil-painting-style scene of a person with a parasol on a windy hill",
+            "風が草原を渡っていく、油絵風の風景",
+            "An oil-painting-style landscape of wind moving across a meadow",
           )}
         />
       }
@@ -229,7 +233,7 @@ function TicketCard(props: { room: Room; ticket: Bet }) {
   };
 
   return (
-    <section className="card ticket-card" aria-labelledby="ticket-card-title">
+    <section className="ticket-card" aria-labelledby="ticket-card-title">
       <header className="ticket-card__head">
         <h2 id="ticket-card-title">{t("あなたのチケット", "Your ticket")}</h2>
         <span className={open ? "status-pill status-pill--placed" : "status-pill status-pill--closed"}>
@@ -288,7 +292,7 @@ function BettorStatus(props: { room: Room }) {
   const { t } = useI18n();
   const placed = new Set(props.room.currentRace.bets.map((bet) => bet.playerId));
   return (
-    <section className="card bettor-status" aria-labelledby="bettor-status-title">
+    <section className="bettor-status" aria-labelledby="bettor-status-title">
       <div className="bettor-status__head">
         <strong id="bettor-status-title">{t("ベット状況", "Bet status")}</strong>
         <span>

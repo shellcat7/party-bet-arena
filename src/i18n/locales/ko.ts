@@ -369,8 +369,6 @@ const messages: Record<string, string> = {
     "경주가 끝나면 ‘진행’ 탭에서 순위를 입력하세요.",
   "Start the next race to enter bets for others again.":
     "다음 경주를 시작하면 다시 대신 베팅을 입력할 수 있습니다.",
-  "An oil-painting-style scene of a person with a parasol on a windy hill":
-    "바람 부는 언덕에서 양산을 든 사람을 그린 유화풍 풍경",
   "Little helpers carrying tickets": "베팅권을 나르는 작은 도우미들",
   "While the race runs": "경주가 진행되는 동안",
   "Rules and settings": "규칙과 설정",
@@ -398,6 +396,7 @@ const messages: Record<string, string> = {
   "See the final standings and records.": "최종 순위와 기록을 확인할 수 있습니다.",
   "See final results": "최종 결과 보기",
   Placed: "접수됨",
+  "An oil-painting-style landscape of wind moving across a meadow": "바람이 초원을 지나가는 유화풍 풍경",
 };
 
 export default messages;

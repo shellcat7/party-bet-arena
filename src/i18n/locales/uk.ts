@@ -378,8 +378,6 @@ const messages: Record<string, string> = {
     "Коли заїзд завершиться, введи результати на вкладці «Гра».",
   "Start the next race to enter bets for others again.":
     "Почни наступний заїзд, щоб знову вносити ставки за інших.",
-  "An oil-painting-style scene of a person with a parasol on a windy hill":
-    "Пейзаж у стилі олійного живопису: людина з парасолькою на вітряному пагорбі",
   "Little helpers carrying tickets": "Маленькі помічники несуть квитки",
   "While the race runs": "Поки триває заїзд",
   "Rules and settings": "Правила й налаштування",
@@ -408,6 +406,8 @@ const messages: Record<string, string> = {
   "See the final standings and records.": "Переглянь підсумковий рейтинг і рекорди.",
   "See final results": "Переглянути підсумки",
   Placed: "Прийнято",
+  "An oil-painting-style landscape of wind moving across a meadow":
+    "Пейзаж у стилі олійного живопису: вітер біжить лукою",
 };
 
 export default messages;

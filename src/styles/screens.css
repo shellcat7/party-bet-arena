@@ -1347,41 +1347,89 @@
   }
 }
 
-/* ------------------------------------------------------------------- race stage (participants) */
+/* ----------------------------------------------------------- waiting screens (participants) */
 
-.stage {
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-l);
-  background: var(--surface);
+/* The scene fills the screen behind (down to the tab bar); the details sit on a card at the top. */
+.waiting {
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100dvh - 57px - var(--safe-top) - var(--nav-height) - var(--safe-bottom));
+  padding: 12px var(--screen-pad, 16px) 24px;
 }
 
-.stage__scene {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 16 / 7;
+.waiting__scene {
+  position: fixed;
+  z-index: -1;
+  inset: 0 0 calc(var(--nav-height) + var(--safe-bottom));
   background: var(--surface-2);
 }
 
-.stage--live .stage__scene {
-  aspect-ratio: 4 / 3;
+.waiting__scene > * {
+  width: 100%;
+  height: 100%;
 }
 
-.stage__body {
+/* Banners (demo, offline) stay above the scene. */
+.room:has(.waiting) > .banner {
+  position: relative;
+  z-index: 1;
+}
+
+/* On screens wider than the app column the scene fills the window, so the bars span it too. */
+.room:has(.waiting) .topbar,
+.room:has(.waiting) .bottom-nav,
+.room:has(.waiting) > .banner {
+  box-shadow: 0 0 0 100vmax var(--surface);
+  clip-path: inset(0 -100vmax);
+}
+
+.room:has(.waiting) > .banner--demo {
+  box-shadow: 0 0 0 100vmax var(--brand-tint);
+}
+
+.room:has(.waiting) > .banner--warning {
+  box-shadow: 0 0 0 100vmax var(--negative-tint);
+}
+
+.waiting__panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px 18px 20px;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  box-shadow: var(--shadow-overlay);
+}
+
+.waiting__head {
   display: grid;
   justify-items: start;
-  gap: 8px;
-  padding: 16px 16px 20px;
+  gap: 6px;
 }
 
-.stage__body h1 {
+.waiting__head h1 {
   font-size: 1.6rem;
   font-weight: 700;
   line-height: 1.25;
 }
 
-.stage__body p {
+.waiting__head p {
   color: var(--text-2);
+}
+
+.waiting__panel > .ticket-card,
+.waiting__panel > .bettor-status,
+.waiting__panel > .result-strip {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.waiting__panel > .notice {
+  margin: 0;
+}
+
+.ticket-card {
+  display: grid;
+  gap: 12px;
 }
 
 .ticket-card__head {
@@ -1469,10 +1517,9 @@
 }
 
 .result-strip > div {
-  padding: 12px 14px;
-  border: 1px solid var(--border);
+  padding: 10px 12px;
   border-radius: var(--radius-m);
-  background: var(--surface);
+  background: var(--surface-2);
 }
 
 .result-strip dt {

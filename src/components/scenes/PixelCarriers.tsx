@@ -1467,11 +1467,12 @@ type SceneController = { setPaused: (paused: boolean) => void; destroy: () => vo
 
 /**
  * Integer device pixels per logical pixel: about 140 logical pixels across, so the crew keeps the same size
- * from a thin banner to a card; at most 120 logical rows, and never fewer than 36.
+ * from a thin banner to a full-screen backdrop (a tall container just gets more sky); at most 320 logical
+ * rows, and never fewer than 36.
  */
 function pickScale(devW: number, devH: number): number {
   let s = Math.max(1, Math.round(devW / 140));
-  s = Math.max(s, Math.ceil(devH / 120));
+  s = Math.max(s, Math.ceil(devH / 320));
   if (devH / s < 36) s = Math.max(1, Math.floor(devH / 36));
   return s;
 }

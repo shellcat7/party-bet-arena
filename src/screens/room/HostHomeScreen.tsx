@@ -59,8 +59,8 @@ export function HostHomeScreen() {
           {race.status === "closed" || gameOver ? (
             <Meadow
               label={t(
-                "風の吹く丘で日傘をさす人を描いた油絵風の風景",
-                "An oil-painting-style scene of a person with a parasol on a windy hill",
+                "風が草原を渡っていく、油絵風の風景",
+                "An oil-painting-style landscape of wind moving across a meadow",
               )}
             />
           ) : (
