@@ -54,9 +54,7 @@ const messages: Record<string, string> = {
   "Confirm & pay out": "Підтвердити й розрахувати",
   "Confirm this result?": "Підтвердити результат?",
   Continue: "Продовжити",
-  "Copy join code": "Скопіювати код входу",
   "Copy link": "Скопіювати посилання",
-  "Copy room ID": "Скопіювати ID кімнати",
   "Correct the finishing order": "Виправити порядок фінішу",
   "Correct the finishing order?": "Виправити порядок фінішу?",
   "Couldn't copy. Long-press to select instead.": "Не вдалося скопіювати. Натисни й утримуй, щоб виділити.",
@@ -161,8 +159,6 @@ const messages: Record<string, string> = {
   "Odds, bets and standings for game nights": "Коефіцієнти, ставки й рейтинг для ігрових вечорів",
   "Online sync is disabled in this build, so rooms on other devices can't be joined.":
     "У цій збірці онлайн-синхронізацію вимкнено, тому приєднатися до кімнат на інших пристроях не можна.",
-  "Online sync is off in this build. The room stays on this device and the host enters bets for everyone.":
-    "У цій збірці онлайн-синхронізацію вимкнено. Кімната зберігатиметься лише на цьому пристрої, а ставки за всіх вводить ведучий.",
   "Online sync is off, so QR invitations aren't available. Add bettors and enter their bets as the host.":
     "Онлайн-синхронізацію вимкнено, тому запрошення через QR недоступні. Додай гравців і вводь їхні ставки як ведучий.",
   "Only people with the join code can see the room. Don't post it publicly.":
@@ -263,7 +259,6 @@ const messages: Record<string, string> = {
   System: "Системна",
   "Tap 1st, 2nd, then 3rd": "Вибери 1-ше, 2-ге, потім 3-тє місце",
   "Tap 1st, then 2nd": "Вибери 1-ше, потім 2-ге місце",
-  "Tap a race for its payout details": "Торкнись заїзду, щоб побачити виплати",
   "Tap racers in finishing order": "Торкайся учасників у порядку фінішу",
   "That racer no longer exists": "Цього учасника більше немає",
   "The database URL appears to be misconfigured.": "Схоже, URL бази даних налаштовано неправильно.",
@@ -331,7 +326,6 @@ const messages: Record<string, string> = {
   races: "кількість заїздів",
   "starting points": "стартові очки",
   strength: "рівень сили",
-  won: "— 1-ше місце",
   x: "x",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
     "{count, plural, one {# активну ставку з цим учасником буде анульовано.} few {# активні ставки з цим учасником буде анульовано.} many {# активних ставок з цим учасником буде анульовано.} other {# активної ставки з цим учасником буде анульовано.}}",
@@ -390,8 +384,6 @@ const messages: Record<string, string> = {
   Capacity: "Місць",
   Invitation: "Запрошення",
   "Send it in a chat": "Надіслати в чаті",
-  "For joining by hand": "Для входу вручну",
-  "Send it with the room ID": "Надішли разом з ID кімнати",
   "This ticket was voided": "Цю ставку анульовано",
   "Ticket for {race}": "Квиток на {race}",
   Type: "Тип",
@@ -408,6 +400,11 @@ const messages: Record<string, string> = {
   "A painted desert of dunes and mesas": "Картина пустелі з дюнами та столовими горами",
   "Start over": "Почати знову",
   "Shown once you pick": "З'явиться після вибору",
+  "R{n}": "З{n}",
+  "Online sync isn't available here. The room stays on this device and the host enters bets for everyone.":
+    "Онлайн-синхронізація тут недоступна. Кімната зберігається лише на цьому пристрої, а ведучий вносить ставки за всіх.",
+  Auto: "Авто",
+  "{name} won": "Переміг {name}",
 };
 
 export default messages;

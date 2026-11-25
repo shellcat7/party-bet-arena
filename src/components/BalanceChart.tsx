@@ -75,7 +75,7 @@ export function BalanceChart(props: { room: Room; highlightId?: string }) {
   const yMax = ticks[ticks.length - 1] === yMin ? yMin + 1 : ticks[ticks.length - 1];
   const x = (index: number) => MARGIN.left + (points === 0 ? plotWidth / 2 : (index / points) * plotWidth);
   const y = (value: number) => MARGIN.top + plotHeight - ((value - yMin) / (yMax - yMin)) * plotHeight;
-  const xLabel = (index: number) => (index === 0 ? t("開始", "Start") : `R${index}`);
+  const xLabel = (index: number) => (index === 0 ? t("開始", "Start") : t("{n}R", "R{n}", { n: index }));
 
   // Direct labels: sort by final value and push apart so names never overlap.
   const labels = directLabels

@@ -59,7 +59,7 @@ export function PageHeader(props: {
     <header className="page-header">
       {props.onBack && (
         <button
-          className="icon-button icon-button--quiet page-header__back"
+          className="glass-button page-header__back"
           type="button"
           onClick={props.onBack}
           aria-label={t("戻る", "Back")}

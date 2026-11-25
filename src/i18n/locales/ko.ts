@@ -54,9 +54,7 @@ const messages: Record<string, string> = {
   "Confirm & pay out": "확정하고 정산",
   "Confirm this result?": "이 순위로 확정할까요?",
   Continue: "계속",
-  "Copy join code": "참가 코드 복사",
   "Copy link": "링크 복사",
-  "Copy room ID": "방 ID 복사",
   "Correct the finishing order": "도착 순위 수정",
   "Correct the finishing order?": "도착 순위를 수정할까요?",
   "Couldn't copy. Long-press to select instead.": "복사하지 못했어요. 길게 눌러 직접 선택해 주세요.",
@@ -160,8 +158,6 @@ const messages: Record<string, string> = {
   "Odds, bets and standings for game nights": "게임 모임을 위한 배당률·베팅·순위 관리",
   "Online sync is disabled in this build, so rooms on other devices can't be joined.":
     "이 빌드에서는 온라인 동기화가 꺼져 있어 다른 기기의 방에 참가할 수 없어요.",
-  "Online sync is off in this build. The room stays on this device and the host enters bets for everyone.":
-    "이 빌드에서는 온라인 동기화가 꺼져 있어요. 방은 이 기기에만 저장되고, 모든 참가자의 베팅은 진행자가 대리 입력해요.",
   "Online sync is off, so QR invitations aren't available. Add bettors and enter their bets as the host.":
     "온라인 동기화가 꺼져 있어 QR 초대를 사용할 수 없어요. 참가자를 추가한 뒤 진행자가 베팅을 대리 입력해 주세요.",
   "Only people with the join code can see the room. Don't post it publicly.":
@@ -259,7 +255,6 @@ const messages: Record<string, string> = {
   System: "시스템 설정",
   "Tap 1st, 2nd, then 3rd": "1위, 2위, 3위 순서로 눌러 주세요",
   "Tap 1st, then 2nd": "1위, 2위 순서로 눌러 주세요",
-  "Tap a race for its payout details": "경주를 누르면 배당 내역을 볼 수 있어요",
   "Tap racers in finishing order": "도착 순서대로 출전자를 눌러 주세요",
   "That racer no longer exists": "선택한 출전자를 찾을 수 없어요",
   "The database URL appears to be misconfigured.": "데이터베이스 URL 설정에 문제가 있는 것 같아요.",
@@ -325,7 +320,6 @@ const messages: Record<string, string> = {
   races: "경주 수",
   "starting points": "시작 포인트",
   strength: "실력",
-  won: "우승",
   x: "배",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
     "{count, plural, other {이 출전자가 포함된 베팅 #건이 취소돼요.}}",
@@ -382,8 +376,6 @@ const messages: Record<string, string> = {
   Capacity: "정원",
   Invitation: "초대장",
   "Send it in a chat": "메시지로 보내기",
-  "For joining by hand": "직접 입력해 참가하는 사람용",
-  "Send it with the room ID": "방 ID와 함께 보내기",
   "This ticket was voided": "이 베팅권은 무효가 되었습니다",
   "Ticket for {race}": "{race} 베팅권",
   Type: "종류",
@@ -400,6 +392,11 @@ const messages: Record<string, string> = {
   "A painted desert of dunes and mesas": "모래언덕과 메사가 있는 사막을 그린 유화풍 풍경",
   "Start over": "다시 선택",
   "Shown once you pick": "선택하면 표시됩니다",
+  "R{n}": "{n}R",
+  "Online sync isn't available here. The room stays on this device and the host enters bets for everyone.":
+    "이 환경에서는 온라인 동기화를 사용할 수 없습니다. 방은 이 기기에만 저장되고, 진행자가 모두의 베팅을 대신 입력합니다.",
+  Auto: "자동",
+  "{name} won": "{name} 1착",
 };
 
 export default messages;

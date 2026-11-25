@@ -57,9 +57,7 @@ const messages: Record<string, string> = {
   "Confirm & pay out": "Conferma e liquida",
   "Confirm this result?": "Confermare questo risultato?",
   Continue: "Continua",
-  "Copy join code": "Copia codice di accesso",
   "Copy link": "Copia link",
-  "Copy room ID": "Copia ID stanza",
   "Correct the finishing order": "Correggi l'ordine di arrivo",
   "Correct the finishing order?": "Correggere l'ordine di arrivo?",
   "Couldn't copy. Long-press to select instead.":
@@ -165,8 +163,6 @@ const messages: Record<string, string> = {
   "Odds, bets and standings for game nights": "Quote, scommesse e classifiche per le serate di gioco",
   "Online sync is disabled in this build, so rooms on other devices can't be joined.":
     "La sincronizzazione online è disattivata in questa versione, quindi non puoi entrare nelle stanze di altri dispositivi.",
-  "Online sync is off in this build. The room stays on this device and the host enters bets for everyone.":
-    "La sincronizzazione online è disattivata in questa versione. La stanza resta su questo dispositivo e l'organizzatore inserisce le scommesse di tutti.",
   "Online sync is off, so QR invitations aren't available. Add bettors and enter their bets as the host.":
     "La sincronizzazione online è disattivata, quindi gli inviti tramite QR non sono disponibili. Aggiungi gli scommettitori e inserisci tu le loro scommesse.",
   "Only people with the join code can see the room. Don't post it publicly.":
@@ -268,7 +264,6 @@ const messages: Record<string, string> = {
   System: "Sistema",
   "Tap 1st, 2nd, then 3rd": "Tocca il 1°, il 2° e poi il 3°",
   "Tap 1st, then 2nd": "Tocca il 1° e poi il 2°",
-  "Tap a race for its payout details": "Tocca una gara per vedere il dettaglio delle vincite",
   "Tap racers in finishing order": "Tocca i concorrenti in ordine di arrivo",
   "That racer no longer exists": "Questo concorrente non esiste più",
   "The database URL appears to be misconfigured.": "L'URL del database sembra configurato in modo errato.",
@@ -336,7 +331,6 @@ const messages: Record<string, string> = {
   races: "gare",
   "starting points": "punti iniziali",
   strength: "forza",
-  won: "ha vinto",
   x: "x",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
     "{count, plural, one {# scommessa aperta che include questo concorrente verrà annullata.} other {# scommesse aperte che includono questo concorrente verranno annullate.}}",
@@ -395,8 +389,6 @@ const messages: Record<string, string> = {
   Capacity: "Posti",
   Invitation: "Invito",
   "Send it in a chat": "Mandalo in chat",
-  "For joining by hand": "Per entrare a mano",
-  "Send it with the room ID": "Mandalo con l'ID della stanza",
   "This ticket was voided": "Questa scommessa è stata annullata",
   "Ticket for {race}": "Scommessa per {race}",
   Type: "Tipo",
@@ -413,6 +405,11 @@ const messages: Record<string, string> = {
   "A painted desert of dunes and mesas": "Dipinto di un deserto di dune e altopiani",
   "Start over": "Ricomincia",
   "Shown once you pick": "Compare dopo la scelta",
+  "R{n}": "G{n}",
+  "Online sync isn't available here. The room stays on this device and the host enters bets for everyone.":
+    "Qui la sincronizzazione online non è disponibile. La stanza resta su questo dispositivo e l'organizzatore inserisce le scommesse di tutti.",
+  Auto: "Automatico",
+  "{name} won": "Vince {name}",
 };
 
 export default messages;

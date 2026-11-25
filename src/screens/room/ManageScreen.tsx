@@ -7,7 +7,7 @@ import { LIMITS, pickEmoji } from "../../lib/constants";
 import { canAddContestant, canAddPlayer, canRemoveContestant } from "../../lib/room";
 import { useOpenRoom } from "../../state/AppContext";
 import type { ManageSection } from "../../state/navigation";
-import { LanguageSwitch, ThemeSwitch } from "../LaunchScreen";
+import { LanguageSwitch, ThemePicker } from "../LaunchScreen";
 
 /** Text input that writes on blur / Enter instead of on every keystroke. */
 function CommitInput(props: {
@@ -54,7 +54,6 @@ export function ManageScreen(props: { initialSection?: ManageSection }) {
     <div className="screen">
       <header className="section-heading">
         <h1>{t("管理", "Manage")}</h1>
-        <p>{room.name}</p>
       </header>
       <SegmentedControl
         label={t("管理メニュー", "Manage menu")}
@@ -565,9 +564,9 @@ function RulesSection() {
           <strong>{t("言語", "Language")}</strong>
           <LanguageSwitch />
         </div>
-        <div className="setting-row">
+        <div className="setting-row setting-row--stacked">
           <strong>{t("テーマ", "Theme")}</strong>
-          <ThemeSwitch />
+          <ThemePicker />
         </div>
       </section>
 

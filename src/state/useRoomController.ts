@@ -488,7 +488,8 @@ export function useRoomController({ t, notify, language }: Options) {
         const ok = await mutate((room) => addBet(room, createBet(ticket)));
         if (!ok) return false;
       }
-      notify.success(t("ベットを受け付けました", "Bet placed"));
+      // A participant's screen turns into the ticket; only the host, entering bets for others, needs a note.
+      if (ticket.placedBy === "host") notify.success(t("ベットを受け付けました", "Bet placed"));
       return true;
     },
     [mutate, notify, reportError, session, setRoom, t],

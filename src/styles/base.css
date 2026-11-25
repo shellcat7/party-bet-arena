@@ -14,10 +14,28 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.5;
+}
+
+/* Japanese breaks at phrase boundaries; short last lines are avoided where supported. */
+:root:lang(ja) {
+  word-break: auto-phrase;
+}
+
+p,
+h1,
+h2,
+h3,
+li,
+dd {
+  text-wrap: pretty;
 }
 
 h1,

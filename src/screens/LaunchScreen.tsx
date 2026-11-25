@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Github, Globe, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useConfirm } from "../components/feedback";
 import { Meadow } from "../components/scenes/Meadow";
-import { BrandMark } from "../components/ui";
+import { BrandMark, SegmentedControl } from "../components/ui";
 import { raceStatusCopy } from "../i18n/copy";
 import { landscapeLabel } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
@@ -55,6 +55,24 @@ export function ThemeSwitch() {
     >
       <Icon size={18} />
     </button>
+  );
+}
+
+/** The theme as three named choices, for settings screens where there is room to spell them out. */
+export function ThemePicker() {
+  const { t } = useI18n();
+  const { preferences, setPreferences } = useApp();
+  return (
+    <SegmentedControl<ThemePreference>
+      label={t("テーマ", "Theme")}
+      value={preferences.theme}
+      onChange={(theme) => setPreferences({ theme })}
+      options={[
+        { value: "system", label: t("自動", "Auto") },
+        { value: "light", label: t("ライト", "Light") },
+        { value: "dark", label: t("ダーク", "Dark") },
+      ]}
+    />
   );
 }
 

@@ -51,7 +51,8 @@ export function RoomShell() {
     <div className={isTab && !removed ? "room room--tab" : "room"}>
       {isTab && <RoomTopBar />}
       {controller.connection === "offline" && <OfflineBanner />}
-      {room.isDemo && <DemoBanner />}
+      {/* Switching perspective belongs to the tabs; pushed screens keep their own header on top. */}
+      {room.isDemo && isTab && <DemoBanner />}
       <div className="room__content" key={screen.name} ref={content} tabIndex={-1}>
         {removed ? <RemovedNotice /> : renderScreen(screen)}
       </div>
@@ -242,7 +243,7 @@ function BottomNav() {
  * tab except the race screen itself.
  */
 function RaceAccessory() {
-  const { t } = useI18n();
+  const { t, formatNumber } = useI18n();
   const { room, controller, nav } = useOpenRoom();
   const isHost = controller.role === "host";
   const raceTab: ScreenName = isHost ? "home" : "bet";
@@ -250,30 +251,26 @@ function RaceAccessory() {
 
   const race = room.currentRace;
   const labels = betTypeCopy(t);
-  let detail: string;
+  let detail: string | undefined;
   if (isHost) {
     const placed = new Set(race.bets.map((bet) => bet.playerId)).size;
-    detail =
-      race.status === "betting"
-        ? t("{count} / {max}人がベット", "{count} of {max} have bet", {
-            count: placed,
-            max: room.players.length,
-          })
-        : race.status === "closed"
-          ? t("着順の入力待ち", "Waiting for the result")
-          : t("精算済み", "Settled");
+    if (race.status === "betting") {
+      detail = t("{count} / {max}人がベット", "{count} of {max} have bet", {
+        count: placed,
+        max: room.players.length,
+      });
+    } else if (race.status === "closed") {
+      detail = t("着順の入力待ち", "Waiting for the result");
+    }
   } else {
     const ticket = controller.me ? getPlayerBets(room, controller.me.id)[0] : undefined;
     if (ticket) {
       const names = getBetPickIds(ticket).map(
         (id) => room.contestants.find((contestant) => contestant.id === id)?.name ?? "?",
       );
-      detail = `${labels[ticket.type].title} ${names.join(" → ")} · ${ticket.amount}pt`;
-    } else {
-      detail =
-        race.status === "betting"
-          ? t("まだベットしていません", "You haven't bet yet")
-          : t("このレースはベットしていません。", "You didn't bet on this race.");
+      detail = `${labels[ticket.type].title} ${names.join(" → ")} · ${formatNumber(ticket.amount)}pt`;
+    } else if (race.status === "betting") {
+      detail = t("まだベットしていません", "You haven't bet yet");
     }
   }
 
@@ -281,10 +278,11 @@ function RaceAccessory() {
     <button className="race-accessory" type="button" onClick={() => nav.replace({ name: raceTab })}>
       <i className={`status-dot status-dot--${race.status}`} aria-hidden="true" />
       <span className="race-accessory__text">
-        <strong>
-          {raceName(t, race.number)} · {raceStatusCopy(t)[race.status]}
-        </strong>
-        <small>{detail}</small>
+        <strong>{raceName(t, race.number)}</strong>
+        <small>
+          {raceStatusCopy(t)[race.status]}
+          {detail && ` · ${detail}`}
+        </small>
       </span>
       <ChevronRight size={18} aria-hidden="true" />
     </button>

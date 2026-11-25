@@ -20,6 +20,7 @@
   width: 100%;
   max-width: 400px;
   justify-self: center;
+  margin-inline: auto;
   color: var(--pass-ink);
   filter: drop-shadow(0 0 0.5px var(--pass-edge)) drop-shadow(0 1px 1px rgba(15, 17, 21, 0.08))
     drop-shadow(0 12px 22px rgba(15, 17, 21, 0.14));

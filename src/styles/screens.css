@@ -45,7 +45,7 @@
 }
 
 .launch__intro h1 {
-  font-size: 1.6rem;
+  font-size: var(--text-title2);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -66,7 +66,7 @@
   justify-content: center;
   gap: 4px 12px;
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   text-align: center;
 }
 
@@ -115,7 +115,7 @@
 
 .saved-room__copy small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 /* ------------------------------------------------------------------------------ create / join */
@@ -172,14 +172,14 @@
 
 .topbar__title strong {
   overflow: hidden;
-  font-size: 0.97rem;
+  font-size: var(--text-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .topbar__title span {
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
 }
 
 .topbar__spacer {
@@ -187,20 +187,22 @@
 }
 
 .balance-chip {
+  min-height: 44px;
   display: grid;
+  align-content: center;
   justify-items: end;
   padding: 5px 14px;
-  border-radius: 22px;
+  border-radius: var(--radius-l);
   line-height: 1.2;
 }
 
 .balance-chip small {
   color: var(--text-3);
-  font-size: 0.72rem;
+  font-size: var(--text-caption2);
 }
 
 .balance-chip .points {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 
 /* The tab bar and the race capsule above it float together at the bottom. */
@@ -221,7 +223,7 @@
   display: grid;
   grid-template-columns: repeat(var(--tabs), minmax(0, 1fr));
   padding: var(--pad);
-  border-radius: 30px;
+  border-radius: 999px;
 }
 
 .bottom-nav button {
@@ -233,10 +235,10 @@
   align-content: center;
   gap: 2px;
   border: 0;
-  border-radius: 25px;
+  border-radius: 999px;
   background: none;
   color: var(--text);
-  font-size: 0.72rem;
+  font-size: var(--text-caption2);
   font-weight: 600;
 }
 
@@ -259,7 +261,7 @@
 .bottom-nav__lens > span {
   display: block;
   height: 100%;
-  border-radius: 25px;
+  border-radius: 999px;
   background: var(--glass-lens);
   box-shadow: var(--glass-lens-edge);
   animation: lens-stretch 460ms ease-out;
@@ -280,7 +282,7 @@
   gap: 12px;
   padding: 8px 14px 8px 18px;
   border: 0;
-  border-radius: 28px;
+  border-radius: 999px;
   color: var(--text);
   text-align: left;
 }
@@ -300,13 +302,13 @@
 }
 
 .race-accessory__text strong {
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
 }
 
 .race-accessory__text small {
   overflow: hidden;
   color: var(--text-2);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -333,7 +335,7 @@
 }
 
 .stage-card h2 {
-  font-size: 1.4rem;
+  font-size: var(--text-title3);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -341,14 +343,14 @@
 .stage-card h2 small {
   margin-left: 4px;
   color: var(--text-3);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
   font-weight: 400;
 }
 
 .stage-card__hint,
 .stage-card__empty p {
   color: var(--text-2);
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
 }
 
 .stage-card__empty {
@@ -359,7 +361,7 @@
 .progress {
   height: 4px;
   overflow: hidden;
-  border-radius: 2px;
+  border-radius: var(--radius-s);
   background: var(--surface-3);
 }
 
@@ -386,7 +388,7 @@
   min-height: 36px;
   padding: 0 6px;
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   text-align: center;
 }
 
@@ -402,7 +404,7 @@
   place-items: center;
   border-radius: 50%;
   background: var(--surface-3);
-  font-size: 0.7rem;
+  font-size: var(--text-caption2);
   font-weight: 600;
 }
 
@@ -434,7 +436,7 @@
 .bettor-status__head {
   display: flex;
   justify-content: space-between;
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
 }
 
 .bettor-status__head span {
@@ -456,7 +458,7 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-3);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
 }
 
 .bettor-status li .avatar {
@@ -498,7 +500,7 @@
 }
 
 .odds-board__icon {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 
 .odds-board__name,
@@ -561,7 +563,7 @@
   border-radius: 999px;
   background: var(--surface-3);
   color: var(--text-2);
-  font-size: 0.72rem;
+  font-size: var(--text-caption2);
   font-style: normal;
 }
 
@@ -610,7 +612,7 @@
 }
 
 .racer__icon {
-  font-size: 1.25rem;
+  font-size: var(--text-title3);
 }
 
 .racer__name {
@@ -627,7 +629,7 @@
 
 .racer__name small {
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
 }
 
 .racer__odds {
@@ -651,7 +653,7 @@
   place-items: center;
   border: 1.5px solid var(--border-strong);
   border-radius: 50%;
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   font-weight: 700;
 }
 
@@ -684,7 +686,7 @@
 
 .amount__head small {
   color: var(--text-3);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
 }
 
 .amount__input {
@@ -718,7 +720,7 @@
   height: 48px;
   border: 0;
   background: transparent;
-  font-size: 1.33rem;
+  font-size: var(--text-title3);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -732,13 +734,13 @@
 }
 
 .amount__quick button {
-  min-height: 36px;
+  min-height: 40px;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: var(--radius-s);
+  border-radius: var(--radius-m);
   background: var(--surface);
   color: var(--text-2);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
   font-variant-numeric: tabular-nums;
 }
 
@@ -766,7 +768,7 @@
 
 .ticket__payout strong,
 .ticket__payout .points {
-  font-size: 1.33rem;
+  font-size: var(--text-title3);
 }
 
 .ticket-list,
@@ -800,7 +802,7 @@
 .ticket-list__who strong,
 .ticket-results__what strong {
   overflow: hidden;
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -809,7 +811,7 @@
 .ticket-list__what small,
 .ticket-results__what small {
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
 }
 
 .ticket-list__what {
@@ -850,7 +852,7 @@
 }
 
 .finish-pick__icon {
-  font-size: 1.15rem;
+  font-size: var(--text-headline);
 }
 
 .finish-pick__position {
@@ -913,7 +915,7 @@
 }
 
 .result-summary strong .points {
-  font-size: 1.6rem;
+  font-size: var(--text-title2);
 }
 
 .result-summary dl {
@@ -923,7 +925,7 @@
 
 .result-summary dt {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .finish-order {
@@ -961,7 +963,7 @@
 }
 
 .finish-order__icon {
-  font-size: 1.05rem;
+  font-size: var(--text-body);
 }
 
 /* ---------------------------------------------------------------------------------- ranking */
@@ -998,10 +1000,10 @@
 
 .standings__name em {
   padding: 0 6px;
-  border-radius: 4px;
+  border-radius: var(--radius-s);
   background: var(--text);
   color: var(--surface);
-  font-size: 0.7rem;
+  font-size: var(--text-caption2);
   font-style: normal;
   font-weight: 600;
 }
@@ -1013,7 +1015,7 @@
 }
 
 .standings__value .points + .points {
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 /* ---------------------------------------------------------------------------------- history */
@@ -1055,11 +1057,11 @@
 
 .race-history__number small {
   color: var(--text-3);
-  font-size: 0.68rem;
+  font-size: var(--text-caption2);
 }
 
 .race-history__number strong {
-  font-size: 1.2rem;
+  font-size: var(--text-headline);
 }
 
 .race-history__body {
@@ -1071,7 +1073,7 @@
 
 .race-history__body > strong {
   overflow: hidden;
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
   font-weight: 400;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1080,7 +1082,7 @@
 .race-history__body small {
   margin-left: 4px;
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
 }
 
 .race-history__delta {
@@ -1092,7 +1094,7 @@
   max-width: 80px;
   overflow: hidden;
   color: var(--text-3);
-  font-size: 0.72rem;
+  font-size: var(--text-caption2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -1129,7 +1131,7 @@
 }
 
 .champion h2 {
-  font-size: 1.33rem;
+  font-size: var(--text-title3);
 }
 
 .champion p {
@@ -1138,12 +1140,12 @@
   align-items: baseline;
   gap: 4px;
   color: var(--text-2);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
 }
 
 .champion p > .points {
   color: var(--text);
-  font-size: 1.15rem;
+  font-size: var(--text-headline);
 }
 
 /* ----------------------------------------------------------------------------------- manage */
@@ -1173,7 +1175,7 @@
 
 .edit-list__main > small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .edit-list--racers li {
@@ -1196,7 +1198,7 @@
 
 .quick-add > span {
   color: var(--text-3);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
 }
 
 .quick-add .chip-scroller {
@@ -1227,7 +1229,7 @@
 }
 
 .racer-controls .toggle__text strong {
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
   font-weight: 400;
 }
 
@@ -1238,7 +1240,7 @@
 
 .racer-controls .stepper output {
   min-width: 40px;
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
 }
 
 .odds-input {
@@ -1260,7 +1262,7 @@
 
 .odds-input small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 /* ------------------------------------------------------------------------------------ crash */
@@ -1274,7 +1276,7 @@
 }
 
 .crash h1 {
-  font-size: 1.33rem;
+  font-size: var(--text-title3);
 }
 
 .crash p {
@@ -1284,7 +1286,7 @@
 .crash details {
   width: 100%;
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   text-align: left;
 }
 
@@ -1330,7 +1332,7 @@
   flex: none;
   display: grid;
   place-items: center;
-  border-radius: 11px;
+  border-radius: var(--radius-m);
   background: var(--surface-2);
   color: var(--text-2);
 }
@@ -1343,7 +1345,7 @@
 
 .shortcut-list__text small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .shortcut-list button > svg {
@@ -1356,7 +1358,7 @@
   width: 100%;
   height: clamp(150px, 26dvh, 230px);
   overflow: hidden;
-  border-radius: 22px;
+  border-radius: var(--radius-l);
 }
 
 .launch__scene > * {

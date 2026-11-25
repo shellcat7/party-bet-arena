@@ -1,5 +1,5 @@
 import QRCode from "react-qr-code";
-import { Copy, Link2, Share2, WifiOff } from "lucide-react";
+import { Link2, Share2, WifiOff } from "lucide-react";
 import { useNotify } from "../components/feedback";
 import { Pass } from "../components/BetPass";
 import { Tile } from "../components/Tile";
@@ -136,20 +136,6 @@ export default function InviteScreen(props: { isNew: boolean }) {
               title={t("リンクをコピー", "Copy link")}
               detail={t("招待リンク", "Invite link")}
               onClick={() => void copy(url, t("招待リンク", "Invite link"))}
-            />
-            <Tile
-              icon={<Copy size={16} />}
-              tone="green"
-              title={t("ルームIDをコピー", "Copy room ID")}
-              detail={t("手入力で参加する人に", "For joining by hand")}
-              onClick={() => void copy(room.id, t("ルームID", "Room ID"))}
-            />
-            <Tile
-              icon={<Copy size={16} />}
-              tone="orange"
-              title={t("参加コードをコピー", "Copy join code")}
-              detail={t("ルームIDと一緒に伝える", "Send it with the room ID")}
-              onClick={() => void copy(room.joinCode, t("参加コード", "Join code"))}
             />
           </div>
           <p className="form-help">

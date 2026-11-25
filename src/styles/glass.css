@@ -140,7 +140,7 @@
 .room > .banner {
   position: relative;
   z-index: 1;
-  margin: 8px 12px 0;
+  margin: 8px 16px 0;
   border: 0;
   border-radius: 16px;
 }
@@ -155,6 +155,16 @@
 
 .toast-region {
   bottom: calc(var(--nav-height) + 26px + var(--safe-bottom));
+  width: min(100% - 24px, var(--frame-width) - 24px);
+}
+
+/* Above the race capsule when it is shown, never on top of it. */
+body:has(.race-accessory) .toast-region {
+  bottom: calc(var(--nav-height) + 92px + var(--safe-bottom));
+}
+
+.toast {
+  border-radius: var(--radius-l);
 }
 
 /* ------------------------------------------------------------------- sheets, toasts, bars */
@@ -177,13 +187,13 @@
   background: var(--glass-tint);
 }
 
-.toast--success svg:first-child,
-:root[data-theme="dark"] .toast--success svg:first-child {
+.toast--success > svg:first-child,
+:root[data-theme="dark"] .toast--success > svg:first-child {
   color: var(--positive);
 }
 
-.toast--error svg:first-child,
-:root[data-theme="dark"] .toast--error svg:first-child {
+.toast--error > svg:first-child,
+:root[data-theme="dark"] .toast--error > svg:first-child {
   color: var(--negative);
 }
 

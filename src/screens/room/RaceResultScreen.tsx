@@ -83,7 +83,7 @@ export function RaceResultScreen(props: { raceId?: string }) {
                   {contestant?.icon}
                 </span>
                 <strong>{contestant?.name ?? "?"}</strong>
-                <small>{contestant ? `${contestant.odds.toFixed(1)}${t("倍", "x")}` : ""}</small>
+                <small>{contestant ? `×${contestant.odds.toFixed(1)}` : ""}</small>
               </li>
             );
           })}

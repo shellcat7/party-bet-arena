@@ -55,7 +55,7 @@
   padding: 0 16px;
   border: 1px solid transparent;
   border-radius: var(--radius-m);
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -67,13 +67,18 @@
     opacity 120ms ease;
 }
 
-/* Buttons sit on a short edge and press down into it, like a physical key. */
 .button:active:not(:disabled) {
-  transform: translateY(2px);
+  transform: scale(0.97);
 }
 
 .button:disabled {
-  opacity: 0.4;
+  border-color: transparent;
+  background: var(--surface-3);
+  color: var(--text-3);
+}
+
+.button--ghost:disabled {
+  background: transparent;
 }
 
 .button--block {
@@ -87,26 +92,15 @@
 .button--primary {
   color: var(--on-brand);
   background: var(--brand);
-  box-shadow: 0 3px 0 var(--brand-edge);
 }
 
 .button--primary:active:not(:disabled) {
   background: var(--brand-pressed);
-  box-shadow: 0 1px 0 var(--brand-edge);
 }
 
 .button--secondary {
   background: var(--surface);
   border-color: var(--border-strong);
-  box-shadow: 0 2px 0 var(--border-strong);
-}
-
-.button--secondary:active:not(:disabled) {
-  box-shadow: 0 0 0 var(--border-strong);
-}
-
-.button:disabled {
-  box-shadow: none;
 }
 
 .button--secondary:active:not(:disabled),
@@ -191,7 +185,7 @@
   border: 0;
   background: none;
   color: var(--link);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
   font-weight: 600;
 }
 
@@ -210,9 +204,17 @@
   background: var(--bg);
 }
 
-/* The sticky bar provides the bottom spacing itself. */
-.screen:has(.sticky-actions) {
+/* The sticky bar provides the bottom spacing itself, and on a short page it sits at the bottom
+   of the screen rather than under the last card. */
+.screen:has(> .sticky-actions) {
+  min-height: calc(100svh - var(--safe-top));
+  display: flex;
+  flex-direction: column;
   padding-bottom: 0;
+}
+
+.screen:has(> .sticky-actions) > .sticky-actions {
+  margin-top: auto;
 }
 
 /* ---------------------------------------------------------------------------------- surfaces */
@@ -252,12 +254,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .card__header small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .form-card {
@@ -267,7 +269,7 @@
 .section-label {
   margin: 0 4px 8px;
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   font-weight: 600;
 }
 
@@ -278,14 +280,14 @@
 }
 
 .section-heading h1 {
-  font-size: 1.6rem;
+  font-size: var(--text-title2);
   font-weight: 700;
   line-height: 1.3;
 }
 
 .section-heading p {
   color: var(--text-3);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
 }
 
 .page-header {
@@ -300,13 +302,6 @@
   padding-top: 0;
 }
 
-/* Pull the chevron out so it lines up optically with the content edge. */
-.page-header__back {
-  margin-left: -12px;
-  margin-right: -8px;
-  color: var(--text-2);
-}
-
 .page-header__title {
   min-width: 0;
   flex: 1;
@@ -314,7 +309,7 @@
 
 .page-header__title h1 {
   overflow: hidden;
-  font-size: 1.27rem;
+  font-size: var(--text-title3);
   font-weight: 700;
   line-height: 1.3;
   text-overflow: ellipsis;
@@ -324,7 +319,7 @@
 .page-header__title p {
   overflow: hidden;
   color: var(--text-3);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -379,7 +374,7 @@
 
 .summary dt {
   color: var(--text-3);
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
 }
 
 .summary dd {
@@ -395,7 +390,7 @@
 
 .summary--stacked dd span {
   color: var(--text-3);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
   font-weight: 400;
 }
 
@@ -406,7 +401,7 @@
   border-radius: var(--radius-m);
   background: var(--info-tint);
   color: var(--text-2);
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
 }
 
 .notice--success {
@@ -434,7 +429,7 @@
 }
 
 .notice--card p {
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
 }
 
 .banner {
@@ -443,7 +438,7 @@
   gap: 8px;
   padding: 8px 16px;
   border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
 }
 
 .banner--warning {
@@ -497,12 +492,12 @@
 
 .form-help {
   color: var(--text-3);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
 }
 
 .form-error {
   color: var(--negative);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
   font-weight: 600;
 }
 
@@ -513,15 +508,21 @@
   gap: 6px;
 }
 
+/* A field's label reads like the label of a settings row beside it. */
 .field > label {
-  color: var(--text-2);
-  font-size: 0.87rem;
+  color: var(--text);
+  font-size: var(--text-body);
   font-weight: 600;
+}
+
+.setting-row--stacked {
+  display: grid;
+  gap: 8px;
 }
 
 .field__hint {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .input {
@@ -607,12 +608,12 @@ select.input {
 }
 
 .setting-row strong {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .setting-row small {
   color: var(--text-3);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
 }
 
 .setting-block {
@@ -657,12 +658,12 @@ select.input {
 }
 
 .toggle__text strong {
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 .toggle__text small {
   color: var(--text-3);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
 }
 
 .toggle input {
@@ -753,7 +754,7 @@ select.input {
   display: flex;
   gap: 2px;
   padding: 2px;
-  border-radius: 10px;
+  border-radius: var(--radius-m);
   background: var(--surface-3);
 }
 
@@ -763,10 +764,10 @@ select.input {
   min-height: 36px;
   padding: 4px 6px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   background: transparent;
   color: var(--text-2);
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
   font-weight: 600;
   line-height: 1.2;
   /* Long labels in some languages (e.g. German "Zweierwette") wrap or hyphenate instead of overflowing. */
@@ -784,11 +785,17 @@ select.input {
   opacity: 0.4;
 }
 
+/* In the dark the selected segment is lifted above the track, not sunk into it. */
+:root[data-theme="dark"] .segmented button.is-active {
+  background: #3a404b;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
 .language-select {
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 40px;
+  height: 44px;
   color: var(--text-2);
 }
 
@@ -812,7 +819,7 @@ select.input {
   border-radius: var(--radius-m);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
   appearance: none;
   cursor: pointer;
 }
@@ -826,7 +833,7 @@ select.input {
   place-items: center;
   border-radius: 50%;
   background: var(--surface-2);
-  font-size: 1.25rem;
+  font-size: var(--text-title3);
 }
 
 .emoji-picker select {
@@ -856,25 +863,25 @@ select.input {
 .avatar--sm {
   width: 30px;
   height: 30px;
-  font-size: 0.95rem;
+  font-size: var(--text-subhead);
 }
 
 .avatar--md {
   width: 38px;
   height: 38px;
-  font-size: 1.2rem;
+  font-size: var(--text-headline);
 }
 
 .avatar--lg {
   width: 52px;
   height: 52px;
-  font-size: 1.6rem;
+  font-size: var(--text-title2);
 }
 
 .avatar--xl {
   width: 64px;
   height: 64px;
-  font-size: 2rem;
+  font-size: var(--text-title1);
 }
 
 .lane {
@@ -883,10 +890,10 @@ select.input {
   height: 28px;
   display: inline-grid;
   place-items: center;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--accent);
   color: var(--accent-ink, #fff);
-  font-size: 0.87rem;
+  font-size: var(--text-footnote);
   font-weight: 700;
 }
 
@@ -902,8 +909,8 @@ select.input {
 .lane--sm {
   width: 22px;
   height: 22px;
-  border-radius: 5px;
-  font-size: 0.73rem;
+  border-radius: var(--radius-s);
+  font-size: var(--text-caption2);
 }
 
 .lane-row {
@@ -921,7 +928,7 @@ select.input {
   border-radius: 50%;
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -946,10 +953,10 @@ select.input {
   align-items: center;
   gap: 6px;
   padding: 2px 8px;
-  border-radius: 6px;
+  border-radius: var(--radius-s);
   background: var(--surface-2);
   color: var(--text-2);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1005,7 +1012,7 @@ select.input {
   justify-content: center;
   gap: 1px;
   min-width: 28px;
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -1055,7 +1062,7 @@ select.input {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   font-weight: 700;
   line-height: 1.3;
 }
@@ -1094,7 +1101,7 @@ select.input {
   flex: none;
   padding: 3px 10px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   font-weight: 700;
 }
 
@@ -1110,7 +1117,7 @@ select.input {
 
 .data-table {
   width: 100%;
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1122,9 +1129,19 @@ select.input {
   white-space: nowrap;
 }
 
+.data-table th:first-child,
+.data-table td:first-child {
+  padding-left: 0;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+  padding-right: 0;
+}
+
 .data-table thead th {
   color: var(--text-3);
-  font-size: 0.78rem;
+  font-size: var(--text-caption);
   font-weight: 600;
 }
 
@@ -1173,13 +1190,13 @@ select.input {
 }
 
 .empty-state strong {
-  font-size: 1.07rem;
+  font-size: var(--text-headline);
 }
 
 .empty-state p {
   max-width: 32ch;
   color: var(--text-3);
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
 }
 
 .empty-state .button {
@@ -1190,7 +1207,7 @@ select.input {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 1rem;
+  font-size: var(--text-body);
 }
 
 /* The artwork carries its own corner radius; clipping it here would change the shape. */
@@ -1219,7 +1236,7 @@ select.input {
   background: #1f2329;
   color: #fff;
   box-shadow: var(--shadow-overlay);
-  font-size: 0.9rem;
+  font-size: var(--text-footnote);
   pointer-events: auto;
   animation: fade-in 150ms ease-out;
 }
@@ -1239,25 +1256,25 @@ select.input {
   display: grid;
   place-items: center;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-s);
   background: transparent;
   color: inherit;
   opacity: 0.7;
 }
 
-.toast--success svg:first-child {
+.toast--success > svg:first-child {
   color: #56d394;
 }
 
-.toast--error svg:first-child {
+.toast--error > svg:first-child {
   color: #ff8a80;
 }
 
-:root[data-theme="dark"] .toast--success svg:first-child {
+:root[data-theme="dark"] .toast--success > svg:first-child {
   color: #0b7a43;
 }
 
-:root[data-theme="dark"] .toast--error svg:first-child {
+:root[data-theme="dark"] .toast--error > svg:first-child {
   color: #c4261c;
 }
 
@@ -1302,12 +1319,12 @@ select.input {
 }
 
 .sheet h2 {
-  font-size: 1.13rem;
+  font-size: var(--text-headline);
 }
 
 .sheet__body {
   color: var(--text-2);
-  font-size: 0.93rem;
+  font-size: var(--text-subhead);
 }
 
 .sheet__actions {
@@ -1336,12 +1353,14 @@ select.input {
 /* -------------------------------------------------------------------------------------- chart */
 
 .chart {
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
 .chart__title {
-  font-size: 1rem;
+  font-size: var(--text-body);
   font-weight: 600;
 }
 
@@ -1350,7 +1369,7 @@ select.input {
   flex-wrap: wrap;
   gap: 6px 14px;
   color: var(--text-2);
-  font-size: 0.82rem;
+  font-size: var(--text-caption);
 }
 
 .chart__legend li {
@@ -1368,7 +1387,7 @@ select.input {
 .chart__tooltip i {
   width: 12px;
   height: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-s);
 }
 
 .chart__plot {
@@ -1427,7 +1446,7 @@ select.input {
   border-radius: var(--radius-s);
   background: var(--surface);
   box-shadow: var(--shadow-overlay);
-  font-size: 0.8rem;
+  font-size: var(--text-caption);
   pointer-events: none;
 }
 
@@ -1456,7 +1475,7 @@ select.input {
 
 .chart__table summary {
   color: var(--link);
-  font-size: 0.85rem;
+  font-size: var(--text-footnote);
   font-weight: 600;
 }
 

@@ -52,9 +52,7 @@ const messages: Record<string, string> = {
   "Confirm & pay out": "确认并派彩",
   "Confirm this result?": "要确认此名次吗？",
   Continue: "继续",
-  "Copy join code": "复制加入码",
   "Copy link": "复制链接",
-  "Copy room ID": "复制房间ID",
   "Correct the finishing order": "更正名次",
   "Correct the finishing order?": "要更正名次吗？",
   "Couldn't copy. Long-press to select instead.": "无法复制，请长按以选择。",
@@ -155,8 +153,6 @@ const messages: Record<string, string> = {
   "Odds, bets and standings for game nights": "轻松管理游戏聚会的赔率、投注与排名",
   "Online sync is disabled in this build, so rooms on other devices can't be joined.":
     "此版本未启用在线同步，无法加入其他设备上的房间。",
-  "Online sync is off in this build. The room stays on this device and the host enters bets for everyone.":
-    "此版本未启用在线同步。房间仅保存在此设备上，由主持人为所有人代投。",
   "Online sync is off, so QR invitations aren't available. Add bettors and enter their bets as the host.":
     "未启用在线同步，无法使用QR码邀请。请添加投注者，由主持人为其代投。",
   "Only people with the join code can see the room. Don't post it publicly.":
@@ -254,7 +250,6 @@ const messages: Record<string, string> = {
   System: "跟随系统",
   "Tap 1st, 2nd, then 3rd": "请依次点选第1、2、3名",
   "Tap 1st, then 2nd": "请依次点选第1、2名",
-  "Tap a race for its payout details": "点按比赛可查看派彩明细",
   "Tap racers in finishing order": "请按名次依次点选参赛者",
   "That racer no longer exists": "所选参赛者已不存在",
   "The database URL appears to be misconfigured.": "数据库URL配置似乎有误。",
@@ -318,7 +313,6 @@ const messages: Record<string, string> = {
   races: "比赛场数",
   "starting points": "初始积分",
   strength: "实力",
-  won: "获胜",
   x: "倍",
   "{count, plural, one {# open ticket that includes this racer will be voided.} other {# open tickets that include this racer will be voided.}}":
     "{count, plural, other {包含该参赛者的#注投注将被撤销。}}",
@@ -373,8 +367,6 @@ const messages: Record<string, string> = {
   Capacity: "名额",
   Invitation: "邀请函",
   "Send it in a chat": "通过消息发送",
-  "For joining by hand": "给手动输入加入的人",
-  "Send it with the room ID": "和房间ID一起发送",
   "This ticket was voided": "这张投注单已作废",
   "Ticket for {race}": "{race}的投注单",
   Type: "玩法",
@@ -390,6 +382,11 @@ const messages: Record<string, string> = {
   "A painted desert of dunes and mesas": "油画风格：沙丘与方山的沙漠",
   "Start over": "重新选择",
   "Shown once you pick": "选择后显示",
+  "R{n}": "第{n}场",
+  "Online sync isn't available here. The room stays on this device and the host enters bets for everyone.":
+    "此环境无法使用在线同步。房间只保存在这台设备上，由主持人代为输入所有人的投注。",
+  Auto: "自动",
+  "{name} won": "{name}获得第1名",
 };
 
 export default messages;

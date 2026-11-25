@@ -174,8 +174,8 @@ export function CreateRoomScreen() {
         {!isFirebaseConfigured && (
           <p className="notice">
             {t(
-              "オンライン同期が無効のビルドです。ルームはこの端末だけに保存され、参加者のベットは幹事が代行入力します。",
-              "Online sync is off in this build. The room stays on this device and the host enters bets for everyone.",
+              "この環境ではオンライン同期を使えません。ルームはこの端末だけに保存され、参加者のベットは幹事が代行で入力します。",
+              "Online sync isn't available here. The room stays on this device and the host enters bets for everyone.",
             )}
           </p>
         )}

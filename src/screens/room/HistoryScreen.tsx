@@ -18,7 +18,6 @@ export function HistoryScreen() {
       ) : (
         <header className="section-heading">
           <h1>{t("レース履歴", "Race history")}</h1>
-          <p>{t("タップすると払戻の明細を確認できます", "Tap a race for its payout details")}</p>
         </header>
       )}
 
@@ -52,7 +51,7 @@ export function HistoryScreen() {
                     </span>
                     <span className="race-history__body">
                       <strong>
-                        {winner?.icon} {winner?.name ?? "?"} {t("が1着", "won")}
+                        {winner?.icon} {t("{name}が1着", "{name} won", { name: winner?.name ?? "?" })}
                       </strong>
                       <span className="lane-row">
                         {entry.resultIds.slice(0, 3).map((id) => {
