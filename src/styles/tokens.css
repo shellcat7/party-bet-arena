@@ -23,19 +23,19 @@
   --border: #e2e4e8;
   --border-strong: #c9cdd4;
 
-  --brand: #ffc400;
-  --brand-pressed: #f0b400;
+  --brand: #f3c351;
+  --brand-pressed: #e7b140;
   --on-brand: #15171b;
   --brand-tint: #fff5cc;
   --brand-ink: #7a5000;
-  --brand-edge: #d9a400;
+  --brand-edge: #c99a2e;
   /* One colour per race phase: open (betting), live (racing), result (settled). */
-  --phase-open: #0b7a43;
-  --phase-open-tint: #e4f4ea;
-  --phase-live: #b0500a;
-  --phase-live-tint: #fdf0e2;
-  --phase-result: #5a46d4;
-  --phase-result-tint: #efecfd;
+  --phase-open: #2f7a52;
+  --phase-open-tint: #e9f2ec;
+  --phase-live: #a0592a;
+  --phase-live-tint: #f7eee5;
+  --phase-result: #5b55a8;
+  --phase-result-tint: #eeedf6;
 
   --positive: #0b7a43;
   --positive-tint: #e4f4ea;
@@ -94,18 +94,18 @@
   --border: #282d35;
   --border-strong: #3a404b;
 
-  --brand: #ffc400;
-  --brand-pressed: #e6b000;
+  --brand: #f3c351;
+  --brand-pressed: #e2ae3d;
   --on-brand: #15171b;
   --brand-tint: #2b2410;
   --brand-ink: #ffd24d;
-  --brand-edge: #b98b00;
-  --phase-open: #4cd38c;
-  --phase-open-tint: #13281d;
-  --phase-live: #f5a650;
-  --phase-live-tint: #2e2011;
-  --phase-result: #aa9df6;
-  --phase-result-tint: #221d38;
+  --brand-edge: #b08626;
+  --phase-open: #72c294;
+  --phase-open-tint: #17251d;
+  --phase-live: #dca473;
+  --phase-live-tint: #2a2117;
+  --phase-result: #a7a1dc;
+  --phase-result-tint: #211f33;
 
   --positive: #4cd38c;
   --positive-tint: #13281d;

@@ -94,12 +94,11 @@
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: var(--lane);
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
-  color: #fff;
+  background: var(--accent);
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.55);
+  color: var(--accent-ink, #fff);
   font-size: 1.25rem;
   font-weight: 800;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .pass-picks strong {
@@ -158,6 +157,7 @@
 .pass__art > * {
   width: 100%;
   height: 100%;
+  filter: saturate(0.82);
 }
 
 /* ------------------------------------------------------------------------------ fields */
@@ -300,11 +300,11 @@
 }
 
 .pass-stub--placed .pass-stub__state > i {
-  background: #5be49b;
+  background: #8fd3ab;
 }
 
 .pass-stub--closed .pass-stub__state > i {
-  background: #ffb35c;
+  background: #e9b98a;
   animation: phase-pulse 1.6s ease-in-out infinite;
 }
 
@@ -397,27 +397,8 @@ button.tile:active {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  color: #fff;
-}
-
-.tile__icon--green {
-  background: #22a861;
-}
-
-.tile__icon--purple {
-  background: #7b61e8;
-}
-
-.tile__icon--blue {
-  background: #2a78d6;
-}
-
-.tile__icon--gray {
-  background: #7d8591;
-}
-
-.tile__icon--orange {
-  background: #e07a1f;
+  background: var(--surface-2);
+  color: var(--text-2);
 }
 
 .tile__text {
@@ -456,17 +437,35 @@ button.tile:active {
 
 /* ------------------------------------------------------------------- brand (invitation) */
 
-/* The invitation is printed on the brand yellow with dark type. */
-.pass--brand {
-  --pass-bg: var(--brand);
+/* Light accents (amber, and the brand yellow of the invitation) print with dark type. */
+.pass--light {
+  --pass-bg: color-mix(in oklab, var(--pass-accent) 86%, #fff);
   --pass-label: rgba(21, 23, 27, 0.62);
-  --pass-rule: rgba(21, 23, 27, 0.28);
+  --pass-rule: rgba(21, 23, 27, 0.26);
   color: #15171b;
 }
 
-.pass--brand .pass__fields .points,
-.pass--brand .pass-stub .points {
+.pass--brand {
+  --pass-bg: var(--brand);
+}
+
+.pass--light .pass__fields .points,
+.pass--light .pass-stub .points {
   color: #15171b;
+}
+
+.pass--light .pass-stub__action {
+  background: rgba(21, 23, 27, 0.08);
+  color: #15171b;
+}
+
+.pass--light .pass-stub--hit .pass-stub__state strong {
+  background: #15171b;
+  color: #fff;
+}
+
+.pass--light .pass-picks__lane {
+  box-shadow: 0 0 0 1.5px rgba(21, 23, 27, 0.18);
 }
 
 .pass-title {

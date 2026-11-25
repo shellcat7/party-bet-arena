@@ -885,10 +885,9 @@ select.input {
   place-items: center;
   border-radius: 6px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-ink, #fff);
   font-size: 0.87rem;
   font-weight: 700;
-  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
 }
 
 .lane--sm {

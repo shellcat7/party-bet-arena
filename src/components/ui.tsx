@@ -2,9 +2,12 @@ import { useId } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { ChevronLeft, Minus, Plus } from "lucide-react";
 import { useI18n } from "../i18n/i18n";
-import { EMOJI_CHOICES } from "../lib/constants";
+import { EMOJI_CHOICES, accentInk, displayAccent } from "../lib/constants";
 
-export const accentStyle = (accent: string) => ({ "--accent": accent }) as CSSProperties;
+export const accentStyle = (accent: string) => {
+  const colour = displayAccent(accent);
+  return { "--accent": colour, "--accent-ink": accentInk(colour) } as CSSProperties;
+};
 
 export function Avatar(props: {
   emoji: string;

@@ -1,7 +1,8 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Meadow } from "./scenes/Meadow";
 import type { Biome } from "../lib/pass";
-import { BrandMark } from "./ui";
+import { accentInk, displayAccent } from "../lib/constants";
+import { BrandMark, accentStyle } from "./ui";
 
 /*
  * Tickets, laid out like a boarding pass in Apple Wallet: a header with the brand and the key
@@ -28,10 +29,13 @@ export function Pass(props: {
   label: string;
   className?: string;
 }) {
+  const accent = displayAccent(props.accent);
+  // Light colours (amber, the brand yellow) print as a light pass with dark type, as in Wallet.
+  const light = accentInk(accent) !== "#ffffff";
   return (
     <article
-      className={props.className ? `pass ${props.className}` : "pass"}
-      style={{ "--pass-accent": props.accent } as CSSProperties}
+      className={["pass", light ? "pass--light" : "", props.className ?? ""].filter(Boolean).join(" ")}
+      style={{ "--pass-accent": accent } as CSSProperties}
       aria-label={props.label}
     >
       <header className="pass__head">
@@ -84,11 +88,11 @@ export function PassPicks(props: { picks: PassPick[] }) {
       {props.picks.map((pick, index) => (
         <li key={`${pick.lane}-${index}`}>
           {pick.position && <small>{pick.position}</small>}
-          <span className="pass-picks__lane" style={{ "--lane": pick.accent } as CSSProperties}>
+          <span className="pass-picks__lane" style={accentStyle(pick.accent)}>
             {pick.lane}
           </span>
           <strong>
-            <span aria-hidden="true">{pick.icon} </span>
+            {props.picks.length === 1 && <span aria-hidden="true">{pick.icon} </span>}
             {pick.name}
           </strong>
         </li>

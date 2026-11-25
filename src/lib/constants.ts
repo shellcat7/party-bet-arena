@@ -40,16 +40,48 @@ export function nextPlayerColor(used: string[]) {
 }
 
 /** Racer "gate" colours, like the coloured post positions at a race track. */
+/**
+ * Lane and avatar colours: one muted family (similar lightness and chroma in OKLCH) so that several
+ * on screen at once stay calm. White text reads on all of them except amber, which takes dark ink.
+ */
 export const ACCENTS = [
-  "#ff4c69",
-  "#3568ff",
-  "#f2c114",
-  "#25bf45",
-  "#9d7cff",
-  "#ff8f3f",
-  "#14b8c4",
-  "#e255c8",
+  "#b4514e",
+  "#4572b4",
+  "#e1b761",
+  "#428557",
+  "#7966ae",
+  "#ad5f30",
+  "#2e828b",
+  "#a4587d",
 ];
+
+/** Saved rooms still carry the earlier, saturated colours; they are shown in the new family. */
+const LEGACY_ACCENTS: Record<string, string> = {
+  "#ff4c69": "#b4514e",
+  "#3568ff": "#4572b4",
+  "#f2c114": "#e1b761",
+  "#25bf45": "#428557",
+  "#9d7cff": "#7966ae",
+  "#ff8f3f": "#ad5f30",
+  "#14b8c4": "#2e828b",
+  "#e255c8": "#a4587d",
+};
+
+export function displayAccent(accent: string) {
+  return LEGACY_ACCENTS[accent.toLowerCase()] ?? accent;
+}
+
+/** Text colour for a label on an accent: white, or dark ink on light accents. */
+export function accentInk(accent: string) {
+  const match = /^#?([0-9a-f]{6})$/i.exec(accent.trim());
+  if (!match) return "#ffffff";
+  const channel = (offset: number) => {
+    const value = parseInt(match[1].slice(offset, offset + 2), 16) / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+  return luminance > 0.36 ? "#15171b" : "#ffffff";
+}
 
 export const EMOJI_CHOICES = [
   "😀",
