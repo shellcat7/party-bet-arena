@@ -1,27 +1,29 @@
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import { History, ListChecks, RotateCcw, Trophy, Users } from "lucide-react";
+import { Pass, PassPicks, PassStub } from "../../components/BetPass";
+import type { PassPick, PassStatus } from "../../components/BetPass";
 import { useConfirm } from "../../components/feedback";
-import { Meadow } from "../../components/scenes/Meadow";
-import { PixelCarriers } from "../../components/scenes/PixelCarriers";
-import { Avatar, Lane, PhaseTag, Points } from "../../components/ui";
+import { Tile } from "../../components/Tile";
+import { Avatar, PhaseTag, Points } from "../../components/ui";
 import type { PhaseTone } from "../../components/ui";
 import { betTypeCopy, raceName } from "../../i18n/copy";
 import { useI18n } from "../../i18n/i18n";
 import { getDraftMultiplier, getPlayerBets } from "../../lib/betting";
 import { getBetPickIds } from "../../lib/odds";
-import { isGameOver } from "../../lib/settlement";
-import type { Bet, Room } from "../../lib/types";
+import { biomeForRace, ticketCode } from "../../lib/pass";
+import { isGameOver, rankPlayers } from "../../lib/settlement";
+import type { Bet, BetType, Room } from "../../lib/types";
 import { useOpenRoom } from "../../state/AppContext";
 import { BetScreen } from "./BetScreen";
 
 /**
- * A participant's race tab follows the race. Each phase has exactly one screen and at most one
- * thing to do, so nobody has to work out what is going on:
+ * A participant's race tab follows the race. Each phase has one screen and at most one thing to
+ * do; the ticket itself, laid out like a boarding pass, is the centre of it:
  *
  *   betting, no ticket  → bet slip
- *   betting, ticket     → "you're in", waiting for the host to close betting (can still cancel)
- *   closed              → race in progress; nothing to do until the result arrives
- *   settled             → this race's outcome, waiting for the next race
+ *   betting, ticket     → the ticket, "placed"; who is still to bet; cancel
+ *   closed              → the ticket, "racing"; nothing to do until the result arrives
+ *   settled             → the ticket stamped hit or miss, waiting for the next race
  *   game over           → link to the final results
  */
 export function PlayerRaceScreen() {
@@ -31,46 +33,52 @@ export function PlayerRaceScreen() {
   const ticket = me ? getPlayerBets(room, me.id)[0] : undefined;
 
   if (race.status === "betting") {
-    return ticket ? <BetPlacedStage room={room} ticket={ticket} /> : <BetScreen />;
+    return ticket ? <PlacedScreen room={room} ticket={ticket} /> : <BetScreen />;
   }
-  if (race.status === "closed") return <RaceLiveStage room={room} ticket={ticket} />;
-  if (isGameOver(room)) return <GameOverStage room={room} />;
-  return <RaceSettledStage room={room} playerId={me?.id} />;
+  if (race.status === "closed") return <RacingScreen room={room} ticket={ticket} />;
+  if (isGameOver(room)) return <GameOverScreen room={room} />;
+  return <SettledScreen room={room} playerId={me?.id} />;
 }
 
-/**
- * A waiting screen: the scene fills the screen behind, and the details sit on a card at the top,
- * leaving the lower part of the scene, where things move, in view.
- */
-function Stage(props: {
+function RaceScreen(props: {
   tone: PhaseTone;
   phase: string;
   title: string;
   message: ReactNode;
-  scene: ReactNode;
   children?: ReactNode;
 }) {
   return (
-    <div className={`waiting waiting--${props.tone}`}>
-      <div className="waiting__scene">{props.scene}</div>
-      <section className="waiting__panel" aria-labelledby="stage-title">
-        <header className="waiting__head">
-          <PhaseTag tone={props.tone}>{props.phase}</PhaseTag>
-          <h1 id="stage-title">{props.title}</h1>
-          <p role="status">{props.message}</p>
-        </header>
-        {props.children}
-      </section>
+    <div className="screen race-screen">
+      <header className="race-screen__head">
+        <PhaseTag tone={props.tone}>{props.phase}</PhaseTag>
+        <h1>{props.title}</h1>
+        <p role="status">{props.message}</p>
+      </header>
+      {props.children}
     </div>
   );
 }
 
-function BetPlacedStage(props: { room: Room; ticket: Bet }) {
+function PlacedScreen(props: { room: Room; ticket: Bet }) {
   const { t } = useI18n();
   const { room, ticket } = props;
-  const waitingFor = room.players.length - new Set(room.currentRace.bets.map((bet) => bet.playerId)).size;
+  const { controller } = useOpenRoom();
+  const confirm = useConfirm();
+  const placed = new Set(room.currentRace.bets.map((bet) => bet.playerId));
+  const waitingFor = room.players.length - placed.size;
+
+  const cancel = async () => {
+    const ok = await confirm({
+      title: t("ベットを取り消しますか？", "Cancel this bet?"),
+      message: t("締切までなら、もう一度ベットできます。", "You can bet again until betting closes."),
+      confirmLabel: t("取り消す", "Cancel bet"),
+      tone: "danger",
+    });
+    if (ok) await controller.actions.cancelOwnBet();
+  };
+
   return (
-    <Stage
+    <RaceScreen
       tone="open"
       phase={raceName(t, room.currentRace.number)}
       title={t("ベットしました", "You're in")}
@@ -86,21 +94,48 @@ function BetPlacedStage(props: { room: Room; ticket: Bet }) {
               "Everyone has bet. The race starts when the host closes betting.",
             )
       }
-      scene={
-        <PixelCarriers label={t("チケットを運ぶ小さなキャラクター", "Little helpers carrying tickets")} />
-      }
     >
-      <TicketCard room={room} ticket={ticket} />
-      <BettorStatus room={room} />
-    </Stage>
+      <CurrentTicket room={room} ticket={ticket} status="placed" />
+      <div className="tiles">
+        <Tile
+          icon={<Users size={16} />}
+          tone="green"
+          title={t("ベット状況", "Bet status")}
+          detail={t("{count} / {max}人", "{count} / {max}", { count: placed.size, max: room.players.length })}
+        >
+          <ul className="tile__avatars">
+            {room.players.map((player) => (
+              <li
+                key={player.id}
+                className={placed.has(player.id) ? "is-done" : undefined}
+                title={player.name}
+              >
+                <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
+                <span className="sr-only">
+                  {player.name}
+                  {placed.has(player.id) ? `: ${t("ベット済み", "Bet placed")}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Tile>
+        <Tile
+          icon={<RotateCcw size={16} />}
+          tone="gray"
+          title={t("取り消して選び直す", "Cancel and choose again")}
+          detail={t("締切までは変更できます", "Possible until betting closes")}
+          onClick={() => void cancel()}
+        />
+      </div>
+    </RaceScreen>
   );
 }
 
-function RaceLiveStage(props: { room: Room; ticket?: Bet }) {
+function RacingScreen(props: { room: Room; ticket?: Bet }) {
   const { t } = useI18n();
   const { room, ticket } = props;
   return (
-    <Stage
+    <RaceScreen
       tone="live"
       phase={raceName(t, room.currentRace.number)}
       title={t("レース中", "Race in progress")}
@@ -108,39 +143,33 @@ function RaceLiveStage(props: { room: Room; ticket?: Bet }) {
         "ベットは締め切られました。幹事が着順を入力すると、結果がこの画面に届きます。",
         "Betting is closed. The result appears here as soon as the host enters the finishing order.",
       )}
-      scene={
-        <Meadow
-          label={t(
-            "風が草原を渡っていく、油絵風の風景",
-            "An oil-painting-style landscape of wind moving across a meadow",
-          )}
-        />
-      }
     >
       {ticket ? (
-        <TicketCard room={room} ticket={ticket} />
+        <CurrentTicket room={room} ticket={ticket} status="closed" />
       ) : (
-        <p className="notice">{t("このレースはベットしていません。", "You didn't bet on this race.")}</p>
+        <p className="no-ticket">{t("このレースはベットしていません。", "You didn't bet on this race.")}</p>
       )}
-    </Stage>
+      <StandingTiles room={room} />
+    </RaceScreen>
   );
 }
 
-function RaceSettledStage(props: { room: Room; playerId?: string }) {
+function SettledScreen(props: { room: Room; playerId?: string }) {
   const { t } = useI18n();
   const { nav } = useOpenRoom();
   const { room, playerId } = props;
   const entry = room.raceHistory.find((item) => item.raceId === room.currentRace.id);
-  const row = entry?.payouts.find((item) => item.playerId === playerId);
-  const played = Boolean(row && row.stake > 0);
-  const title = !played
+  const result = entry?.bets.find((bet) => bet.playerId === playerId);
+  const title = !result
     ? t("結果が出ました", "The result is in")
-    : row && row.hits > 0
-      ? t("的中しました", "Your ticket hit")
-      : t("今回は外れました", "No luck this time");
+    : result.voided
+      ? t("このチケットは無効になりました", "This ticket was voided")
+      : result.hit
+        ? t("的中しました", "Your ticket hit")
+        : t("今回は外れました", "No luck this time");
 
   return (
-    <Stage
+    <RaceScreen
       tone="result"
       phase={raceName(t, room.currentRace.number)}
       title={title}
@@ -148,56 +177,41 @@ function RaceSettledStage(props: { room: Room; playerId?: string }) {
         "次のレースが始まると、この画面でベットできます。",
         "You can bet here as soon as the next race opens.",
       )}
-      scene={
-        <PixelCarriers
-          label={t("次のレースを準備する小さなキャラクター", "Little helpers setting up the next race")}
-        />
-      }
     >
-      {row && played && (
-        <dl className="result-strip">
-          <div>
-            <dt>{t("このレースの収支", "This race")}</dt>
-            <dd>
-              <Points value={row.delta} signed />
-            </dd>
-          </div>
-          <div>
-            <dt>{t("残高", "Balance")}</dt>
-            <dd>
-              <Points value={row.balanceAfter} />
-            </dd>
-          </div>
-        </dl>
+      {result && entry && (
+        <TicketPass
+          room={room}
+          raceNumber={entry.raceNumber}
+          contestants={entry.contestants}
+          ticket={{ ...result, contestantIds: result.contestantIds }}
+          multiplier={result.multiplier}
+          payout={result.payout}
+          status={result.voided ? "void" : result.hit ? "hit" : "miss"}
+        />
       )}
-      <button
-        className="button button--secondary button--block"
-        type="button"
-        onClick={() => nav.push({ name: "race", raceId: room.currentRace.id })}
-      >
-        {t("結果と払戻を見る", "See the result and payouts")}
-      </button>
-    </Stage>
+      <div className="tiles">
+        <Tile
+          icon={<ListChecks size={16} />}
+          tone="purple"
+          title={t("結果と払戻", "Result and payouts")}
+          detail={t("着順と全員の収支", "Finishing order and everyone's result")}
+          onClick={() => nav.push({ name: "race", raceId: room.currentRace.id })}
+        />
+        <RankTile room={room} playerId={playerId} />
+      </div>
+    </RaceScreen>
   );
 }
 
-function GameOverStage(props: { room: Room }) {
+function GameOverScreen(props: { room: Room }) {
   const { t } = useI18n();
   const { nav } = useOpenRoom();
   return (
-    <Stage
+    <RaceScreen
       tone="result"
       phase={t("全{max}レース終了", "All {max} races finished", { max: props.room.settings.maxRaces })}
       title={t("大会が終わりました", "The tournament is over")}
       message={t("最終順位と記録を確認できます。", "See the final standings and records.")}
-      scene={
-        <Meadow
-          label={t(
-            "風が草原を渡っていく、油絵風の風景",
-            "An oil-painting-style landscape of wind moving across a meadow",
-          )}
-        />
-      }
     >
       <button
         className="button button--primary button--block button--lg"
@@ -206,108 +220,175 @@ function GameOverStage(props: { room: Room }) {
       >
         {t("最終結果を見る", "See final results")}
       </button>
-    </Stage>
+    </RaceScreen>
   );
 }
 
-/** The participant's own ticket, stated as plainly as a receipt. */
-function TicketCard(props: { room: Room; ticket: Bet }) {
-  const { t } = useI18n();
+/* -------------------------------------------------------------------------------- tickets */
+
+function CurrentTicket(props: { room: Room; ticket: Bet; status: PassStatus }) {
   const { room, ticket } = props;
-  const { controller } = useOpenRoom();
-  const confirm = useConfirm();
-  const labels = betTypeCopy(t);
-  const open = room.currentRace.status === "betting";
   const pickIds = getBetPickIds(ticket);
   const multiplier = getDraftMultiplier(room, { type: ticket.type, contestantIds: pickIds });
-  const estimate = Math.floor(ticket.amount * multiplier);
+  return (
+    <TicketPass
+      room={room}
+      raceNumber={room.currentRace.number}
+      contestants={room.contestants}
+      ticket={{ ...ticket, contestantIds: pickIds }}
+      multiplier={multiplier}
+      payout={Math.floor(ticket.amount * multiplier)}
+      status={props.status}
+    />
+  );
+}
 
-  const cancel = async () => {
-    const ok = await confirm({
-      title: t("ベットを取り消しますか？", "Cancel this bet?"),
-      message: t("締切までなら、もう一度ベットできます。", "You can bet again until betting closes."),
-      confirmLabel: t("取り消す", "Cancel bet"),
-      tone: "danger",
-    });
-    if (ok) await controller.actions.cancelOwnBet();
+function TicketPass(props: {
+  room: Room;
+  raceNumber: number;
+  contestants: Array<{ id: string; name: string; icon: string; accent: string }>;
+  ticket: {
+    id: string;
+    playerId: string;
+    type: BetType;
+    contestantIds: string[];
+    amount: number;
+    createdAt: number;
+  };
+  multiplier: number;
+  payout: number;
+  status: PassStatus;
+}) {
+  const { t, formatTime } = useI18n();
+  const { room, ticket, status } = props;
+  const labels = betTypeCopy(t);
+  const positions = [t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")];
+  const picks: PassPick[] = ticket.contestantIds.map((id, index) => {
+    const lane = props.contestants.findIndex((contestant) => contestant.id === id);
+    const contestant = props.contestants[lane];
+    return {
+      lane: lane + 1,
+      name: contestant?.name ?? "?",
+      icon: contestant?.icon ?? "",
+      accent: contestant?.accent ?? "#6b7280",
+      position: ticket.contestantIds.length > 1 ? positions[index] : undefined,
+    };
+  });
+  const bettor = room.players.find((player) => player.id === ticket.playerId)?.name ?? "";
+  const estimate = status === "placed" && room.settings.marketOdds;
+
+  const stub: Record<PassStatus, ReactNode> = {
+    placed: (
+      <PassStub
+        status="placed"
+        title={t("受付済み", "Placed")}
+        detail={
+          estimate
+            ? t("倍率は締切時に確定します", "The odds are fixed when betting closes")
+            : t("締め切られるとレースが始まります", "The race starts when betting closes")
+        }
+      />
+    ),
+    closed: (
+      <PassStub
+        status="closed"
+        title={t("レース中", "Race in progress")}
+        detail={t("結果を待っています", "Waiting for the result")}
+      />
+    ),
+    hit: (
+      <PassStub
+        status="hit"
+        title={t("的中", "Hit")}
+        detail={t("払戻", "Payout")}
+        value={<Points value={props.payout} />}
+      />
+    ),
+    miss: (
+      <PassStub status="miss" title={t("不的中", "Miss")} value={<Points value={-ticket.amount} signed />} />
+    ),
+    void: (
+      <PassStub
+        status="void"
+        title={t("無効（返金）", "Void (refunded)")}
+        value={<Points value={ticket.amount} />}
+      />
+    ),
   };
 
   return (
-    <section className="ticket-card" aria-labelledby="ticket-card-title">
-      <header className="ticket-card__head">
-        <h2 id="ticket-card-title">{t("あなたのチケット", "Your ticket")}</h2>
-        <span className={open ? "status-pill status-pill--placed" : "status-pill status-pill--closed"}>
-          {open ? t("受付済み", "Placed") : t("締切", "Closed")}
-        </span>
-      </header>
-      <div className="ticket-card__picks">
-        <span className="badge">{labels[ticket.type].title}</span>
-        {pickIds.map((id, index) => {
-          const contestant = room.contestants.find((item) => item.id === id);
-          const lane = room.contestants.findIndex((item) => item.id === id) + 1;
-          return (
-            <span key={id} className="ticket-card__pick">
-              {pickIds.length > 1 && (
-                <small>{[t("1着", "1st"), t("2着", "2nd"), t("3着", "3rd")][index]}</small>
-              )}
-              {contestant && <Lane number={lane} accent={contestant.accent} small />}
-              {contestant ? `${contestant.icon} ${contestant.name}` : "?"}
-            </span>
-          );
-        })}
-      </div>
-      <dl className="ticket-card__math">
-        <div>
-          <dt>{t("ベット額", "Stake")}</dt>
-          <dd>
-            <Points value={ticket.amount} />
-          </dd>
-        </div>
-        <div>
-          <dt>
-            {room.settings.marketOdds && open
-              ? t("的中時の払戻（目安）", "Payout if it hits (est.)")
-              : t("的中時の払戻", "Payout if it hits")}
-          </dt>
-          <dd>
-            <Points value={estimate} />
-            <small>×{multiplier.toFixed(1)}</small>
-          </dd>
-        </div>
-      </dl>
-      {open && (
-        <button className="button button--ghost button--block" type="button" onClick={() => void cancel()}>
-          {t("取り消して選び直す", "Cancel and choose again")}
-        </button>
-      )}
-    </section>
+    <Pass
+      accent={picks[0]?.accent ?? "#6b7280"}
+      brand={t("ランクパーティ", "Rank Party")}
+      label={t("{race}のチケット", "Ticket for {race}", { race: raceName(t, props.raceNumber) })}
+      headerFields={[
+        { label: t("レース", "Race"), value: props.raceNumber },
+        { label: t("券種", "Type"), value: labels[ticket.type].title },
+      ]}
+      primary={<PassPicks picks={picks} />}
+      art={{
+        biome: biomeForRace(props.raceNumber),
+        label: t("油絵風の風景", "An oil-painting-style landscape"),
+        animate: status === "closed",
+      }}
+      fields={[
+        { label: t("ベット額", "Stake"), value: <Points value={ticket.amount} /> },
+        { label: t("倍率", "Odds"), value: `×${props.multiplier.toFixed(1)}` },
+        {
+          label: estimate ? t("的中時（目安）", "If it hits (est.)") : t("的中時", "If it hits"),
+          value: <Points value={Math.floor(ticket.amount * props.multiplier)} />,
+          align: "end",
+        },
+      ]}
+      auxFields={[
+        { label: t("名前", "Name"), value: bettor },
+        { label: t("受付", "Placed at"), value: formatTime(ticket.createdAt) },
+        { label: t("チケット番号", "Ticket no."), value: ticketCode(ticket.id), align: "end" },
+      ]}
+      stub={stub[status]}
+    />
   );
 }
 
-/** Who has bet so far, as a row of avatars (names on hover and for screen readers). */
-function BettorStatus(props: { room: Room }) {
+/* ---------------------------------------------------------------------------------- tiles */
+
+function RankTile(props: { room: Room; playerId?: string }) {
   const { t } = useI18n();
-  const placed = new Set(props.room.currentRace.bets.map((bet) => bet.playerId));
+  const { nav } = useOpenRoom();
+  const rank = rankPlayers(props.room.players).find((item) => item.player.id === props.playerId)?.rank;
   return (
-    <section className="bettor-status bettor-status--compact" aria-labelledby="bettor-status-title">
-      <div className="bettor-status__head">
-        <strong id="bettor-status-title">{t("ベット状況", "Bet status")}</strong>
-        <span>
-          {placed.size} / {props.room.players.length}
-        </span>
-      </div>
-      <ul>
-        {props.room.players.map((player) => (
-          <li key={player.id} className={placed.has(player.id) ? "is-done" : undefined} title={player.name}>
-            <Avatar emoji={player.emoji} accent={player.accent} size="sm" />
-            <span className="sr-only">
-              {player.name}
-              {placed.has(player.id) ? `: ${t("ベット済み", "Bet placed")}` : ""}
-            </span>
-            {placed.has(player.id) && <Check size={10} strokeWidth={4} aria-hidden="true" />}
-          </li>
-        ))}
-      </ul>
-    </section>
+    <Tile
+      icon={<Trophy size={16} />}
+      tone="blue"
+      title={t("順位", "Standings")}
+      detail={
+        rank
+          ? t("いま{rank}位（{count}人中）", "Rank {rank} of {count}", {
+              rank,
+              count: props.room.players.length,
+            })
+          : undefined
+      }
+      onClick={() => nav.replace({ name: "ranking" })}
+    />
+  );
+}
+
+function StandingTiles(props: { room: Room }) {
+  const { t } = useI18n();
+  const { controller, nav } = useOpenRoom();
+  return (
+    <div className="tiles">
+      <RankTile room={props.room} playerId={controller.me?.id} />
+      <Tile
+        icon={<History size={16} />}
+        tone="purple"
+        title={t("これまでの結果", "Earlier races")}
+        detail={t("{count}レース確定", "{count, plural, one {# race settled} other {# races settled}}", {
+          count: props.room.raceHistory.length,
+        })}
+        onClick={() => nav.replace({ name: "history" })}
+      />
+    </div>
   );
 }

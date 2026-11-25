@@ -6,6 +6,7 @@ import "./styles/base.css";
 import "./styles/components.css";
 import "./styles/screens.css";
 import "./styles/scenes.css";
+import "./styles/pass.css";
 import "./styles/glass.css";
 
 const root = document.getElementById("root");

@@ -56,7 +56,7 @@ test("the demo shows both the host and a participant's view", async ({ page }) =
   await expect(page.getByRole("heading", { name: "待っている間に" })).toBeVisible();
   await page.getByLabel("デモ・表示中の視点").selectOption({ label: "🌟 あやか" });
   await expect(page.getByRole("heading", { name: "レース中" })).toBeVisible();
-  await expect(page.getByText("締切", { exact: true })).toBeVisible();
+  await expect(page.getByText("結果を待っています")).toBeVisible();
   await expect(page.getByRole("button", { name: "ベットする" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "取り消して選び直す" })).toHaveCount(0);
 

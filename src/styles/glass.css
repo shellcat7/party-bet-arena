@@ -2,7 +2,7 @@
  * Liquid Glass
  * ------------
  * The navigation layer (top bar, tab bar, banners over a scene, sheets, toasts, the action bar)
- * and the card on a waiting screen are a translucent material over the content: the backdrop is
+ * are a translucent material over the content: the backdrop is
  * blurred and saturated, the edge catches light, and a soft shadow lifts it. Content itself stays
  * on solid cards, as Apple's guidance recommends, so lists and numbers remain easy to read.
  *
@@ -78,8 +78,7 @@
 .room > .banner,
 .sticky-actions,
 .sheet,
-.toast,
-.waiting__panel {
+.toast {
   -webkit-backdrop-filter: var(--glass-blur);
   backdrop-filter: var(--glass-blur);
 }
@@ -100,8 +99,7 @@
 .race-accessory::before,
 .room > .banner::before,
 .sheet::before,
-.toast::before,
-.waiting__panel::before {
+.toast::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -155,17 +153,6 @@
   background: var(--glass-warning);
 }
 
-/* On a scene the title sits on glass too, so it stays readable over the picture. */
-.room:has(.waiting) .topbar__title {
-  position: relative;
-  padding: 4px 14px;
-  border-radius: 22px;
-  background: var(--glass-tint);
-  -webkit-backdrop-filter: var(--glass-blur);
-  backdrop-filter: var(--glass-blur);
-  box-shadow: var(--glass-shadow);
-}
-
 .toast-region {
   bottom: calc(var(--nav-height) + 26px + var(--safe-bottom));
 }
@@ -188,14 +175,6 @@
 .sticky-actions {
   border-top-color: var(--glass-line);
   background: var(--glass-tint);
-}
-
-/* ------------------------------------------------------------------------- waiting screens */
-
-.waiting__panel {
-  position: relative;
-  background: var(--glass-tint-strong);
-  box-shadow: var(--glass-shadow);
 }
 
 .toast--success svg:first-child,
@@ -243,15 +222,4 @@ body:has(.room--tab)::before {
   background: var(--glass-tint-strong);
   -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
   mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
-}
-
-/* Over a scene, only the status bar area is softened, so the picture stays clear. */
-body:has(.waiting) {
-  --edge-top: var(--safe-top);
-}
-
-body:has(.waiting)::before {
-  background: var(--glass-tint);
-  -webkit-mask-image: linear-gradient(#000 40%, transparent);
-  mask-image: linear-gradient(#000 40%, transparent);
 }

@@ -1,8 +1,6 @@
 import type { ReactNode } from "react";
 import { Check, ChevronRight, Flag, QrCode, SlidersHorizontal, Trophy, Users } from "lucide-react";
 import { useConfirm } from "../../components/feedback";
-import { Meadow } from "../../components/scenes/Meadow";
-import { PixelCarriers } from "../../components/scenes/PixelCarriers";
 import { Avatar, Points, Lane } from "../../components/ui";
 import type { PhaseTone } from "../../components/ui";
 import { raceName } from "../../i18n/copy";
@@ -55,18 +53,6 @@ export function HostHomeScreen() {
   return (
     <div className="screen">
       <section className={`card stage-card stage-card--${tones[race.status]}`} aria-labelledby="stage-title">
-        <div className="stage-card__scene">
-          {race.status === "closed" || gameOver ? (
-            <Meadow
-              label={t(
-                "風が草原を渡っていく、油絵風の風景",
-                "An oil-painting-style landscape of wind moving across a meadow",
-              )}
-            />
-          ) : (
-            <PixelCarriers label={t("チケットを運ぶ小さなキャラクター", "Little helpers carrying tickets")} />
-          )}
-        </div>
         <div className="stage-card__head">
           <h2 id="stage-title">
             {raceName(t, race.number)}

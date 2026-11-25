@@ -58,6 +58,22 @@ export function CreateRoomScreen() {
             )}
           </Field>
 
+          <Field
+            label={t("あなたの名前（幹事）", "Your name (host)")}
+            hint={t("招待状に表示されます。省略できます。", "Shown on the invitation. Optional.")}
+          >
+            {(id) => (
+              <input
+                id={id}
+                className="input"
+                value={draft.hostName}
+                maxLength={LIMITS.maxNameLength}
+                autoComplete="nickname"
+                onChange={(event) => update({ hostName: event.target.value })}
+              />
+            )}
+          </Field>
+
           <div className="setting-row">
             <span>
               <strong>{t("レース数", "Races")}</strong>

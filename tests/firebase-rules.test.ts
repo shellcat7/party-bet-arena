@@ -120,6 +120,14 @@ describe("room access", () => {
     await assertFails(set(ref(as("someone"), "rooms/STXLENRXXM23"), { ...payload, id: "STXLENRXXM23" }));
   });
 
+  it("accepts a short host name for the invitation", async () => {
+    await assertSucceeds(set(ref(as(hostUid), `rooms/${roomId}/hostName`), "Haruto"));
+    await assertFails(set(ref(as(hostUid), `rooms/${roomId}/hostName`), "x".repeat(41)));
+    await assertFails(set(ref(as(hostUid), `rooms/${roomId}/hostName`), 42));
+    await joinAsPlayer();
+    await assertFails(set(ref(as(playerUid), `rooms/${roomId}/hostName`), "Mallory"));
+  });
+
   it("keeps rooms from older schema versions sealed", async () => {
     await environment.withSecurityRulesDisabled(async (context) => {
       const { schemaVersion: _schemaVersion, ...legacy } = toRoomPayload({ ...room, id: "LEGACYRXXM12" });

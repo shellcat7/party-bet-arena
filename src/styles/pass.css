@@ -1,0 +1,517 @@
+/*
+ * Tickets (passes)
+ * ----------------
+ * Laid out like a boarding pass in Apple Wallet. The pass takes a deep shade of its accent colour
+ * with white type; labels are small capitals at reduced opacity, values are bold and tabular. A
+ * perforation with two notches separates the stub, which carries the ticket's state.
+ */
+
+.pass {
+  --pass-bg: color-mix(in oklab, var(--pass-accent) 52%, #07080a);
+  --pass-label: rgba(255, 255, 255, 0.68);
+  --pass-rule: rgba(255, 255, 255, 0.22);
+  --notch: var(--bg);
+  position: relative;
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  justify-self: center;
+  padding: 16px 18px 0;
+  overflow: hidden;
+  border-radius: 22px;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0) 38%), var(--pass-bg);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    0 1px 2px rgba(15, 17, 21, 0.12),
+    0 14px 34px rgba(15, 17, 21, 0.18);
+}
+
+/* ------------------------------------------------------------------------------- header */
+
+.pass__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.pass__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin-right: auto;
+  padding-top: 2px;
+  font-size: 0.93rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pass__head-field {
+  display: grid;
+  justify-items: end;
+  line-height: 1.2;
+}
+
+.pass__head-field small,
+.pass__fields dt,
+.pass-picks small {
+  color: var(--pass-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pass__head-field strong {
+  font-size: 1.13rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------------------- picks */
+
+.pass-picks {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.pass-picks li {
+  position: relative;
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+}
+
+.pass-picks__lane {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--lane);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 800;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.pass-picks strong {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Ordered picks read left to right, joined by arrows like a route. */
+.pass-picks--ordered li + li {
+  padding-left: 22px;
+}
+
+.pass-picks--ordered li + li::before {
+  content: "→";
+  position: absolute;
+  bottom: 30px;
+  left: 0;
+  color: var(--pass-label);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+/* A single pick is set large, like an airport code. */
+.pass-picks:not(.pass-picks--ordered) li {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pass-picks:not(.pass-picks--ordered) .pass-picks__lane {
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  font-size: 1.9rem;
+}
+
+.pass-picks:not(.pass-picks--ordered) strong {
+  font-size: 1.75rem;
+  line-height: 1.15;
+}
+
+/* --------------------------------------------------------------------------------- art */
+
+.pass__art {
+  position: relative;
+  height: 128px;
+  margin: 0 -18px;
+  overflow: hidden;
+  background: color-mix(in oklab, var(--pass-bg) 70%, #8fb4dc);
+}
+
+.pass__art > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* ------------------------------------------------------------------------------ fields */
+
+.pass__fields {
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  gap: 12px;
+}
+
+.pass__fields > div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.pass__fields > div.is-end {
+  justify-items: end;
+  text-align: right;
+}
+
+.pass__fields dd {
+  overflow: hidden;
+  font-size: 1.02rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pass__fields .points small,
+.pass-stub .points small {
+  color: var(--pass-label);
+}
+
+.pass__fields .points {
+  color: #fff;
+}
+
+/* ------------------------------------------------------------------ perforation and stub */
+
+.pass__perforation {
+  position: relative;
+  height: 1px;
+  margin: 2px -18px 0;
+  background-image: linear-gradient(90deg, var(--pass-rule) 55%, transparent 0);
+  background-size: 9px 1px;
+}
+
+.pass__perforation::before,
+.pass__perforation::after {
+  content: "";
+  position: absolute;
+  top: -11px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--notch);
+}
+
+.pass__perforation::before {
+  left: -11px;
+}
+
+.pass__perforation::after {
+  right: -11px;
+}
+
+.pass__stub {
+  margin: 0 -18px;
+  padding: 14px 18px 18px;
+}
+
+.pass-stub {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.pass-stub__state {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pass-stub__state > i {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.22);
+}
+
+.pass-stub__state > span {
+  min-width: 0;
+  display: grid;
+  line-height: 1.3;
+}
+
+.pass-stub__state strong {
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.pass-stub__state small {
+  color: var(--pass-label);
+  font-size: 0.8rem;
+}
+
+.pass-stub__value .points {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.pass-stub--placed .pass-stub__state > i {
+  background: #5be49b;
+}
+
+.pass-stub--closed .pass-stub__state > i {
+  background: #ffb35c;
+  animation: phase-pulse 1.6s ease-in-out infinite;
+}
+
+/* Settled tickets are stamped: a hit in white, a miss and a void muted. */
+.pass-stub--hit .pass-stub__state strong {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fff;
+  color: color-mix(in oklab, var(--pass-accent) 60%, #07080a);
+}
+
+.pass-stub--hit .pass-stub__state > i {
+  display: none;
+}
+
+.pass-stub--miss .pass-stub__state > i,
+.pass-stub--void .pass-stub__state > i {
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
+.pass-stub--miss .pass-stub__value .points,
+.pass-stub--void .pass-stub__value .points {
+  color: var(--pass-label);
+  font-size: 1.1rem;
+}
+
+/* --------------------------------------------------------------- race screen and tiles */
+
+.race-screen {
+  gap: 18px;
+}
+
+.race-screen__head {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  padding: 4px 2px 0;
+}
+
+.race-screen__head h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.race-screen__head p {
+  color: var(--text-2);
+}
+
+.no-ticket {
+  padding: 18px;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 22px;
+  color: var(--text-3);
+  text-align: center;
+}
+
+/* Action tiles under a pass, as in Wallet. */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.tile {
+  position: relative;
+  min-height: 104px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.06);
+  color: var(--text);
+  text-align: left;
+}
+
+button.tile:active {
+  transform: scale(0.98);
+}
+
+.tile__icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+}
+
+.tile__icon--green {
+  background: #22a861;
+}
+
+.tile__icon--purple {
+  background: #7b61e8;
+}
+
+.tile__icon--blue {
+  background: #2a78d6;
+}
+
+.tile__icon--gray {
+  background: #7d8591;
+}
+
+.tile__icon--orange {
+  background: #e07a1f;
+}
+
+.tile__text {
+  display: grid;
+  gap: 2px;
+  line-height: 1.3;
+}
+
+.tile__text strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.tile__text small {
+  color: var(--text-3);
+  font-size: 0.8rem;
+}
+
+.tile__chevron {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  color: var(--text-3);
+}
+
+.tile__avatars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tile__avatars li:not(.is-done) .avatar {
+  filter: grayscale(1);
+  opacity: 0.45;
+}
+
+/* ------------------------------------------------------------------- brand (invitation) */
+
+/* The invitation is printed on the brand yellow with dark type. */
+.pass--brand {
+  --pass-bg: var(--brand);
+  --pass-label: rgba(21, 23, 27, 0.62);
+  --pass-rule: rgba(21, 23, 27, 0.28);
+  color: #15171b;
+}
+
+.pass--brand .pass__fields .points,
+.pass--brand .pass-stub .points {
+  color: #15171b;
+}
+
+.pass-title {
+  display: grid;
+  gap: 4px;
+}
+
+.pass-title small {
+  color: var(--pass-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pass-title strong {
+  font-size: 1.6rem;
+  font-weight: 800;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+/* The code sits on white in the stub, as on a boarding pass. */
+.pass-qr {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  text-align: center;
+}
+
+.pass-qr__code {
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 17, 21, 0.12);
+}
+
+.pass-qr__code svg {
+  display: block;
+}
+
+.pass-qr p {
+  color: var(--pass-label);
+  font-size: 0.8rem;
+}
+
+.pass-qr__codes {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  text-align: left;
+}
+
+.pass-qr__codes > div:last-child {
+  text-align: right;
+}
+
+.pass-qr__codes dt {
+  color: var(--pass-label);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pass-qr__codes dd {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}

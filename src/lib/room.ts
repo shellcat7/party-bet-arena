@@ -24,6 +24,7 @@ import type {
 
 export type RoomCreateInput = {
   name: string;
+  hostName: string;
   maxRaces: number;
   startingBalance: number;
   maxPlayers: number;
@@ -35,6 +36,7 @@ export type RoomCreateInput = {
 
 export const defaultCreateInput: RoomCreateInput = {
   name: "",
+  hostName: "",
   maxRaces: 10,
   startingBalance: 1000,
   maxPlayers: 8,
@@ -90,6 +92,7 @@ export function createRoom(input: RoomCreateInput, hostUid?: string, now = Date.
     id: createRoomId(),
     schemaVersion: 2,
     name: input.name.trim().slice(0, LIMITS.maxRoomNameLength),
+    ...(input.hostName.trim() ? { hostName: input.hostName.trim().slice(0, LIMITS.maxNameLength) } : {}),
     isDemo: false,
     joinCode: createJoinCode(),
     theme: "arena",
@@ -117,50 +120,59 @@ export function createRoom(input: RoomCreateInput, hostUid?: string, now = Date.
 const demoCopy = {
   ja: {
     room: "週末ゲーム大会（デモ）",
+    host: "はると",
     players: ["ゆうた", "たくみ", "あやか", "けんと"],
     racers: ["レッド", "ブルー", "イエロー", "グリーン"],
   },
   en: {
     room: "Weekend Game Night (demo)",
+    host: "Jordan",
     players: ["Alex", "Sam", "Mia", "Ken"],
     racers: ["Red", "Blue", "Yellow", "Green"],
   },
   zh: {
     room: "周末游戏大会（演示）",
+    host: "老王",
     players: ["小明", "小红", "阿强", "小美"],
     racers: ["红色", "蓝色", "黄色", "绿色"],
   },
   ko: {
     room: "주말 게임 대회 (데모)",
+    host: "도윤",
     players: ["민준", "서연", "지훈", "하은"],
     racers: ["레드", "블루", "옐로", "그린"],
   },
   es: {
     room: "Noche de juegos (demo)",
+    host: "Pablo",
     players: ["Lucía", "Mateo", "Sofía", "Diego"],
     racers: ["Rojo", "Azul", "Amarillo", "Verde"],
   },
   fr: {
     room: "Soirée jeux (démo)",
+    host: "Nina",
     players: ["Léa", "Hugo", "Chloé", "Louis"],
     racers: ["Rouge", "Bleu", "Jaune", "Vert"],
   },
   de: {
     room: "Spieleabend (Demo)",
+    host: "Paul",
     players: ["Lena", "Jonas", "Mia", "Felix"],
     racers: ["Rot", "Blau", "Gelb", "Grün"],
   },
   it: {
     room: "Serata giochi (demo)",
+    host: "Elena",
     players: ["Giulia", "Marco", "Sofia", "Luca"],
     racers: ["Rosso", "Blu", "Giallo", "Verde"],
   },
   uk: {
     room: "Ігровий вечір (демо)",
+    host: "Ірина",
     players: ["Олена", "Андрій", "Марія", "Тарас"],
     racers: ["Червоний", "Синій", "Жовтий", "Зелений"],
   },
-} satisfies Record<LanguageName, { room: string; players: string[]; racers: string[] }>;
+} satisfies Record<LanguageName, { room: string; host: string; players: string[]; racers: string[] }>;
 
 /**
  * A self-contained room for trying the app without Firebase or other devices.
@@ -196,6 +208,7 @@ export function createDemoRoom(language: LanguageName = "ja", now = Date.now()):
     id: DEMO_ROOM_ID,
     schemaVersion: 2,
     name: copy.room,
+    hostName: copy.host,
     isDemo: true,
     joinCode: DEMO_JOIN_CODE,
     theme: "arena",
@@ -644,5 +657,8 @@ export function normalizeRoom(input: unknown): Room {
     updatedAt: finiteOr(raw.updatedAt, now),
   };
   if (typeof raw.hostUid === "string") room.hostUid = raw.hostUid;
+  if (typeof raw.hostName === "string" && raw.hostName.trim()) {
+    room.hostName = raw.hostName.trim().slice(0, LIMITS.maxNameLength);
+  }
   return room;
 }

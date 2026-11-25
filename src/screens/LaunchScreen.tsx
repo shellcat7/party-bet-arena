@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronRight, Github, Globe, Monitor, Moon, Sun, Trash2 } from "lucide-react";
 import { useConfirm } from "../components/feedback";
-import { PixelCarriers } from "../components/scenes/PixelCarriers";
+import { Meadow } from "../components/scenes/Meadow";
 import { BrandMark } from "../components/ui";
 import { raceStatusCopy } from "../i18n/copy";
 import { useI18n } from "../i18n/i18n";
@@ -91,9 +91,7 @@ export function LaunchScreen() {
         ) : (
           <div className="launch__intro">
             <div className="launch__scene">
-              <PixelCarriers
-                label={t("チケットを運ぶ小さなキャラクター", "Little helpers carrying tickets")}
-              />
+              <Meadow label={t("油絵風の風景", "An oil-painting-style landscape")} biome="meadow" paused />
             </div>
             <BrandMark size={72} />
             <h1>{t("ランクパーティ", "Rank Party")}</h1>

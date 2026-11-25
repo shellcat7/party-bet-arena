@@ -19,14 +19,19 @@ test("a participant joins by QR, bets, and sees the host's result live", async (
   await host.goto("./");
   await host.getByRole("button", { name: "ルームを作成" }).click();
   await host.getByLabel("ルーム名").fill("オンライン杯");
+  await host.getByLabel("あなたの名前（幹事）").fill("はると");
   await host.getByRole("button", { name: "ルームを作成" }).click();
 
   // Decode the rendered QR code exactly as a phone camera would.
-  const qr = host.getByTestId("invite-qr").locator("svg");
-  await expect(qr).toBeVisible({ timeout: 20_000 });
+  const qr = host.getByTestId("invite-qr");
+  await expect(qr.locator("svg")).toBeVisible({ timeout: 20_000 });
+  // Centre it so the floating action bar can't cover it, and include its white quiet zone.
+  await qr.evaluate((element) => element.scrollIntoView({ block: "center" }));
   const png = PNG.sync.read(await qr.screenshot());
   const decoded = jsQR(new Uint8ClampedArray(png.data), png.width, png.height);
   expect(decoded?.data).toContain("#roomId=");
+  // The invitation is a ticket that says what the room is and who runs it.
+  await expect(host.getByRole("article", { name: /招待状/ })).toContainText("はると");
   await host.getByRole("button", { name: "進行画面へ" }).click();
 
   await player.goto(decoded!.data);

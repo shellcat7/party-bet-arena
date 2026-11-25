@@ -1,9 +1,12 @@
 import QRCode from "react-qr-code";
 import { Copy, Link2, Share2, WifiOff } from "lucide-react";
 import { useNotify } from "../components/feedback";
-import { PageHeader } from "../components/ui";
+import { Pass } from "../components/BetPass";
+import { Tile } from "../components/Tile";
+import { PageHeader, Points } from "../components/ui";
 import { useI18n } from "../i18n/i18n";
 import { buildInviteUrl, groupCode } from "../lib/ids";
+import { biomeForRace } from "../lib/pass";
 import { useOpenRoom } from "../state/AppContext";
 
 export default function InviteScreen(props: { isNew: boolean }) {
@@ -57,63 +60,95 @@ export default function InviteScreen(props: { isNew: boolean }) {
 
       {online ? (
         <>
-          <figure className="invite__qr" data-testid="invite-qr">
-            <QRCode
-              value={url}
-              size={232}
-              bgColor="#ffffff"
-              fgColor="#0b0d10"
-              level="M"
-              title={t("参加用QRコード", "Join QR code")}
+          <Pass
+            className="pass--brand"
+            accent="#ffc400"
+            brand={t("ランクパーティ", "Rank Party")}
+            label={t("「{room}」への招待状", "Invitation to “{room}”", { room: room.name })}
+            headerFields={[
+              { label: t("レース", "Races"), value: room.settings.maxRaces },
+              { label: t("定員", "Capacity"), value: room.settings.maxPlayers },
+            ]}
+            primary={
+              <div className="pass-title">
+                <small>{t("招待状", "Invitation")}</small>
+                <strong>{room.name}</strong>
+              </div>
+            }
+            art={{
+              biome: biomeForRace(room.id.charCodeAt(0)),
+              label: t("油絵風の風景", "An oil-painting-style landscape"),
+            }}
+            fields={[
+              { label: t("幹事", "Host"), value: room.hostName || "—" },
+              { label: t("初期ポイント", "Starting points"), value: <Points value={room.startingBalance} /> },
+              {
+                label: t("参加者", "Bettors"),
+                value: `${room.players.length} / ${room.settings.maxPlayers}`,
+                align: "end",
+              },
+            ]}
+            stub={
+              <div className="pass-qr">
+                <figure className="pass-qr__code" data-testid="invite-qr">
+                  <QRCode
+                    value={url}
+                    size={184}
+                    bgColor="#ffffff"
+                    fgColor="#0b0d10"
+                    level="M"
+                    title={t("参加用QRコード", "Join QR code")}
+                  />
+                </figure>
+                <p>
+                  {t(
+                    "スマホのカメラで読み取ると参加画面が開きます",
+                    "Scan with a phone camera to open the join screen",
+                  )}
+                </p>
+                <dl className="pass-qr__codes">
+                  <div>
+                    <dt>{t("ルームID", "Room ID")}</dt>
+                    <dd data-testid="invite-room-id">{groupCode(room.id)}</dd>
+                  </div>
+                  <div>
+                    <dt>{t("参加コード", "Join code")}</dt>
+                    <dd data-testid="invite-join-code">{groupCode(room.joinCode)}</dd>
+                  </div>
+                </dl>
+              </div>
+            }
+          />
+
+          <div className="tiles">
+            <Tile
+              icon={<Share2 size={16} />}
+              tone="blue"
+              title={t("リンクを共有", "Share link")}
+              detail={t("メッセージやLINEで送る", "Send it in a chat")}
+              onClick={() => void share()}
             />
-            <figcaption>
-              {t(
-                "スマホのカメラで読み取ると参加画面が開きます",
-                "Scan with a phone camera to open the join screen",
-              )}
-            </figcaption>
-          </figure>
-
-          <dl className="invite__codes">
-            <div>
-              <dt>{t("ルームID", "Room ID")}</dt>
-              <dd data-testid="invite-room-id">{groupCode(room.id)}</dd>
-              <button
-                type="button"
-                className="icon-button icon-button--quiet"
-                onClick={() => void copy(room.id, t("ルームID", "Room ID"))}
-                aria-label={t("ルームIDをコピー", "Copy room ID")}
-              >
-                <Copy size={18} />
-              </button>
-            </div>
-            <div>
-              <dt>{t("参加コード", "Join code")}</dt>
-              <dd data-testid="invite-join-code">{groupCode(room.joinCode)}</dd>
-              <button
-                type="button"
-                className="icon-button icon-button--quiet"
-                onClick={() => void copy(room.joinCode, t("参加コード", "Join code"))}
-                aria-label={t("参加コードをコピー", "Copy join code")}
-              >
-                <Copy size={18} />
-              </button>
-            </div>
-          </dl>
-
-          <div className="button-row">
-            <button className="button button--secondary" type="button" onClick={() => void share()}>
-              <Share2 size={18} />
-              {t("リンクを共有", "Share link")}
-            </button>
-            <button
-              className="button button--secondary"
-              type="button"
+            <Tile
+              icon={<Link2 size={16} />}
+              tone="purple"
+              title={t("リンクをコピー", "Copy link")}
+              detail={t("招待リンク", "Invite link")}
               onClick={() => void copy(url, t("招待リンク", "Invite link"))}
-            >
-              <Link2 size={18} />
-              {t("リンクをコピー", "Copy link")}
-            </button>
+            />
+            <Tile
+              icon={<Copy size={16} />}
+              tone="green"
+              title={t("ルームIDをコピー", "Copy room ID")}
+              detail={t("手入力で参加する人に", "For joining by hand")}
+              onClick={() => void copy(room.id, t("ルームID", "Room ID"))}
+            />
+            <Tile
+              icon={<Copy size={16} />}
+              tone="orange"
+              title={t("参加コードをコピー", "Copy join code")}
+              detail={t("ルームIDと一緒に伝える", "Send it with the room ID")}
+              onClick={() => void copy(room.joinCode, t("参加コード", "Join code"))}
+            />
           </div>
           <p className="form-help">
             {t(

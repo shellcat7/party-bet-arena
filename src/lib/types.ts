@@ -122,6 +122,8 @@ export type Room = {
   id: string;
   schemaVersion: 2;
   hostUid?: string;
+  /** Shown on the invitation so guests know who is running the room. */
+  hostName?: string;
   name: string;
   isDemo: boolean;
   joinCode: string;

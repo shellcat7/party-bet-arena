@@ -26,6 +26,7 @@
         "hostUid": { ".validate": "newData.isString() && newData.val().length <= 128" },
         "isDemo": { ".validate": "newData.val() === false" },
         "name": { ".validate": "newData.isString() && newData.val().length <= 100" },
+        "hostName": { ".validate": "newData.isString() && newData.val().length <= 40" },
         "joinCode": { ".validate": "newData.isString() && newData.val().matches(/^[A-HJ-NP-Z2-9]{16}$/)" },
         "theme": { ".validate": "newData.val() === 'arena' || newData.val() === 'neon'" },
         "startingBalance": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000" },
