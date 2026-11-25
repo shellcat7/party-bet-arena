@@ -1,0 +1,235 @@
+/*
+ * Liquid Glass
+ * ------------
+ * The navigation layer (top bar, tab bar, banners over a scene, sheets, toasts, the action bar)
+ * are a translucent material over the content: the backdrop is
+ * blurred and saturated, the edge catches light, and a soft shadow lifts it. Content itself stays
+ * on solid cards, as Apple's guidance recommends, so lists and numbers remain easy to read.
+ *
+ * With Reduce Transparency, Increase Contrast or no backdrop-filter support, the material is solid.
+ */
+
+:root {
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-tint: rgba(255, 255, 255, 0.6);
+  --glass-tint-strong: rgba(255, 255, 255, 0.8);
+  --glass-line: rgba(15, 17, 21, 0.08);
+  --glass-shadow: 0 10px 30px rgba(15, 17, 21, 0.12), 0 1px 3px rgba(15, 17, 21, 0.08);
+  --glass-rim: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.3) 30%,
+    rgba(255, 255, 255, 0.08) 58%,
+    rgba(255, 255, 255, 0.55)
+  );
+  --glass-lens: rgba(15, 17, 21, 0.07);
+  --glass-lens-edge: inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(15, 17, 21, 0.04);
+  --glass-demo: rgba(255, 245, 204, 0.72);
+  --glass-warning: rgba(252, 235, 233, 0.8);
+  --tab-accent: var(--brand-ink);
+}
+
+:root[data-theme="dark"] {
+  --glass-tint: rgba(30, 33, 40, 0.58);
+  --glass-tint-strong: rgba(26, 29, 35, 0.8);
+  --glass-line: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --glass-rim: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.32),
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0.02) 58%,
+    rgba(255, 255, 255, 0.14)
+  );
+  --glass-lens: rgba(255, 255, 255, 0.13);
+  --glass-lens-edge: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  --glass-demo: rgba(43, 36, 16, 0.72);
+  --glass-warning: rgba(46, 23, 22, 0.8);
+  --tab-accent: var(--brand);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root[data-theme="dark"] {
+    --glass-tint: var(--surface);
+    --glass-tint-strong: var(--surface);
+    --glass-demo: var(--brand-tint);
+    --glass-warning: var(--negative-tint);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root,
+  :root[data-theme="dark"] {
+    --glass-blur: none;
+    --glass-tint: var(--surface);
+    --glass-tint-strong: var(--surface);
+    --glass-demo: var(--brand-tint);
+    --glass-warning: var(--negative-tint);
+  }
+}
+
+/* -------------------------------------------------------------------------------- material */
+
+.glass-button,
+.glass-capsule,
+.bottom-nav,
+.race-accessory,
+.room > .banner,
+.sticky-actions,
+.sheet,
+.toast {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+.glass-button,
+.glass-capsule,
+.bottom-nav,
+.race-accessory,
+.room > .banner {
+  background: var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+}
+
+/* The light-catching rim: a 1px ring, bright at the top-left and bottom-right edges. */
+.glass-button::before,
+.glass-capsule::before,
+.bottom-nav::before,
+.race-accessory::before,
+.room > .banner::before,
+.sheet::before,
+.toast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-rim);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* Round glass button, as in the iOS navigation bar. */
+.glass-button {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text);
+}
+
+.glass-button:active {
+  transform: scale(0.94);
+}
+
+.glass-capsule {
+  position: relative;
+}
+
+/* Banners (demo, offline) float as capsules under the top bar. */
+.room > .banner {
+  position: relative;
+  z-index: 1;
+  margin: 8px 16px 0;
+  border: 0;
+  border-radius: 16px;
+}
+
+.room > .banner--demo {
+  background: var(--glass-demo);
+}
+
+.room > .banner--warning {
+  background: var(--glass-warning);
+}
+
+.toast-region {
+  bottom: calc(var(--nav-height) + 26px + var(--safe-bottom));
+  width: min(100% - 24px, var(--frame-width) - 24px);
+}
+
+/* Above the race capsule when it is shown, never on top of it. */
+body:has(.race-accessory) .toast-region {
+  bottom: calc(var(--nav-height) + 92px + var(--safe-bottom));
+}
+
+.toast {
+  border-radius: var(--radius-l);
+}
+
+/* ------------------------------------------------------------------- sheets, toasts, bars */
+
+.sheet {
+  position: relative;
+  background: var(--glass-tint-strong);
+}
+
+.toast,
+:root[data-theme="dark"] .toast {
+  position: relative;
+  background: var(--glass-tint-strong);
+  color: var(--text);
+  box-shadow: var(--glass-shadow);
+}
+
+.sticky-actions {
+  border-top-color: var(--glass-line);
+  background: var(--glass-tint);
+}
+
+.toast--success > svg:first-child,
+:root[data-theme="dark"] .toast--success > svg:first-child {
+  color: var(--positive);
+}
+
+.toast--error > svg:first-child,
+:root[data-theme="dark"] .toast--error > svg:first-child {
+  color: var(--negative);
+}
+
+/* ------------------------------------------------------------------------ status bar edge */
+
+/*
+ * Scroll edge. In a home-screen app the page runs under the status bar (black-translucent), so the
+ * top safe area (notch, Dynamic Island) holds no controls: every bar starts below it. Content that
+ * scrolls up fades softly under a strip of the glass material instead of colliding with the clock,
+ * the island or the floating controls. Without a safe area (most browsers) the strip only covers
+ * the controls of the top bar.
+ */
+body::before {
+  content: "";
+  position: fixed;
+  z-index: 5;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: var(--edge-top, var(--safe-top));
+  background: var(--glass-tint);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  -webkit-mask-image: linear-gradient(#000 40%, transparent);
+  mask-image: linear-gradient(#000 40%, transparent);
+  pointer-events: none;
+}
+
+/* Under the floating controls of the top bar, the soft edge reaches below them and is denser, so
+   text scrolling underneath never competes with the title. */
+body:has(.room--tab) {
+  --edge-top: calc(var(--safe-top) + 72px);
+}
+
+body:has(.room--tab)::before {
+  background: var(--glass-tint-strong);
+  -webkit-mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
+  mask-image: linear-gradient(#000 calc(100% - 22px), transparent);
+}

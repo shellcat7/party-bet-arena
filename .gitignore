@@ -13,3 +13,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .tmp-*
+coverage
+playwright-report
+test-results
+blob-report
+*-debug.log
+
+# Agent worktrees
+.claude/worktrees/
+
+# Throwaway scripts used while reviewing screens
+scripts/.audit-*
+scripts/.tmp-*

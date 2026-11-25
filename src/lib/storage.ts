@@ -1,267 +1,228 @@
-import { createInitialRoom } from "./sample.ts";
-import type { AppRole, LanguageName, Player, RaceBetResult, Room, ThemeName } from "./types";
+import { LegacyRoomError, normalizeRoom } from "./room";
+import type { AppRole, LanguageName, Room } from "./types";
 
-const roomKey = "party-bet-arena:room";
-const sessionKey = "party-bet-arena:session";
-const roomSummariesKey = "party-bet-arena:room-summaries";
-const deletedRoomIdsKey = "party-bet-arena:deleted-room-ids";
+/**
+ * Everything the app keeps on the device. Values are versioned by key name and parsed
+ * defensively: storage can be full, disabled (private browsing) or edited by hand.
+ */
+const KEYS = {
+  legacyRoom: "party-bet-arena:room",
+  roomPrefix: "party-bet-arena:room:",
+  session: "party-bet-arena:session",
+  preferences: "party-bet-arena:preferences",
+  summaries: "party-bet-arena:room-summaries",
+  deleted: "party-bet-arena:deleted-room-ids",
+} as const;
 
-export type LocalSession = {
-  role: AppRole;
-  playerId?: string;
-  language: LanguageName;
-};
+function read(key: string) {
+  try {
+    return globalThis.localStorage?.getItem(key) ?? null;
+  } catch {
+    return null;
+  }
+}
 
-export type LocalRoomSummary = {
+function write(key: string, value: string) {
+  try {
+    globalThis.localStorage?.setItem(key, value);
+  } catch {
+    // Quota exceeded or storage disabled: the app keeps working from memory.
+  }
+}
+
+function remove(key: string) {
+  try {
+    globalThis.localStorage?.removeItem(key);
+  } catch {
+    // ignore
+  }
+}
+
+function readJson<T>(key: string): T | undefined {
+  const stored = read(key);
+  if (!stored) return undefined;
+  try {
+    return JSON.parse(stored) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+/* ----------------------------------------------------------------------------- preferences */
+
+const SUPPORTED_LANGUAGES: LanguageName[] = ["ja", "en", "zh", "ko", "es", "fr", "de", "it", "uk"];
+
+export type ThemePreference = "system" | "light" | "dark";
+export type Preferences = { language: LanguageName; theme: ThemePreference };
+
+function detectLanguage(): LanguageName {
+  for (const tag of globalThis.navigator?.languages ?? [globalThis.navigator?.language ?? "ja"]) {
+    const base = tag.toLowerCase().split(/[-_]/)[0];
+    if (SUPPORTED_LANGUAGES.includes(base as LanguageName)) return base as LanguageName;
+  }
+  return "en";
+}
+
+export function loadPreferences(): Preferences {
+  const stored = readJson<Partial<Preferences>>(KEYS.preferences);
+  const legacy = readJson<{ language?: string }>(KEYS.session);
+  const language = stored?.language ?? legacy?.language;
+  return {
+    language: SUPPORTED_LANGUAGES.includes(language as LanguageName)
+      ? (language as LanguageName)
+      : detectLanguage(),
+    theme: stored?.theme === "light" || stored?.theme === "dark" ? stored.theme : "system",
+  };
+}
+
+export function savePreferences(preferences: Preferences) {
+  write(KEYS.preferences, JSON.stringify(preferences));
+}
+
+/* --------------------------------------------------------------------------------- session */
+
+/** Which room this device last had open, and in which role. */
+export type Session = { roomId: string; role: AppRole; playerId?: string };
+
+export function loadSession(): Session | undefined {
+  const stored = readJson<Partial<Session>>(KEYS.session);
+  if (!stored?.roomId) return undefined;
+  return {
+    roomId: stored.roomId,
+    role: stored.role === "player" ? "player" : "host",
+    ...(stored.playerId ? { playerId: stored.playerId } : {}),
+  };
+}
+
+export function saveSession(session: Session | undefined) {
+  if (session) write(KEYS.session, JSON.stringify(session));
+  else remove(KEYS.session);
+}
+
+/* ---------------------------------------------------------------------------- room records */
+
+/**
+ * Full room snapshots are kept for rooms that live only on this device (demo / no Firebase)
+ * and, temporarily, for online rooms whose latest change has not been confirmed by the server.
+ */
+export function saveRoomSnapshot(room: Room) {
+  write(KEYS.roomPrefix + room.id, JSON.stringify(room));
+}
+
+export function loadRoomSnapshot(roomId: string): Room | undefined {
+  migrateLegacySnapshot();
+  const stored = readJson<unknown>(KEYS.roomPrefix + roomId);
+  if (!stored) return undefined;
+  try {
+    return normalizeRoom(stored);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Removes a cached copy once the server has confirmed a version at least as new. */
+export function clearRoomSnapshot(roomId: string, confirmedUpdatedAt?: number) {
+  const cached = readJson<Partial<Room>>(KEYS.roomPrefix + roomId);
+  if (!cached) return;
+  if (confirmedUpdatedAt !== undefined && (cached.updatedAt ?? Infinity) > confirmedUpdatedAt) return;
+  remove(KEYS.roomPrefix + roomId);
+}
+
+/**
+ * Older builds kept a single full-room record. Current-schema rooms are moved to the keyed
+ * store; legacy-schema records are left untouched in case they hold unsynced data.
+ */
+function migrateLegacySnapshot() {
+  const stored = readJson<unknown>(KEYS.legacyRoom);
+  if (!stored) return;
+  try {
+    const room = normalizeRoom(stored);
+    if (!read(KEYS.roomPrefix + room.id)) saveRoomSnapshot(room);
+    remove(KEYS.legacyRoom);
+  } catch (error) {
+    if (!(error instanceof LegacyRoomError)) remove(KEYS.legacyRoom);
+  }
+}
+
+/* ------------------------------------------------------------------------------- summaries */
+
+/** Lightweight list for the launcher. Never contains invitation codes or balances. */
+export type RoomSummary = {
   id: string;
   schemaVersion: 2;
   name: string;
-  isDemo: boolean;
+  role: AppRole;
+  isLocal: boolean;
   currentRaceNumber: number;
   maxRaces: number;
   status: Room["currentRace"]["status"];
   updatedAt: number;
 };
 
-const validThemes = new Set<ThemeName>(["arena", "neon"]);
-const fallbackEmojis = ["🎮", "😎", "🌟", "🚗", "🎲", "🔥", "🍀", "🏆"];
-const fallbackContestantIcons = ["👑", "🤖", "⚡", "🍀", "🚀", "🎯", "💎", "⭐"];
-const legacyContestantIcons: Record<string, string> = {
-  sparkle: "👑",
-  wave: "🤖",
-  bolt: "⚡",
-  leaf: "🍀",
-};
-const validLanguages = new Set<LanguageName>(["ja", "en", "zh", "ko", "es", "fr", "de", "it", "uk"]);
-
-function normalizeIcon(icon: string | undefined, index: number) {
-  if (!icon) return fallbackContestantIcons[index % fallbackContestantIcons.length];
-  return legacyContestantIcons[icon] ?? icon;
+export function loadRoomSummaries(): RoomSummary[] {
+  const parsed = readJson<Array<Partial<RoomSummary>>>(KEYS.summaries);
+  if (!Array.isArray(parsed)) return [];
+  const deleted = new Set(loadDeletedRoomIds());
+  const summaries = parsed
+    .filter((item): item is RoomSummary =>
+      Boolean(
+        item && item.id && item.name !== undefined && item.schemaVersion === 2 && !deleted.has(item.id),
+      ),
+    )
+    .map(({ id, schemaVersion, name, role, isLocal, currentRaceNumber, maxRaces, status, updatedAt }) => ({
+      id,
+      schemaVersion,
+      name,
+      role: role === "player" ? ("player" as const) : ("host" as const),
+      isLocal: Boolean(isLocal),
+      currentRaceNumber: Number(currentRaceNumber) || 1,
+      maxRaces: Number(maxRaces) || 1,
+      status: status ?? "betting",
+      updatedAt: Number(updatedAt) || 0,
+    }))
+    .sort((a, b) => b.updatedAt - a.updatedAt);
+  write(KEYS.summaries, JSON.stringify(summaries));
+  return summaries;
 }
 
-function normalizeList<T extends { id: string }>(value: unknown, fallback: T[]): T[] {
-  if (Array.isArray(value)) return value as T[];
-  if (value && typeof value === "object") {
-    return Object.entries(value as Record<string, Partial<T>>).map(([id, item]) => ({
-      ...item,
-      id: item.id ?? id,
-    }) as T);
-  }
-  return fallback;
-}
-
-export function loadRoom() {
-  const stored = localStorage.getItem(roomKey);
-  if (!stored) return createInitialRoom();
-
-  try {
-    return normalizeRoom(JSON.parse(stored) as Room);
-  } catch {
-    return createInitialRoom();
-  }
-}
-
-export function saveRoom(room: Room, persistFullRoom = true) {
-  const normalized = normalizeRoom(room);
-  const next = { ...normalized, updatedAt: Date.now() };
-  if (persistFullRoom) {
-    localStorage.setItem(roomKey, JSON.stringify(next));
-  } else {
-    clearCachedRoom(room.id, room.updatedAt);
-  }
-  return rememberRoom(next);
-}
-
-export function clearCachedRoom(roomId: string, confirmedUpdatedAt?: number) {
-  const stored = localStorage.getItem(roomKey);
-  if (!stored) return;
-  try {
-    const cached = JSON.parse(stored) as Partial<Room>;
-    if (cached.id !== roomId) return;
-    if (confirmedUpdatedAt !== undefined && !(Number.isFinite(confirmedUpdatedAt) && (cached.updatedAt ?? Infinity) <= confirmedUpdatedAt)) return;
-    localStorage.removeItem(roomKey);
-  } catch {
-    localStorage.removeItem(roomKey);
-  }
-}
-
-export function loadRoomSummaries(): LocalRoomSummary[] {
-  const stored = localStorage.getItem(roomSummariesKey);
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored) as Partial<LocalRoomSummary>[];
-    const summaries = parsed
-      .filter((room): room is LocalRoomSummary => Boolean(room.id && room.name && room.schemaVersion === 2))
-      .map(({ id, schemaVersion, name, isDemo, currentRaceNumber, maxRaces, status, updatedAt }) => ({
-        id, schemaVersion, name, isDemo, currentRaceNumber, maxRaces, status, updatedAt,
-      }))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-    localStorage.setItem(roomSummariesKey, JSON.stringify(summaries));
-    return summaries;
-  } catch {
-    return [];
-  }
-}
-
-export function rememberRoom(room: Room) {
+export function rememberRoom(room: Room, role: AppRole, isLocal: boolean): RoomSummary[] {
   if (room.isDemo) return loadRoomSummaries();
-  if (loadDeletedRoomIds().includes(room.id)) {
-    const next = loadRoomSummaries().filter((item) => item.id !== room.id);
-    localStorage.setItem(roomSummariesKey, JSON.stringify(next));
-    return next;
-  }
-
-  const currentRaceNumber = Number(room.currentRace.title.match(/\d+/)?.[0] ?? room.raceHistory.length + 1);
-  const summary: LocalRoomSummary = {
+  restoreRoom(room.id);
+  const summary: RoomSummary = {
     id: room.id,
     schemaVersion: 2,
     name: room.name.trim() || room.id,
-    isDemo: room.isDemo,
-    currentRaceNumber,
+    role,
+    isLocal,
+    currentRaceNumber: room.currentRace.number,
     maxRaces: room.settings.maxRaces,
     status: room.currentRace.status,
     updatedAt: room.updatedAt,
   };
   const next = [summary, ...loadRoomSummaries().filter((item) => item.id !== room.id)].slice(0, 12);
-  localStorage.setItem(roomSummariesKey, JSON.stringify(next));
+  write(KEYS.summaries, JSON.stringify(next));
   return next;
 }
 
-export function forgetRoomSummary(roomId: string) {
-  rememberDeletedRoom(roomId);
-  const next = loadRoomSummaries().filter((item) => item.id !== roomId);
-  localStorage.setItem(roomSummariesKey, JSON.stringify(next));
-  return next;
+export function forgetRoom(roomId: string): RoomSummary[] {
+  const deleted = [roomId, ...loadDeletedRoomIds().filter((id) => id !== roomId)].slice(0, 40);
+  write(KEYS.deleted, JSON.stringify(deleted));
+  remove(KEYS.roomPrefix + roomId);
+  const session = loadSession();
+  if (session?.roomId === roomId) saveSession(undefined);
+  return loadRoomSummaries();
 }
 
-export function restoreRoomSummary(roomId: string) {
-  const next = loadDeletedRoomIds().filter((id) => id !== roomId);
-  localStorage.setItem(deletedRoomIdsKey, JSON.stringify(next));
+function restoreRoom(roomId: string) {
+  const deleted = loadDeletedRoomIds();
+  if (deleted.includes(roomId)) write(KEYS.deleted, JSON.stringify(deleted.filter((id) => id !== roomId)));
 }
 
-export function isRoomDeleted(roomId: string) {
+export function isRoomForgotten(roomId: string) {
   return loadDeletedRoomIds().includes(roomId);
 }
 
-function loadDeletedRoomIds() {
-  const stored = localStorage.getItem(deletedRoomIdsKey);
-  if (!stored) return [];
-
-  try {
-    const parsed = JSON.parse(stored) as unknown[];
-    return parsed.filter((id): id is string => typeof id === "string");
-  } catch {
-    return [];
-  }
-}
-
-function rememberDeletedRoom(roomId: string) {
-  const next = [roomId, ...loadDeletedRoomIds().filter((id) => id !== roomId)].slice(0, 40);
-  localStorage.setItem(deletedRoomIdsKey, JSON.stringify(next));
-}
-
-export function loadSession(): LocalSession {
-  const stored = localStorage.getItem(sessionKey);
-  if (!stored) return { role: "host", language: "ja" };
-
-  try {
-    const session = JSON.parse(stored) as Partial<LocalSession>;
-    return {
-      role: session.role === "player" ? "player" : "host",
-      playerId: session.playerId,
-      language: validLanguages.has(session.language as LanguageName) ? (session.language as LanguageName) : "ja",
-    };
-  } catch {
-    return { role: "host", language: "ja" };
-  }
-}
-
-export function saveSession(session: LocalSession) {
-  localStorage.setItem(sessionKey, JSON.stringify(session));
-}
-
-export function resetLocalRoom() {
-  const room = createInitialRoom();
-  saveRoom(room);
-  return room;
-}
-
-export function normalizeRoom(room: Room): Room {
-  const fallback = createInitialRoom();
-  const isDemo = room.id === "DEMO42";
-  if (!isDemo && room.schemaVersion !== 2) {
-    throw new Error("Unsupported legacy room schema");
-  }
-  const emptyIfLive = <T,>(sample: T[]): T[] => isDemo ? sample : [];
-  const cleanRoom = { ...room } as Room & { uiMode?: unknown };
-  delete cleanRoom.uiMode;
-  delete (cleanRoom as Room & { hostPin?: string }).hostPin;
-
-  return {
-    ...fallback,
-    ...cleanRoom,
-    isDemo,
-    theme: validThemes.has(room.theme) ? room.theme : fallback.theme,
-    settings: {
-      ...fallback.settings,
-      ...room.settings,
-      maxPlayers: Math.min(8, Math.max(1, room.settings?.maxPlayers ?? fallback.settings.maxPlayers)),
-      maxContestants: Math.min(8, Math.max(1, room.settings?.maxContestants ?? fallback.settings.maxContestants)),
-      maxRaces: Math.min(15, Math.max(1, room.settings?.maxRaces ?? fallback.settings.maxRaces)),
-      marketOdds: room.settings?.marketOdds ?? fallback.settings.marketOdds,
-      allowDebt: room.settings?.allowDebt ?? fallback.settings.allowDebt,
-      specialBonus: Math.max(0, Math.floor(room.settings?.specialBonus ?? fallback.settings.specialBonus)),
-    },
-    players: normalizeList<Player>((room as unknown as { players?: unknown }).players, emptyIfLive(fallback.players)).map((player, index) => {
-      const { skillRating: _legacySkillRating, ...cleanPlayer } = player as Player & { skillRating?: number };
-      return {
-        ...cleanPlayer,
-        emoji: player.emoji || fallbackEmojis[index % fallbackEmojis.length],
-      };
-    }),
-    contestants: normalizeList((room as unknown as { contestants?: unknown }).contestants, emptyIfLive(fallback.contestants)).map((contestant, index) => {
-      const cleanContestant = { ...contestant } as typeof contestant & { strengthRating?: unknown };
-      delete cleanContestant.strengthRating;
-      return {
-        ...cleanContestant,
-        icon: normalizeIcon(contestant.icon, index),
-        cpuLevel: contestant.cpuLevel ?? Math.max(1, 9 - index),
-        isCpu: contestant.isCpu ?? index > 0,
-      };
-    }),
-    currentRace: {
-      ...fallback.currentRace,
-      ...room.currentRace,
-      startedAt: room.currentRace?.startedAt ?? fallback.currentRace.startedAt,
-      endsAt: room.currentRace?.endsAt ?? room.currentRace?.startedAt ?? fallback.currentRace.startedAt,
-      bets: normalizeList((room.currentRace as unknown as { bets?: unknown } | undefined)?.bets, emptyIfLive(fallback.currentRace.bets)).map((bet) => ({
-        ...bet,
-        contestantIds: bet.contestantIds?.length ? bet.contestantIds : [bet.contestantId],
-      })),
-      resultIds: room.currentRace?.resultIds ?? [],
-    },
-    raceHistory: (room.raceHistory ?? []).map((entry) => ({
-      ...entry,
-      resultIds: entry.resultIds ?? [],
-      contestants: entry.contestants ?? [],
-      bets: (entry.bets ?? []).map((bet: RaceBetResult) => ({
-        ...bet,
-        contestantIds: bet.contestantIds?.length ? bet.contestantIds : [],
-        amount: bet.amount ?? 0,
-        multiplier: bet.multiplier ?? 0,
-        payout: bet.payout ?? 0,
-        delta: bet.delta ?? 0,
-        hit: Boolean(bet.hit),
-      })),
-      payouts: (entry.payouts ?? []).map((payout) => ({
-        ...payout,
-        stake: payout.stake ?? 0,
-        payout: payout.payout ?? 0,
-        delta: payout.delta ?? 0,
-        balanceAfter: payout.balanceAfter ?? 0,
-        hits: payout.hits ?? 0,
-      })),
-    })),
-  };
+function loadDeletedRoomIds(): string[] {
+  const parsed = readJson<unknown[]>(KEYS.deleted);
+  return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
 }

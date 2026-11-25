@@ -17,11 +17,7 @@ const isJpeg = bytes[0] === 0xff && bytes[1] === 0xd8;
 const decodedImage = isJpeg
   ? jpeg.decode(bytes, { formatAsRGBA: true, useTArray: true })
   : PNG.sync.read(bytes);
-const qr = jsQR(
-  new Uint8ClampedArray(decodedImage.data),
-  decodedImage.width,
-  decodedImage.height,
-);
+const qr = jsQR(new Uint8ClampedArray(decodedImage.data), decodedImage.width, decodedImage.height);
 
 if (!qr) {
   console.error(`No readable QR code found in ${absolutePath}`);

@@ -1,93 +1,102 @@
-# Party Bet Arena
+# ランクパーティ
 
-身内で遊ぶための汎用ベッティング＆ランキングWebアプリです。競馬風のBET体験を、スマブラ、マリオカート、カラオケ、ボードゲームなどの勝負に転用できます。
+[![Validate](https://github.com/shellcat7/party-bet-arena/actions/workflows/validate.yml/badge.svg)](https://github.com/shellcat7/party-bet-arena/actions/workflows/validate.yml)
 
-> 注意: このアプリはゲーム内コインだけを扱う身内向けツールです。現金、換金、賞品、賭博性のある運用には使わないでください。
+ゲーム大会の勝負にオッズとベットを付けて、参加者全員の順位をリアルタイムに集計するWebアプリです。幹事がルームを作成してQRコードで招待し、参加者は各自のスマートフォンからベットします。着順を入力すると払戻が自動で計算され、全員の画面に反映されます。
 
-## できること
+https://shellcat7.github.io/party-bet-arena/
 
-- ルーム作成、Room ID、参加コード発行
-- 公開URL、Room ID、参加コードを共有して各スマホから参加
-- ホストモードとプレイヤーモード
-- ホストによる代行BET入力
-- 競走対象ごとの手動オッズ設定
-- 単勝、複勝BET
-- 2連単、3連単BET
-- 所持コインを超えるBETの防止
-- BET状況ダッシュボード
-- 結果入力と自動配当計算
-- リアルタイムランキング
-- 破産者表示、大穴的中エフェクト
-- 賭ける人、競走プレイヤーをそれぞれ最大8人までに制限
-- CPU Lv 1-9、強さ1-9に基づくオッズ自動調整
-- 日本語 / 英語の表示切替
-- 参加者、対戦者の絵文字アイコン選択
-- `パーティ` / `ガーデン` / `キャンディ` / `スカイ` / `ネオン` / `ポップ` / `ミニマル` のデザイン切替
+Firebaseに接続しなくても、「デモを見る」から幹事と参加者の両方の画面を確認できます。
 
-## 使い方
+ポイントは遊び用です。現金や景品のやり取りには使用できません。
 
-1. ホストが公開URLを開き、`本番ルーム` を押します。
-2. 画面に表示されたURL、Room ID、参加コードを友だちへ共有します。
-3. 友だちは同じURLを開き、右上のゲストアイコンから名前、Room ID、参加コードを入力します。
-4. スマホを使わない人は、ホストの `BET` 画面で `幹事代行入力` から代理BETできます。
-5. ホストが `管理` 画面で結果を入力すると、ランキングが更新されます。
+| 進行（幹事） | ベット | レース中（参加者） | 着順入力 |
+| --- | --- | --- | --- |
+| <img src="docs/screenshots/host-home.png" width="190" alt="幹事の進行画面" /> | <img src="docs/screenshots/bet.png" width="190" alt="ベット画面" /> | <img src="docs/screenshots/race-live.png" width="190" alt="レース中の参加者の画面" /> | <img src="docs/screenshots/results-entry.png" width="190" alt="着順入力と精算プレビュー" /> |
+| **レース結果** | **履歴** | **最終結果** | **ダーク表示** |
+| <img src="docs/screenshots/race-result.png" width="190" alt="参加者のレース結果" /> | <img src="docs/screenshots/history.png" width="190" alt="レース履歴と残高推移" /> | <img src="docs/screenshots/final.png" width="190" alt="最終結果" /> | <img src="docs/screenshots/placed-dark.png" width="190" alt="ダーク表示のチケット" /> |
 
-右上の `JP` / `EN` ボタンで、その端末だけ表示言語を切り替えできます。テーマは `管理` 画面で説明付きカードから選べます。
+## 機能
 
-初期表示の `カラオケ対決` や `DEMO42` は操作確認用のデモです。本番利用時は `本番ルーム` を作成して、管理画面の `勝負名` を変更してください。
+- ルームの作成と招待（12文字のルームIDと16文字の参加コード、QRコード、招待リンク）
+- 単勝・複勝・2連単・3連単のベット。幹事による代行入力と取り消し
+- 対戦者の強さからのオッズ自動計算と、ベットの集まり具合でオッズが変わるモード
+- ベット受付 → 締切 → 着順入力 → 精算 の進行管理。確定前の精算プレビュー
+- ベットすると、参加者の画面は Apple Wallet の搭乗券のようなチケットだけになる。状態（受付済み → レース中 → 的中／不的中）と、その時できる操作（取り消し、結果を見る）はチケットの半券に出る
+- 招待もチケット形式（ルーム名、幹事、レース数、初期ポイント、QRコード、参加コード）
+- 幹事のレース中の画面から、ルール・対戦者・参加者・招待の準備に移れる
+- 着順の訂正（直前の精算の取り消し）と、締切前のベットの取り消し
+- 順位と変動、レース履歴、残高推移グラフ、最終結果
+- 9言語（日本語、英語、中国語、韓国語、スペイン語、フランス語、ドイツ語、イタリア語、ウクライナ語）、ライトとダーク表示
+- Liquid Glass 風のナビゲーション（フローティングのタブバー、半透明の上部バーとシート）。透明度を下げる設定では不透明に切り替え
 
-## 技術構成
+## 構成
 
-- React + TypeScript + Vite
-- Firebase Realtime Database optional sync
-- GitHub Pages hosting
-- iPhone縦向き優先のSPA
+| 領域 | 使用技術 |
+| --- | --- |
+| フロントエンド | React 19、TypeScript（strict）、Vite |
+| データ同期 | Firebase Realtime Database、Firebase Authentication（匿名ログイン） |
+| 権限 | Realtime Database Security Rules（`firebase.rules.json`） |
+| ホスティング | GitHub Pages（GitHub Actions でデプロイ） |
+| テスト | Vitest、Firebase Emulator、Playwright、axe-core |
 
-Firebase設定がない場合は、ブラウザのlocalStorageを使うローカルデモとして動作します。
+サーバー側のコードはありません。データの読み書きの可否はすべて Security Rules で判定しています。
 
-## セットアップ
+```
+src/
+├── lib/         ドメインロジック（オッズ、ベット、精算、ルーム操作、同期用の差分生成）
+├── state/       ルームの状態管理と画面遷移
+├── screens/     画面
+├── components/  共通UI
+├── i18n/        翻訳の仕組みと各言語のカタログ
+└── styles/      CSS（トークン、共通部品、画面別）
+```
+
+`lib/` は React と Firebase に依存しない関数のみで構成しており、ユニットテストの対象です。設計の詳細は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) にまとめています。
+
+## 実装上の判断
+
+**同時書き込み時のデータ保護**
+幹事の変更はルーム全体を上書きせず、変更されたパスだけを書き込みます（`src/lib/patch.ts`）。締切・精算・次のレースへの移行は Realtime Database のトランザクションで実行し、サーバー上の最新状態を前提に処理します。複数のタブや古い表示から操作しても、精算済みのレースを再度精算したり、締切直前に受け付けたベットを取りこぼしたりしません。
+
+**サーバーを持たない権限管理**
+Security Rules で次の制約を課しています。参加コードが一致した端末だけがメンバーとして登録でき、メンバー以外はルームを読めません。参加者が作成できるのは、初期残高の自分のレコードと、受付中の自分のベット1件だけです。倍率はクライアントから受け取らず、精算時に毎回計算します。ルールのテストはエミュレータ上で実行しています（`tests/firebase-rules.test.ts`）。
+
+**オッズの計算**
+すべての券種を1つの確率モデル（Plackett–Luce）から計算し、`払戻率 ÷ 的中確率` で倍率を決めています。どの券種を買っても平均の払戻率がそろい（自動オッズでは90%）、期待値が賭け金を上回る券種はありません。テストで券種ごとの払戻率を確認しています。
+
+**色とチケット**
+画面の土台は中立色、ブランドの黄色（アイコンと同じ）は主要な操作と選択中のタブだけに使い、鮮やかな色はチケットに集めています。対戦者の色は競馬の枠色（1白・2黒・3赤・4青・5黄・6緑・7橙・8桃）で、枠番から決まります。チケットは1着に選んだ対戦者の枠色で印刷され、明るい色は黒文字の明るい券になります（`src/components/BetPass.tsx`、`src/styles/pass.css`）。
+
+チケットの絵は、モネの「散歩、日傘をさす女性」（1875年、パブリックドメイン）の筆致と色合いを参考に、Canvas にコードで描いた風景です（`src/components/scenes/meadowPainter.ts`）。草原・海岸・雪山・ラベンダー畑・紅葉・湖・砂漠・桜並木・麦畑の9種類と、昼・夕方・夕暮れの3つの光があり、レースごとに場所と時間帯が変わります。画像ファイルは使わず、乱数のシードから筆致を生成し、約8msずつに分けて描きます。動くのはレース中のチケットだけで、画面外や「視差効果を減らす」設定では止まります。風景のコードは初めて必要になった時に読み込みます。
+
+**多言語対応**
+日本語・英語・中国語（簡体字）・韓国語・スペイン語・フランス語・ドイツ語・イタリア語・ウクライナ語に対応しています。英語の原文をキーにしたカタログ方式で、複数形は ICU 形式で表現します。翻訳漏れはテストで検出します。
+
+## 開発
+
+Node.js 22 以上が必要です。
 
 ```bash
 npm install
 npm run dev
 ```
 
-PowerShellで`npm`が実行ポリシーに止められる場合は、Windowsの実体コマンドを使います。
+Firebase の設定がない場合は、端末内だけで動作するモードで起動します。
 
-```bash
-npm.cmd install
-npm.cmd run dev
-```
+| コマンド | 内容 |
+| --- | --- |
+| `npm run check` | 型チェック、Lint、ユニットテスト、ビルド |
+| `npm test` | ユニットテスト（`npm run test:coverage` でカバレッジ） |
+| `npm run test:rules:emulator` | Security Rules のテスト（Java 21 が必要） |
+| `npm run test:e2e` | 本番ビルドに対する E2E テストとアクセシビリティ検査 |
+| `npm run test:e2e:online` | Firebase Emulator を使った2端末の E2E テスト |
 
-## Firebase設定
+プルリクエストでは、これらすべてを GitHub Actions で実行します。
 
-このリポジトリはpublic前提です。Firebaseの実値や`.env.local`はコミットしないでください。
+### Firebase Emulator で複数端末を試す
 
-1. Firebase ConsoleでWebアプリを追加
-2. `.env.example`を参考に、ローカルだけに`.env.local`を作成
-3. `VITE_FIREBASE_*`にFirebase Web configの値を入れる
-
-```bash
-cp .env.example .env.local
-```
-
-`.env.local`は`.gitignore`で除外されています。
-
-Firebase Web configの`apiKey`はブラウザに配布される前提の識別子ですが、Database Rulesが本体の防御です。管理者用のサービスアカウント鍵はこのアプリでは使いません。
-
-## Realtime Database Rules
-
-公開用ルールの正本は `firebase.rules.json` です。GitHub Pages のデプロイでは Firebase ルールは更新されません。Firebase Console に反映する前に、ルールテストと既存ルームの互換性を確認してください。ホストだけがルーム全体を管理でき、参加者は招待コードで登録した後、自分の参加者レコードを一度作成し、自分の BET を受付中に一度作成できます。
-
-検証コマンド:
-
-```sh
-npm run test:security
-npm run test:rules:emulator
-npm audit --omit=dev --audit-level=high
-```
-
-本番へ書き込まずにブラウザで結合確認する場合は、`.env.local` に以下の**エミュレータ専用**設定を入れ、別々のターミナルで `npm run dev:emulators` と `npm run dev` を起動します。`VITE_USE_FIREBASE_EMULATORS` は開発サーバーでのみ有効です。
+`npm run dev:emulators` を起動したうえで、`.env.local` に次の値を設定して `npm run dev` を実行します。本番の Firebase には接続しません。
 
 ```dotenv
 VITE_FIREBASE_API_KEY=demo-key
@@ -98,35 +107,14 @@ VITE_FIREBASE_PROJECT_ID=demo-party-bet-security
 VITE_USE_FIREBASE_EMULATORS=true
 ```
 
-オンラインルーム全体のローカルキャッシュは、Firebaseへの保存・同期が確認できた後に削除します。保存済みルーム一覧にはIDと表示用情報だけを残し、参加コードは削除します。通信障害中は未同期データを失わないよう、全体キャッシュが残る場合があります。共有端末ではFirebaseの匿名ログイン状態も別途残るため、端末自体の管理が必要です。
+## デプロイ
 
-クライアントとルールは同じ変更として公開し、新しいサイトのデプロイを確認してからFirebaseルールを公開してください。先にルールだけ切り替えると旧クライアントの参加・BET書き込みが拒否されます。ルールを本番へ反映した後、新規ルームの作成、招待参加、BET、結果確定を実機ブラウザで確認してください。
+1. Firebase Console で Web アプリを登録し、Realtime Database と匿名ログインを有効にします。
+2. GitHub の Repository variables に `VITE_FIREBASE_*` を設定します。これらはブラウザに配布される値です。
+3. Settings → Pages で Source を GitHub Actions に設定します。`main` への push でデプロイされます。
+4. `firebase.rules.json` を Firebase に反映します。クライアントとの公開順序は [docs/SECURITY.md](docs/SECURITY.md) を参照してください。
 
-既存の短い参加コードは推測されやすいため、新しいルームを作り、招待リンクを更新してください。匿名認証を使う限り、端末を変えたりブラウザデータを消したりするとホスト権限を復元できません。
+## ドキュメント
 
-このルールでも、匿名認証は「端末ごとの簡易ID」です。管理者用の強い本人確認が必要な規模にする場合は、Googleログインなどの明示ログインを追加してください。
-
-旧ルールで作成したテストルームは`hostUid`や`uid`が入っていない場合があります。本格公開用ルールへ切り替えた後は、新しくルームを作り直して動作確認してください。
-
-## GitHub Pages
-
-このリポジトリにはGitHub Pages向けのActions workflowを含めています。
-
-GitHubでの設定:
-
-1. Repository `Settings`
-2. `Pages`
-3. `Build and deployment`
-4. Sourceを `GitHub Actions` にする
-5. `main`へpushすると自動デプロイ
-
-Firebase configをGitHub Pages上でも有効にする場合は、GitHubのRepository secretsではなく、Repository variablesで`VITE_FIREBASE_*`を設定する運用がおすすめです。値は公開バンドルに含まれるため、秘密情報は入れないでください。
-
-## 開発メモ
-
-- コインはゲーム内ポイントとして扱います。
-- BET時点ではコインを予約し、結果確定時に元本を差し引いて配当を加算します。
-- 複勝は3着以内を的中扱いにし、倍率は単勝オッズの約52%で計算します。
-- 2連単は1着・2着、3連単は1着・2着・3着の順番が完全一致した場合に的中します。
-- 自動オッズは簡易モデルです。CPU Lvまたは強さが高い対象ほど低倍率、低い対象ほど高倍率に寄せます。
-- ルームパスワードや参加コードは身内の簡易制御用であり、強固な認証ではありません。
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)：データモデル、同期、レースの状態遷移、オッズ
+- [docs/SECURITY.md](docs/SECURITY.md)：権限モデル、既知の制約、リリース手順
