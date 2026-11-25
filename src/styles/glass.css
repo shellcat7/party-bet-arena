@@ -1,0 +1,179 @@
+/*
+ * Liquid Glass
+ * ------------
+ * The navigation layer (top bar, tab bar, banners over a scene, sheets, toasts, the action bar)
+ * and the card on a waiting screen are a translucent material over the content: the backdrop is
+ * blurred and saturated, the edge catches light, and a soft shadow lifts it. Content itself stays
+ * on solid cards, as Apple's guidance recommends, so lists and numbers remain easy to read.
+ *
+ * With Reduce Transparency, Increase Contrast or no backdrop-filter support, the material is solid.
+ */
+
+:root {
+  --glass-blur: blur(20px) saturate(180%);
+  --glass-tint: rgba(255, 255, 255, 0.6);
+  --glass-tint-strong: rgba(255, 255, 255, 0.8);
+  --glass-line: rgba(15, 17, 21, 0.08);
+  --glass-shadow: 0 10px 30px rgba(15, 17, 21, 0.12), 0 1px 3px rgba(15, 17, 21, 0.08);
+  --glass-rim: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.3) 30%,
+    rgba(255, 255, 255, 0.08) 58%,
+    rgba(255, 255, 255, 0.55)
+  );
+  --glass-pill: rgba(15, 17, 21, 0.06);
+  --glass-demo: rgba(255, 245, 204, 0.72);
+}
+
+:root[data-theme="dark"] {
+  --glass-tint: rgba(30, 33, 40, 0.58);
+  --glass-tint-strong: rgba(26, 29, 35, 0.8);
+  --glass-line: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --glass-rim: linear-gradient(
+    160deg,
+    rgba(255, 255, 255, 0.32),
+    rgba(255, 255, 255, 0.08) 30%,
+    rgba(255, 255, 255, 0.02) 58%,
+    rgba(255, 255, 255, 0.14)
+  );
+  --glass-pill: rgba(255, 255, 255, 0.1);
+  --glass-demo: rgba(43, 36, 16, 0.72);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  :root,
+  :root[data-theme="dark"] {
+    --glass-tint: var(--surface);
+    --glass-tint-strong: var(--surface);
+    --glass-demo: var(--brand-tint);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root,
+  :root[data-theme="dark"] {
+    --glass-blur: none;
+    --glass-tint: var(--surface);
+    --glass-tint-strong: var(--surface);
+    --glass-demo: var(--brand-tint);
+  }
+}
+
+/* -------------------------------------------------------------------------------- material */
+
+.topbar,
+.bottom-nav,
+.sticky-actions,
+.sheet,
+.toast,
+.waiting__panel,
+.room:has(.waiting) > .banner {
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+}
+
+/* The light-catching rim: a 1px ring, bright at the top-left and bottom-right edges. */
+.bottom-nav::before,
+.sheet::before,
+.toast::before,
+.waiting__panel::before,
+.room:has(.waiting) .topbar::before,
+.room:has(.waiting) > .banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-rim);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ---------------------------------------------------------------------------------- top bar */
+
+.topbar {
+  border-bottom-color: var(--glass-line);
+  background: var(--glass-tint);
+}
+
+.room:has(.waiting) .topbar {
+  box-shadow: var(--glass-shadow);
+}
+
+/* ------------------------------------------------------------- tab bar: a floating capsule */
+
+.bottom-nav {
+  bottom: calc(10px + var(--safe-bottom));
+  width: min(100% - 24px, var(--frame-width) - 24px);
+  padding: 5px;
+  border: 0;
+  border-radius: 28px;
+  background: var(--glass-tint);
+  box-shadow: var(--glass-shadow);
+}
+
+.bottom-nav button {
+  min-height: 50px;
+  border-radius: 23px;
+  transition: background-color 160ms ease;
+}
+
+.bottom-nav button.is-active {
+  background: var(--glass-pill);
+}
+
+.room--tab .room__content {
+  padding-bottom: calc(var(--nav-height) + 28px + var(--safe-bottom));
+}
+
+.toast-region {
+  bottom: calc(var(--nav-height) + 26px + var(--safe-bottom));
+}
+
+/* ------------------------------------------------------------------- sheets, toasts, bars */
+
+.sheet {
+  position: relative;
+  background: var(--glass-tint-strong);
+}
+
+.toast,
+:root[data-theme="dark"] .toast {
+  position: relative;
+  background: var(--glass-tint-strong);
+  color: var(--text);
+  box-shadow: var(--glass-shadow);
+}
+
+.sticky-actions {
+  border-top-color: var(--glass-line);
+  background: var(--glass-tint);
+}
+
+/* ------------------------------------------------------------------------- waiting screens */
+
+.waiting__panel {
+  position: relative;
+  background: var(--glass-tint-strong);
+  box-shadow: var(--glass-shadow);
+}
+
+.room:has(.waiting) > .banner--demo {
+  background: var(--glass-demo);
+}
+
+.toast--success svg:first-child,
+:root[data-theme="dark"] .toast--success svg:first-child {
+  color: var(--positive);
+}
+
+.toast--error svg:first-child,
+:root[data-theme="dark"] .toast--error svg:first-child {
+  color: var(--negative);
+}

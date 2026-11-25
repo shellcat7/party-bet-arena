@@ -1406,7 +1406,6 @@
   padding-top: 6px;
   border: 0;
   border-radius: 18px;
-  box-shadow: var(--shadow-overlay);
 }
 
 .room:has(.waiting) > .banner {
@@ -1417,22 +1416,11 @@
   border-radius: 14px;
 }
 
-.room:has(.waiting) .bottom-nav {
-  bottom: calc(10px + var(--safe-bottom));
-  width: min(100% - 24px, var(--frame-width) - 24px);
-  padding-bottom: 4px;
-  border: 0;
-  border-radius: 22px;
-  box-shadow: var(--shadow-overlay);
-}
-
 .waiting__panel {
   display: grid;
   gap: 14px;
   padding: 18px 18px 20px;
   border-radius: var(--radius-l);
-  background: var(--surface);
-  box-shadow: var(--shadow-overlay);
 }
 
 .waiting__head {
