@@ -6,3 +6,4 @@ package-lock.json
 *.md
 public
 firebase.rules.json
+.claude

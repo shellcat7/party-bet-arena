@@ -1097,9 +1097,9 @@ select.input {
   font-size: 1rem;
 }
 
+/* The artwork carries its own corner radius; clipping it here would change the shape. */
 .brand-mark {
   flex: none;
-  border-radius: 22%;
 }
 
 /* ------------------------------------------------------------------------------ toast & sheet */
